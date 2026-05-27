@@ -78,6 +78,77 @@ dotnet ef database update \
 
 `DesignTimeDbContextFactory` writes to `%LOCALAPPDATA%\VideoArchiveManager\catalog.db` by default, matching the runtime path. The application also calls `Database.MigrateAsync()` on startup so any new migrations are applied automatically.
 
+## Distribution (Velopack)
+
+The app is packaged for end users with [Velopack](https://velopack.io). A self-contained `win-x64` build is bundled into a Windows installer (`Setup.exe`) and a portable zip; the installer also wires up auto-updates so demo users get future versions without reinstalling.
+
+### One-time setup (developer machine)
+
+The Velopack CLI is pinned as a local dotnet tool. Restore it once after cloning:
+
+```powershell
+dotnet tool restore
+```
+
+### Building a release
+
+Run the publish script from the repo root. Optionally pass `-Version` to override the version in the App `.csproj`.
+
+```powershell
+pwsh ./scripts/publish.ps1
+pwsh ./scripts/publish.ps1 -Version 0.2.0
+```
+
+What the script does:
+
+1. Restores local dotnet tools (`vpk`).
+2. `dotnet publish` of `VideoArchiveManager.App` in `Release` for `win-x64`, self-contained, into `./publish`.
+3. If `./tools/ffmpeg/` exists at the repo root, copies `ffmpeg.exe` / `ffprobe.exe` (and any sibling files) into the publish output so the released app picks them up via the relative defaults in `appsettings.json`. Pass `-SkipBundleFfmpeg` to opt out. When no bundled FFmpeg is present the app falls back to whatever `ffmpeg` / `ffprobe` is on the user's `PATH`.
+4. Runs `dotnet vpk pack` against the publish folder.
+
+Artifacts land in `./releases/`:
+
+| File | Purpose |
+| --- | --- |
+| `VideoArchiveManager-win-Setup.exe` | Single-file installer for demo users. |
+| `VideoArchiveManager-win-Portable.zip` | Portable build (just unzip and run `VideoArchiveManager.exe`). |
+| `VideoArchiveManager-<version>-full.nupkg` | Velopack release package used by the auto-updater. |
+| `RELEASES`, `releases.win.json`, `assets.win.json` | Release manifests; publish these alongside the nupkg if/when you wire up auto-update. |
+
+### Bundling FFmpeg (optional)
+
+To give demo users a zero-setup experience, drop a Windows FFmpeg build into `./tools/ffmpeg/` so the directory looks like:
+
+```
+tools/
+  ffmpeg/
+    ffmpeg.exe
+    ffprobe.exe
+    ... (any other FFmpeg dlls if you use a shared build)
+```
+
+The next `./scripts/publish.ps1` run will bundle these into the installer. The app's default settings already point at `tools\ffmpeg\ffmpeg.exe` and `tools\ffmpeg\ffprobe.exe` (relative to the install directory) so it works automatically; users can still override the paths in **Settings**.
+
+### Releasing a new version
+
+1. Bump `<Version>` in `src/VideoArchiveManager.App/VideoArchiveManager.App.csproj` (or use `-Version` on the script).
+2. `pwsh ./scripts/publish.ps1`.
+3. Share `VideoArchiveManager-win-Setup.exe` with demo users.
+
+### Auto-update wiring (optional, not yet enabled)
+
+`VelopackApp.Build().Run()` is already wired into `App.Main`. To enable updates, host the contents of `./releases/` somewhere (S3, GitHub Releases, Azure Blob, etc.) and add an `UpdateManager` call somewhere in the app (e.g. on startup or via a menu item):
+
+```csharp
+var mgr = new Velopack.UpdateManager("https://example.com/releases");
+var newVersion = await mgr.CheckForUpdatesAsync();
+if (newVersion is not null)
+{
+    await mgr.DownloadUpdatesAsync(newVersion);
+    mgr.ApplyUpdatesAndRestart(newVersion);
+}
+```
+
 ## Roadmap (not in v1)
 
 The database already contains an `AiTagSuggestions` table for future AI tagging (sea, fog, ships, birds, parrots, cars, people, beach, forest, mountains, city, snow, etc.). The current MVP focuses on manual tagging and searchable metadata only.

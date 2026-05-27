@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Velopack;
 using VideoArchiveManager.App.ViewModels;
 using VideoArchiveManager.App.Views;
 using VideoArchiveManager.Core.Configuration;
@@ -17,6 +18,16 @@ namespace VideoArchiveManager.App;
 
 public partial class App : Application
 {
+    [STAThread]
+    public static void Main(string[] args)
+    {
+        VelopackApp.Build().Run();
+
+        var app = new App();
+        app.InitializeComponent();
+        app.Run();
+    }
+
     public static IHost? Host { get; private set; }
 
     public static bool IsPlayerAvailable { get; private set; }
