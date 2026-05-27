@@ -1,0 +1,57 @@
+<Window x:Class="VideoArchiveManager.App.Views.BulkEditDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.modernwpf.com/2019"
+        Title="Bulk edit selected videos"
+        Width="520" Height="540"
+        WindowStartupLocation="CenterOwner"
+        ui:WindowHelper.UseModernWindowStyle="True"
+        ResizeMode="NoResize">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Bulk edit" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,12" />
+
+        <StackPanel Grid.Row="1">
+            <CheckBox Content="Set status" IsChecked="{Binding ApplyStatus}" />
+            <ComboBox Margin="20,2,0,12"
+                      ItemsSource="{Binding AvailableStatuses}"
+                      SelectedItem="{Binding Status}"
+                      IsEnabled="{Binding ApplyStatus}" />
+
+            <CheckBox Content="Set rating" IsChecked="{Binding ApplyRating}" />
+            <ui:NumberBox Margin="20,2,0,12" Minimum="0" Maximum="5"
+                          Value="{Binding Rating}"
+                          IsEnabled="{Binding ApplyRating}" />
+
+            <CheckBox Content="Append to notes" IsChecked="{Binding ApplyNotesAppend}" />
+            <TextBox Margin="20,2,0,12"
+                     Text="{Binding NotesToAppend, UpdateSourceTrigger=PropertyChanged}"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     MinHeight="80"
+                     IsEnabled="{Binding ApplyNotesAppend}" />
+
+            <CheckBox Content="Add a tag" IsChecked="{Binding ApplyTag}" />
+            <StackPanel Orientation="Horizontal" Margin="20,2,0,12" IsEnabled="{Binding ApplyTag}">
+                <TextBox Width="180"
+                         Text="{Binding NewTagName, UpdateSourceTrigger=PropertyChanged}"
+                         ui:ControlHelper.PlaceholderText="Tag name" />
+                <ComboBox Width="140" Margin="6,0,0,0"
+                          ItemsSource="{Binding AvailableTagTypes}"
+                          SelectedItem="{Binding NewTagType}" />
+            </StackPanel>
+        </StackPanel>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="Cancel" Command="{Binding CancelCommand}" />
+            <Button Content="Apply" Margin="6,0,0,0"
+                    Style="{StaticResource AccentButtonStyle}"
+                    Command="{Binding ApplyCommand}" />
+        </StackPanel>
+    </Grid>
+</Window>

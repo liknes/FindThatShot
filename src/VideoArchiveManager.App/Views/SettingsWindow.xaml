@@ -1,0 +1,63 @@
+<Window x:Class="VideoArchiveManager.App.Views.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.modernwpf.com/2019"
+        Title="Settings"
+        Width="640" Height="480"
+        WindowStartupLocation="CenterOwner"
+        ui:WindowHelper.UseModernWindowStyle="True"
+        ResizeMode="NoResize">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Application settings" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,12" />
+
+        <StackPanel Grid.Row="1">
+            <TextBlock Text="ffmpeg.exe path (leave blank to use PATH)" Opacity="0.7" />
+            <Grid Margin="0,2,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0" Text="{Binding FfmpegPath, UpdateSourceTrigger=PropertyChanged}" />
+                <Button Grid.Column="1" Margin="6,0,0,0" Content="Browse..." Command="{Binding BrowseFfmpegCommand}" />
+            </Grid>
+
+            <TextBlock Text="ffprobe.exe path (leave blank to use PATH)" Opacity="0.7" />
+            <Grid Margin="0,2,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0" Text="{Binding FfprobePath, UpdateSourceTrigger=PropertyChanged}" />
+                <Button Grid.Column="1" Margin="6,0,0,0" Content="Browse..." Command="{Binding BrowseFfprobeCommand}" />
+            </Grid>
+
+            <TextBlock Text="Thumbnail directory" Opacity="0.7" />
+            <TextBox Text="{Binding ThumbnailDirectory, UpdateSourceTrigger=PropertyChanged}"
+                     Margin="0,2,0,12" />
+
+            <TextBlock Text="Database file" Opacity="0.7" />
+            <TextBox Text="{Binding DatabasePath, UpdateSourceTrigger=PropertyChanged}"
+                     Margin="0,2,0,12" />
+
+            <TextBlock Text="Max scan parallelism" Opacity="0.7" />
+            <ui:NumberBox Value="{Binding MaxScanParallelism}" Minimum="1" Maximum="16" Margin="0,2,0,12" />
+
+            <TextBlock TextWrapping="Wrap"
+                       Opacity="0.6"
+                       Text="Settings are saved to %APPDATA%\VideoArchiveManager\settings.json. Changes to the database path require an app restart." />
+        </StackPanel>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="Cancel" Command="{Binding CancelCommand}" />
+            <Button Content="Save" Margin="6,0,0,0"
+                    Style="{StaticResource AccentButtonStyle}"
+                    Command="{Binding SaveCommand}" />
+        </StackPanel>
+    </Grid>
+</Window>

@@ -1,0 +1,131 @@
+using Microsoft.EntityFrameworkCore;
+using VideoArchiveManager.Core.Models;
+using VideoArchiveManager.Core.Services;
+
+namespace VideoArchiveManager.Data.Services;
+
+public class SearchService : ISearchService
+{
+    private readonly IDbContextFactory<VideoArchiveDbContext> _contextFactory;
+
+    public SearchService(IDbContextFactory<VideoArchiveDbContext> contextFactory)
+    {
+        _contextFactory = contextFactory;
+    }
+
+    public async Task<SearchResult> SearchAsync(SearchQuery query, CancellationToken cancellationToken = default)
+    {
+        await using var ctx = await _contextFactory.CreateDbContextAsync(cancellationToken);
+
+        IQueryable<VideoItem> q = ctx.VideoItems
+            .AsNoTracking()
+            .Include(v => v.VideoTags)
+                .ThenInclude(vt => vt.Tag);
+
+        if (!string.IsNullOrWhiteSpace(query.Text))
+        {
+            var tokens = query.Text
+                .Split(new[] { ' ', '\t', ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(t => t.Trim())
+                .Where(t => t.Length > 0)
+                .ToArray();
+
+            foreach (var token in tokens)
+            {
+                var like = $"%{token}%";
+                q = q.Where(v =>
+                    EF.Functions.Like(v.FileName, like) ||
+                    EF.Functions.Like(v.FolderPath, like) ||
+                    (v.LocationText != null && EF.Functions.Like(v.LocationText, like)) ||
+                    (v.ContextText != null && EF.Functions.Like(v.ContextText, like)) ||
+                    (v.Notes != null && EF.Functions.Like(v.Notes, like)) ||
+                    (v.Camera != null && EF.Functions.Like(v.Camera, like)) ||
+                    (v.Codec != null && EF.Functions.Like(v.Codec, like)) ||
+                    v.VideoTags.Any(vt => EF.Functions.Like(vt.Tag.Name, like)));
+            }
+        }
+
+        if (query.Status.HasValue)
+        {
+            q = q.Where(v => v.Status == query.Status.Value);
+        }
+
+        if (query.MinRating is > 0)
+        {
+            q = q.Where(v => v.Rating >= query.MinRating.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.Camera))
+        {
+            q = q.Where(v => v.Camera == query.Camera);
+        }
+
+        if (query.TagIds is { Count: > 0 })
+        {
+            var tagIds = query.TagIds.ToArray();
+            foreach (var tagId in tagIds)
+            {
+                q = q.Where(v => v.VideoTags.Any(vt => vt.TagId == tagId));
+            }
+        }
+
+        if (query.DateFrom.HasValue)
+        {
+            var from = query.DateFrom.Value;
+            q = q.Where(v =>
+                (v.FolderDate != null && v.FolderDate >= from) ||
+                v.ModifiedAtFile >= from);
+        }
+
+        if (query.DateTo.HasValue)
+        {
+            var to = query.DateTo.Value;
+            q = q.Where(v =>
+                (v.FolderDate != null && v.FolderDate <= to) ||
+                v.ModifiedAtFile <= to);
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.RootFolderPath))
+        {
+            var prefix = query.RootFolderPath;
+            q = q.Where(v => v.FilePath.StartsWith(prefix));
+        }
+
+        if (query.FileExists.HasValue)
+        {
+            var fe = query.FileExists.Value;
+            q = q.Where(v => v.FileExists == fe);
+        }
+
+        var total = await q.CountAsync(cancellationToken);
+
+        q = query.SortBy switch
+        {
+            SearchSortField.ModifiedDescending => q.OrderByDescending(v => v.ModifiedAtFile),
+            SearchSortField.ModifiedAscending => q.OrderBy(v => v.ModifiedAtFile),
+            SearchSortField.FileNameAscending => q.OrderBy(v => v.FileName),
+            SearchSortField.FileNameDescending => q.OrderByDescending(v => v.FileName),
+            SearchSortField.RatingDescending => q.OrderByDescending(v => v.Rating).ThenByDescending(v => v.ModifiedAtFile),
+            SearchSortField.FolderDateDescending => q.OrderByDescending(v => v.FolderDate).ThenByDescending(v => v.ModifiedAtFile),
+            _ => q.OrderByDescending(v => v.ModifiedAtFile)
+        };
+
+        if (query.Skip > 0) q = q.Skip(query.Skip);
+        if (query.Take > 0) q = q.Take(query.Take);
+
+        var items = await q.ToListAsync(cancellationToken);
+        return new SearchResult { Items = items, TotalCount = total };
+    }
+
+    public async Task<IReadOnlyList<string>> GetDistinctCamerasAsync(CancellationToken cancellationToken = default)
+    {
+        await using var ctx = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        return await ctx.VideoItems
+            .AsNoTracking()
+            .Where(v => v.Camera != null && v.Camera != "")
+            .Select(v => v.Camera!)
+            .Distinct()
+            .OrderBy(c => c)
+            .ToListAsync(cancellationToken);
+    }
+}

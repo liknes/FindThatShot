@@ -1,0 +1,353 @@
+<Window x:Class="VideoArchiveManager.App.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.modernwpf.com/2019"
+        xmlns:vm="clr-namespace:VideoArchiveManager.App.ViewModels"
+        xmlns:enums="clr-namespace:VideoArchiveManager.Core.Models.Enums;assembly=VideoArchiveManager.Core"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
+        Title="Video Archive Manager"
+        Width="1500" Height="900"
+        WindowStartupLocation="CenterScreen"
+        ui:WindowHelper.UseModernWindowStyle="True">
+    <Window.Resources>
+        <ObjectDataProvider x:Key="StatusValues" MethodName="GetValues"
+                            ObjectType="{x:Type sys:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="enums:VideoStatus" />
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Padding="12,10"
+                Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="0,0,0,1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Orientation="Horizontal" Grid.Column="0" VerticalAlignment="Center">
+                    <TextBox Width="320"
+                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             ui:ControlHelper.PlaceholderText="Search filename, folder, tags, notes, camera..."
+                             VerticalAlignment="Center" />
+                    <Button Margin="8,0,0,0" Content="Search"
+                            Command="{Binding SearchCommand}"
+                            Style="{StaticResource AccentButtonStyle}" />
+                    <Button Margin="6,0,0,0" Content="Clear filters"
+                            Command="{Binding ClearFiltersCommand}" />
+                    <Separator Margin="12,0" />
+                    <ComboBox Width="170" ItemsSource="{Binding AvailableStatuses}"
+                              SelectedItem="{Binding StatusFilter}"
+                              ui:ControlHelper.PlaceholderText="Status" />
+                    <ComboBox Width="150" Margin="6,0,0,0"
+                              ItemsSource="{Binding Cameras}"
+                              SelectedItem="{Binding CameraFilter}"
+                              ui:ControlHelper.PlaceholderText="Camera"
+                              IsEditable="True" />
+                    <ComboBox Width="120" Margin="6,0,0,0"
+                              ItemsSource="{Binding AllTags}"
+                              SelectedItem="{Binding SelectedTagFilter}"
+                              DisplayMemberPath="Name"
+                              ui:ControlHelper.PlaceholderText="Tag" />
+                    <TextBlock Text="Min ★" VerticalAlignment="Center" Margin="12,0,4,0" />
+                    <ui:NumberBox Width="80"
+                                  Minimum="0" Maximum="5"
+                                  Value="{Binding MinRatingFilter}" />
+                    <DatePicker Margin="12,0,0,0" SelectedDate="{Binding DateFrom}"
+                                ui:ControlHelper.PlaceholderText="From" />
+                    <DatePicker Margin="6,0,0,0" SelectedDate="{Binding DateTo}"
+                                ui:ControlHelper.PlaceholderText="To" />
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Grid.Column="1" VerticalAlignment="Center">
+                    <Button Content="Add folder" Command="{Binding AddRootFolderCommand}" />
+                    <Button Margin="6,0,0,0" Content="Scan"
+                            Command="{Binding ScanCommand}"
+                            IsEnabled="{Binding IsScanning, Converter={StaticResource InverseBool}}"
+                            Style="{StaticResource AccentButtonStyle}" />
+                    <Button Margin="6,0,0,0" Content="Cancel"
+                            Command="{Binding CancelScanCommand}"
+                            Visibility="{Binding IsScanning, Converter={StaticResource BoolToVisibility}}" />
+                    <Button Margin="6,0,0,0" Content="Refresh"
+                            Command="{Binding RefreshCommand}" />
+                    <Button Margin="6,0,0,0" Content="Bulk edit"
+                            Command="{Binding OpenBulkEditCommand}" />
+                    <Button Margin="6,0,0,0" Content="Settings"
+                            Command="{Binding OpenSettingsCommand}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="260" MinWidth="200" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="380" MinWidth="320" />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Padding="10"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="0,0,1,0">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="Root folders" Style="{StaticResource SectionHeader}" />
+                        <ListBox ItemsSource="{Binding RootFolders}"
+                                 SelectedItem="{Binding SelectedRootFolder}"
+                                 Height="180">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding Path}" Opacity="0.7" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                        <Button Content="Remove selected"
+                                Margin="0,4,0,0"
+                                Command="{Binding RemoveRootFolderCommand}"
+                                CommandParameter="{Binding SelectedRootFolder}" />
+
+                        <TextBlock Text="Tags" Style="{StaticResource SectionHeader}" />
+                        <ListBox ItemsSource="{Binding AllTags}"
+                                 SelectedItem="{Binding SelectedTagFilter}"
+                                 Height="180"
+                                 DisplayMemberPath="Name" />
+
+                        <TextBlock Text="Cameras" Style="{StaticResource SectionHeader}" />
+                        <ListBox ItemsSource="{Binding Cameras}"
+                                 SelectedItem="{Binding CameraFilter}"
+                                 Height="120" />
+
+                        <CheckBox Content="Show only available files"
+                                  IsChecked="{Binding ShowOnlyAvailable}"
+                                  Margin="0,12,0,0" />
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <ListBox Grid.Column="1"
+                     ItemsSource="{Binding Videos}"
+                     SelectedItem="{Binding SelectedVideo}"
+                     SelectionMode="Extended"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     ScrollViewer.IsDeferredScrollingEnabled="True"
+                     VirtualizingPanel.IsVirtualizing="True"
+                     VirtualizingPanel.VirtualizationMode="Recycling"
+                     VirtualizingPanel.ScrollUnit="Pixel"
+                     SelectionChanged="VideoList_OnSelectionChanged"
+                     HorizontalContentAlignment="Stretch">
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="Margin" Value="0" />
+                        <Setter Property="BorderThickness" Value="0" />
+                        <Setter Property="Background" Value="Transparent" />
+                    </Style>
+                </ListBox.ItemContainerStyle>
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Border Style="{StaticResource VideoCardBorder}" Width="240">
+                            <StackPanel>
+                                <Grid Background="Black" Height="135">
+                                    <Image Source="{Binding Thumbnail}"
+                                           Stretch="UniformToFill"
+                                           HorizontalAlignment="Stretch"
+                                           VerticalAlignment="Stretch" />
+                                    <Border VerticalAlignment="Bottom"
+                                            HorizontalAlignment="Right"
+                                            Background="#A0000000"
+                                            Padding="4,2"
+                                            CornerRadius="3"
+                                            Margin="4">
+                                        <TextBlock Text="{Binding DurationText}"
+                                                   Foreground="White" FontSize="11" />
+                                    </Border>
+                                    <Border Background="#C0000000"
+                                            Padding="6,3"
+                                            CornerRadius="3"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Visibility="{Binding FileExists, Converter={StaticResource BoolToVisibilityInverted}}">
+                                        <TextBlock Text="Offline"
+                                                   Foreground="White"
+                                                   FontWeight="SemiBold" />
+                                    </Border>
+                                </Grid>
+                                <TextBlock Text="{Binding FileName}"
+                                           FontWeight="SemiBold"
+                                           TextTrimming="CharacterEllipsis"
+                                           Margin="0,6,0,0" />
+                                <TextBlock Text="{Binding Resolution}"
+                                           Opacity="0.7"
+                                           FontSize="11" />
+                                <TextBlock Text="{Binding Camera}"
+                                           Opacity="0.7"
+                                           FontSize="11"
+                                           TextTrimming="CharacterEllipsis" />
+                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                    <TextBlock Text="{Binding Status}" FontSize="11" />
+                                    <TextBlock Text="  ★ " FontSize="11" Margin="6,0,0,0" />
+                                    <TextBlock Text="{Binding Rating}" FontSize="11" />
+                                </StackPanel>
+                                <TextBlock Text="{Binding TagSummary}"
+                                           Opacity="0.6"
+                                           FontSize="11"
+                                           TextTrimming="CharacterEllipsis"
+                                           Margin="0,4,0,0" />
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+            <Border Grid.Column="2"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="1,0,0,0">
+                <Grid>
+                    <TextBlock Text="Select a video to view details"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               Opacity="0.6"
+                               Visibility="{Binding Detail.Current, Converter={StaticResource NullToVisibilityInverted}}" />
+
+                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                  Visibility="{Binding Detail.Current, Converter={StaticResource NullToVisibility}}">
+                        <StackPanel Margin="12" DataContext="{Binding Detail}">
+                            <Image Source="{Binding LargeThumbnail}" MaxHeight="220"
+                                   Stretch="Uniform" Margin="0,0,0,8" />
+
+                            <TextBlock Text="{Binding Current.FileName}" FontWeight="SemiBold"
+                                       TextWrapping="Wrap" FontSize="14" />
+                            <TextBlock Text="{Binding Current.FilePath}" Opacity="0.7"
+                                       TextWrapping="Wrap" FontSize="11" Margin="0,2,0,8" />
+
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="Open location" Command="{Binding OpenFileLocationCommand}" />
+                                <Button Content="Copy path" Margin="6,0,0,0"
+                                        Command="{Binding CopyFilePathCommand}" />
+                                <Button Content="Play" Margin="6,0,0,0"
+                                        Command="{Binding PlayCommand}"
+                                        Style="{StaticResource AccentButtonStyle}" />
+                            </StackPanel>
+
+                            <TextBlock Text="Metadata" Style="{StaticResource SectionHeader}" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition /><RowDefinition /><RowDefinition />
+                                    <RowDefinition /><RowDefinition /><RowDefinition />
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Duration" Opacity="0.7" Margin="0,2,8,2" />
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Current.DurationText}" />
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Resolution" Opacity="0.7" Margin="0,2,8,2" />
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Current.Resolution}" />
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Camera" Opacity="0.7" Margin="0,2,8,2" />
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Current.Camera}" />
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Codec" Opacity="0.7" Margin="0,2,8,2" />
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Current.Codec}" />
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="Size" Opacity="0.7" Margin="0,2,8,2" />
+                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Current.FileSizeText}" />
+                                <TextBlock Grid.Row="5" Grid.Column="0" Text="Folder" Opacity="0.7" Margin="0,2,8,2" />
+                                <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Current.FolderPath}" TextWrapping="Wrap" />
+                            </Grid>
+
+                            <TextBlock Text="Tags" Style="{StaticResource SectionHeader}" />
+                            <ItemsControl ItemsSource="{Binding Tags}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Style="{StaticResource TagChipBorder}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{Binding Name}" Foreground="Black" />
+                                                <Button Content="x"
+                                                        Margin="6,0,0,0"
+                                                        Padding="2,0"
+                                                        FontSize="10"
+                                                        Foreground="Black"
+                                                        Background="Transparent"
+                                                        BorderThickness="0"
+                                                        Command="{Binding DataContext.RemoveTagCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        CommandParameter="{Binding}" />
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                <TextBox Width="140"
+                                         Text="{Binding NewTagName, UpdateSourceTrigger=PropertyChanged}"
+                                         ui:ControlHelper.PlaceholderText="New tag" />
+                                <ComboBox Width="110" Margin="6,0,0,0"
+                                          ItemsSource="{Binding AvailableTagTypes}"
+                                          SelectedItem="{Binding NewTagType}" />
+                                <Button Content="Add" Margin="6,0,0,0"
+                                        Command="{Binding AddTagCommand}" />
+                            </StackPanel>
+
+                            <TextBlock Text="Status" Style="{StaticResource SectionHeader}" />
+                            <ComboBox ItemsSource="{Binding AvailableStatuses}"
+                                      SelectedItem="{Binding Status}" />
+
+                            <TextBlock Text="Rating" Style="{StaticResource SectionHeader}" />
+                            <ComboBox ItemsSource="{Binding RatingValues}"
+                                      SelectedItem="{Binding Rating}" />
+
+                            <TextBlock Text="Notes" Style="{StaticResource SectionHeader}" />
+                            <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
+                                     AcceptsReturn="True" TextWrapping="Wrap"
+                                     MinHeight="80" />
+
+                            <Button Content="Save"
+                                    Command="{Binding SaveCommand}"
+                                    HorizontalAlignment="Right"
+                                    Margin="0,10,0,0"
+                                    Style="{StaticResource AccentButtonStyle}" />
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <Border Grid.Row="2"
+                Padding="10,6"
+                Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="0,1,0,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="{Binding StatusMessage}" VerticalAlignment="Center" />
+                <ProgressBar Grid.Column="1" Width="240" Height="14"
+                             Maximum="{Binding ProgressMaximum}"
+                             Value="{Binding ProgressValue}"
+                             Visibility="{Binding IsScanning, Converter={StaticResource BoolToVisibility}}" />
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
