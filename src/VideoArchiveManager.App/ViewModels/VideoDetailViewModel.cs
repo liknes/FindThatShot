@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Windows;
 using System.Windows.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -31,6 +32,16 @@ public partial class VideoDetailViewModel : ObservableObject
     [ObservableProperty]
     private VideoItemViewModel? _current;
 
+    [ObservableProperty]
+    private Uri? _mediaSource;
+
+    [ObservableProperty]
+    private bool _isPlayerVisible;
+
+    public bool CanPlayInApp => App.IsPlayerAvailable;
+
+    public string? PlayerUnavailableMessage => App.IsPlayerAvailable ? null : App.PlayerInitError;
+
     public BitmapImage? LargeThumbnail => Current is null ? null : ThumbnailLoader.LoadLarge(Current.Model.ThumbnailPath);
 
     public ObservableCollection<Tag> Tags { get; } = new();
@@ -55,6 +66,8 @@ public partial class VideoDetailViewModel : ObservableObject
 
     public async Task LoadAsync(VideoItemViewModel? item)
     {
+        ClosePlayer();
+
         Current = item;
         Tags.Clear();
         if (item is null)
@@ -73,6 +86,24 @@ public partial class VideoDetailViewModel : ObservableObject
         var tags = await _tagService.GetTagsForVideoAsync(item.Id);
         foreach (var t in tags) Tags.Add(t);
         OnPropertyChanged(nameof(LargeThumbnail));
+    }
+
+    [RelayCommand]
+    private void PlayInApp()
+    {
+        if (Current is null) return;
+        if (!App.IsPlayerAvailable) return;
+        if (!File.Exists(Current.FilePath)) return;
+
+        MediaSource = new Uri(Current.FilePath, UriKind.Absolute);
+        IsPlayerVisible = true;
+    }
+
+    [RelayCommand]
+    private void ClosePlayer()
+    {
+        MediaSource = null;
+        IsPlayerVisible = false;
     }
 
     [RelayCommand]

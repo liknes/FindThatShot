@@ -9,6 +9,7 @@ A Windows desktop application for organizing a large local video archive across 
 - MVVM via `CommunityToolkit.Mvvm`
 - SQLite via `Microsoft.EntityFrameworkCore.Sqlite`
 - FFmpeg / FFprobe (external) for metadata extraction and thumbnail generation
+- LibVLCSharp + bundled VLC native libraries for in-app video playback
 
 ## Solution layout
 
@@ -24,9 +25,8 @@ src/
 
 - Windows 10/11
 - .NET 8 SDK (`dotnet --version` should be `8.0.x`)
-- FFmpeg + FFprobe (https://ffmpeg.org)
-  - Easiest: install via `winget install Gyan.FFmpeg` so `ffmpeg.exe` and `ffprobe.exe` are on `PATH`
-  - Alternative: download the static build and configure the exact paths inside the app via **Settings**
+- FFmpeg + FFprobe (https://ffmpeg.org) for **scanning + thumbnails**. Easiest: `winget install Gyan.FFmpeg` so `ffmpeg.exe` and `ffprobe.exe` are on `PATH`. Or configure the exact `.exe` paths inside the app via **Settings**. Any modern FFmpeg version works.
+- **In-app video playback** uses LibVLC, which is bundled via the `VideoLAN.LibVLC.Windows` NuGet package. No additional install or configuration is required.
 
 ## First run
 
@@ -51,8 +51,9 @@ If FFmpeg / FFprobe is not on `PATH`, open **Settings** and point the app at `ff
    - Tokens are AND-matched across filename, folder path, location, context, notes, camera, codec, and tag names.
    - Filter by status, camera, tag, minimum rating, date range, root folder, and online/offline availability.
 4. Select a card to view full metadata in the right panel. Edit notes, rating, status, and tags there. Click **Save** to persist.
-5. Select multiple cards (Ctrl/Shift+click) and click **Bulk edit** to apply status, rating, append notes, or add a tag to all of them.
-6. Missing files (e.g. external drive unplugged) stay searchable; an *Offline* badge appears on their card. Click **Refresh** to re-check availability.
+5. To preview a clip without leaving the app, click **Play in app** in the detail panel — the embedded VLC player handles `.mp4 / .mov / .mxf / .mkv / .avi` and modern codecs (H.264/H.265/ProRes/DNxHD/etc.) out of the box. Use **Pause** / **Resume** / **Stop** / **Close player** to control playback. **Play externally** always works and hands the file off to the OS default player.
+6. Select multiple cards (Ctrl/Shift+click) and click **Bulk edit** to apply status, rating, append notes, or add a tag to all of them.
+7. Missing files (e.g. external drive unplugged) stay searchable; an *Offline* badge appears on their card. Click **Refresh** to re-check availability.
 
 ## Supported extensions
 
