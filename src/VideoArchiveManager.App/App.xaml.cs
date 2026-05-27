@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Windows;
+using LibVLCSharp.Shared;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,6 +19,10 @@ public partial class App : Application
 {
     public static IHost? Host { get; private set; }
 
+    public static bool IsPlayerAvailable { get; private set; }
+
+    public static string? PlayerInitError { get; private set; }
+
     public static T GetService<T>() where T : class
     {
         if (Host == null) throw new InvalidOperationException("Host not initialized");
@@ -30,6 +35,17 @@ public partial class App : Application
 
         Directory.CreateDirectory(AppSettings.DefaultBaseDirectory);
         Directory.CreateDirectory(AppSettings.DefaultThumbnailDirectory);
+
+        try
+        {
+            LibVLCSharp.Shared.Core.Initialize();
+            IsPlayerAvailable = true;
+        }
+        catch (Exception ex)
+        {
+            IsPlayerAvailable = false;
+            PlayerInitError = $"VLC initialization failed: {ex.Message}";
+        }
 
         Host = Microsoft.Extensions.Hosting.Host
             .CreateDefaultBuilder()
@@ -55,6 +71,23 @@ public partial class App : Application
                     options.UseSqlite($"Data Source={dbPath}");
                 });
 
+                if (IsPlayerAvailable)
+                {
+                    services.AddSingleton(sp =>
+                    {
+                        try
+                        {
+                            return new LibVLC();
+                        }
+                        catch (Exception ex)
+                        {
+                            IsPlayerAvailable = false;
+                            PlayerInitError = $"Failed to create LibVLC instance: {ex.Message}";
+                            throw;
+                        }
+                    });
+                }
+
                 services.AddSingleton<IFileSystemService, FileSystemService>();
                 services.AddSingleton<IFfprobeService, FfprobeService>();
                 services.AddSingleton<IThumbnailService, ThumbnailService>();
@@ -72,7 +105,7 @@ public partial class App : Application
                 services.AddLogging(b =>
                 {
                     b.AddDebug();
-                    b.SetMinimumLevel(LogLevel.Information);
+                    b.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Information);
                 });
             })
             .Build();

@@ -5,6 +5,7 @@
         xmlns:vm="clr-namespace:VideoArchiveManager.App.ViewModels"
         xmlns:enums="clr-namespace:VideoArchiveManager.Core.Models.Enums;assembly=VideoArchiveManager.Core"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
+        xmlns:vlc="clr-namespace:LibVLCSharp.WPF;assembly=LibVLCSharp.WPF"
         Title="Video Archive Manager"
         Width="1500" Height="900"
         WindowStartupLocation="CenterScreen"
@@ -230,8 +231,28 @@
                     <ScrollViewer VerticalScrollBarVisibility="Auto"
                                   Visibility="{Binding Detail.Current, Converter={StaticResource NullToVisibility}}">
                         <StackPanel Margin="12" DataContext="{Binding Detail}">
-                            <Image Source="{Binding LargeThumbnail}" MaxHeight="220"
-                                   Stretch="Uniform" Margin="0,0,0,8" />
+                            <Grid Margin="0,0,0,8">
+                                <Image Source="{Binding LargeThumbnail}" MaxHeight="220"
+                                       Stretch="Uniform"
+                                       Visibility="{Binding IsPlayerVisible, Converter={StaticResource BoolToVisibilityInverted}}" />
+                                <Border Background="Black" MinHeight="220"
+                                        Visibility="{Binding IsPlayerVisible, Converter={StaticResource BoolToVisibility}}">
+                                    <vlc:VideoView x:Name="VideoPlayer" />
+                                </Border>
+                            </Grid>
+
+                            <Grid Visibility="{Binding IsPlayerVisible, Converter={StaticResource BoolToVisibility}}"
+                                  Margin="0,0,0,8">
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Content="Pause" Click="PlayerPause_Click" />
+                                    <Button Content="Resume" Margin="6,0,0,0" Click="PlayerResume_Click" />
+                                    <Button Content="Stop" Margin="6,0,0,0" Click="PlayerStop_Click" />
+                                    <Button Content="Close player" Margin="6,0,0,0"
+                                            Command="{Binding ClosePlayerCommand}" />
+                                    <TextBlock x:Name="PlayerTimeText" Text="--:-- / --:--"
+                                               VerticalAlignment="Center" Margin="12,0,0,0" Opacity="0.8" />
+                                </StackPanel>
+                            </Grid>
 
                             <TextBlock Text="{Binding Current.FileName}" FontWeight="SemiBold"
                                        TextWrapping="Wrap" FontSize="14" />
@@ -242,10 +263,20 @@
                                 <Button Content="Open location" Command="{Binding OpenFileLocationCommand}" />
                                 <Button Content="Copy path" Margin="6,0,0,0"
                                         Command="{Binding CopyFilePathCommand}" />
-                                <Button Content="Play" Margin="6,0,0,0"
-                                        Command="{Binding PlayCommand}"
-                                        Style="{StaticResource AccentButtonStyle}" />
+                                <Button Content="Play in app" Margin="6,0,0,0"
+                                        Command="{Binding PlayInAppCommand}"
+                                        IsEnabled="{Binding CanPlayInApp}"
+                                        Style="{StaticResource AccentButtonStyle}"
+                                        Visibility="{Binding IsPlayerVisible, Converter={StaticResource BoolToVisibilityInverted}}" />
+                                <Button Content="Play externally" Margin="6,0,0,0"
+                                        Command="{Binding PlayCommand}" />
                             </StackPanel>
+                            <TextBlock Text="{Binding PlayerUnavailableMessage}"
+                                       Foreground="Orange"
+                                       TextWrapping="Wrap"
+                                       FontSize="11"
+                                       Margin="0,4,0,0"
+                                       Visibility="{Binding CanPlayInApp, Converter={StaticResource BoolToVisibilityInverted}}" />
 
                             <TextBlock Text="Metadata" Style="{StaticResource SectionHeader}" />
                             <Grid>
