@@ -11,6 +11,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.1" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
     <PackageReference Include="ModernWpfUI" Version="0.9.6" />
+    <PackageReference Include="Velopack" Version="1.0.1" />
     <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.23.1" />
   </ItemGroup>
 
@@ -22,7 +23,14 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>VideoArchiveManager.App</RootNamespace>
     <AssemblyName>VideoArchiveManager</AssemblyName>
+    <Version>0.1.0</Version>
+    <StartupObject>VideoArchiveManager.App.App</StartupObject>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ApplicationDefinition Remove="App.xaml" />
+    <Page Include="App.xaml" />
+  </ItemGroup>
 
   <ItemGroup>
     <None Update="appsettings.json">
