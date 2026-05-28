@@ -46,6 +46,8 @@ public class VideoScannerService : IVideoScannerService
         }
 
         var extensions = _settings.Current.SupportedExtensions;
+        var excludedFolders = _settings.Current.ExcludedFolderNames;
+        var excludedPatterns = _settings.Current.ExcludedFileNamePatterns;
         var allFiles = new List<string>();
 
         foreach (var root in roots)
@@ -57,7 +59,7 @@ public class VideoScannerService : IVideoScannerService
                 continue;
             }
 
-            foreach (var path in _fileSystem.EnumerateVideoFiles(root.Path, extensions, cancellationToken))
+            foreach (var path in _fileSystem.EnumerateVideoFiles(root.Path, extensions, excludedFolders, excludedPatterns, cancellationToken))
             {
                 allFiles.Add(path);
                 if (allFiles.Count % 100 == 0)

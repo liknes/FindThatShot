@@ -19,6 +19,27 @@ public class AppSettings
         ".mp4", ".mov", ".mxf", ".avi", ".mkv"
     };
 
+    public IReadOnlyList<string> ExcludedFolderNames { get; set; } = new[]
+    {
+        "proxy",
+        "proxies",
+        "edits",
+        "_proxy",
+        "_edits",
+        "_originals",
+        "@eaDir",
+        "@Recycle",
+        ".Trash",
+        "$RECYCLE.BIN",
+        "System Volume Information"
+    };
+
+    public IReadOnlyList<string> ExcludedFileNamePatterns { get; set; } = new[]
+    {
+        "*.LRV",
+        "*.THM"
+    };
+
     public static string DefaultBaseDirectory =>
         Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),

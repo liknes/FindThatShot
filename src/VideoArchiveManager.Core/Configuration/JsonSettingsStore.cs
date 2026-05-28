@@ -62,7 +62,9 @@ public class JsonSettingsStore : ISettingsStore
                 DatabasePath = !string.IsNullOrWhiteSpace(loaded.DatabasePath) ? loaded.DatabasePath : baseline.DatabasePath,
                 MaxScanParallelism = loaded.MaxScanParallelism > 0 ? loaded.MaxScanParallelism : baseline.MaxScanParallelism,
                 PageSize = loaded.PageSize > 0 ? loaded.PageSize : baseline.PageSize,
-                SupportedExtensions = loaded.SupportedExtensions is { Count: > 0 } ? loaded.SupportedExtensions : baseline.SupportedExtensions
+                SupportedExtensions = loaded.SupportedExtensions is { Count: > 0 } ? loaded.SupportedExtensions : baseline.SupportedExtensions,
+                ExcludedFolderNames = loaded.ExcludedFolderNames is not null ? loaded.ExcludedFolderNames : baseline.ExcludedFolderNames,
+                ExcludedFileNamePatterns = loaded.ExcludedFileNamePatterns is not null ? loaded.ExcludedFileNamePatterns : baseline.ExcludedFileNamePatterns
             };
         }
         catch

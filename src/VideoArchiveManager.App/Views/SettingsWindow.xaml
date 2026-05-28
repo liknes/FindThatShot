@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.modernwpf.com/2019"
         Title="Settings"
-        Width="640" Height="500"
+        Width="640" Height="680"
         WindowStartupLocation="CenterOwner"
         ui:WindowHelper.UseModernWindowStyle="True"
         ResizeMode="NoResize">
@@ -47,6 +47,20 @@
 
             <TextBlock Text="Max scan parallelism" Opacity="0.7" />
             <ui:NumberBox Value="{Binding MaxScanParallelism}" Minimum="1" Maximum="16" Margin="0,2,0,12" />
+
+            <TextBlock Text="Excluded folder names (comma-separated, matched on any path segment, case-insensitive)" Opacity="0.7" TextWrapping="Wrap" />
+            <TextBox Text="{Binding ExcludedFolderNames, UpdateSourceTrigger=PropertyChanged}"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     MinHeight="60"
+                     Margin="0,2,0,12" />
+
+            <TextBlock Text="Excluded file name patterns (comma-separated globs, e.g. *_proxy.mp4, *.LRV)" Opacity="0.7" TextWrapping="Wrap" />
+            <TextBox Text="{Binding ExcludedFileNamePatterns, UpdateSourceTrigger=PropertyChanged}"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     MinHeight="40"
+                     Margin="0,2,0,12" />
 
             <TextBlock TextWrapping="Wrap"
                        Opacity="0.6"

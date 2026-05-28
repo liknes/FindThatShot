@@ -18,6 +18,8 @@ public partial class SettingsViewModel : ObservableObject
         _thumbnailDirectory = current.EffectiveThumbnailDirectory;
         _databasePath = current.EffectiveDatabasePath;
         _maxScanParallelism = current.MaxScanParallelism;
+        _excludedFolderNames = JoinList(current.ExcludedFolderNames);
+        _excludedFileNamePatterns = JoinList(current.ExcludedFileNamePatterns);
     }
 
     [ObservableProperty]
@@ -34,6 +36,12 @@ public partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     private int _maxScanParallelism;
+
+    [ObservableProperty]
+    private string _excludedFolderNames;
+
+    [ObservableProperty]
+    private string _excludedFileNamePatterns;
 
     public event Action? Saved;
     public event Action? Cancelled;
@@ -63,10 +71,28 @@ public partial class SettingsViewModel : ObservableObject
             DatabasePath = DatabasePath,
             MaxScanParallelism = MaxScanParallelism > 0 ? MaxScanParallelism : 4,
             PageSize = _store.Current.PageSize,
-            SupportedExtensions = _store.Current.SupportedExtensions
+            SupportedExtensions = _store.Current.SupportedExtensions,
+            ExcludedFolderNames = SplitList(ExcludedFolderNames),
+            ExcludedFileNamePatterns = SplitList(ExcludedFileNamePatterns)
         };
         await _store.SaveAsync(settings);
         Saved?.Invoke();
+    }
+
+    private static string JoinList(IReadOnlyList<string>? values)
+    {
+        if (values is null || values.Count == 0) return string.Empty;
+        return string.Join(", ", values);
+    }
+
+    private static IReadOnlyList<string> SplitList(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return Array.Empty<string>();
+        return raw
+            .Split(new[] { ',', ';', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(s => s.Trim())
+            .Where(s => s.Length > 0)
+            .ToArray();
     }
 
     [RelayCommand]

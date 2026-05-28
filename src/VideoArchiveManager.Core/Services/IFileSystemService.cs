@@ -6,7 +6,12 @@ public interface IFileSystemService
 
     bool DirectoryExists(string path);
 
-    IEnumerable<string> EnumerateVideoFiles(string rootPath, IReadOnlyList<string> extensions, CancellationToken cancellationToken = default);
+    IEnumerable<string> EnumerateVideoFiles(
+        string rootPath,
+        IReadOnlyList<string> extensions,
+        IReadOnlyList<string>? excludedFolderNames = null,
+        IReadOnlyList<string>? excludedFileNamePatterns = null,
+        CancellationToken cancellationToken = default);
 
     void OpenFolder(string path);
 
