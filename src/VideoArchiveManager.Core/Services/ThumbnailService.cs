@@ -41,6 +41,57 @@ public class ThumbnailService : IThumbnailService
         return Path.Combine(dir, $"{videoId}.jpg");
     }
 
+    // Deletes only canonical "{id}.jpg" files inside the configured thumbnail
+    // cache directory. Source video files (anything outside this directory)
+    // are NEVER touched, even if a malformed DB row tried to point us there.
+    public int DeleteForVideos(IEnumerable<int> videoIds)
+    {
+        if (videoIds is null) return 0;
+
+        string thumbDirFull;
+        try
+        {
+            thumbDirFull = Path.GetFullPath(_settings.Current.EffectiveThumbnailDirectory);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not resolve thumbnail directory; skipping thumbnail cleanup.");
+            return 0;
+        }
+
+        if (!Directory.Exists(thumbDirFull)) return 0;
+
+        var deleted = 0;
+        foreach (var id in videoIds)
+        {
+            try
+            {
+                var candidate = Path.GetFullPath(Path.Combine(thumbDirFull, $"{id}.jpg"));
+                var candidateDir = Path.GetDirectoryName(candidate);
+
+                // Defense in depth: only delete files that resolve directly inside the
+                // configured thumbnail cache directory. This guards against any future
+                // change to the path scheme accidentally escaping the cache dir.
+                if (!string.Equals(candidateDir, thumbDirFull, StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogWarning("Skipping thumbnail outside cache dir: {Path}", candidate);
+                    continue;
+                }
+
+                if (File.Exists(candidate))
+                {
+                    File.Delete(candidate);
+                    deleted++;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to delete thumbnail for video id {Id}", id);
+            }
+        }
+        return deleted;
+    }
+
     public async Task<string?> GenerateAsync(int videoId, string videoFilePath, double? durationSeconds, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(videoFilePath) || !File.Exists(videoFilePath))

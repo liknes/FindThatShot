@@ -1,6 +1,6 @@
 # FindThatShot - Video Archive Manager
 
-A Windows desktop application for organizing a large local video archive across internal and external drives. Files are never moved, renamed, or modified; the app only catalogs them, generates thumbnails, and stores searchable metadata, tags, notes, ratings, and workflow status.
+A Windows desktop application for organizing a large local video archive across internal and external drives. **Source video files are never moved, renamed, deleted, or modified by this app under any circumstances** — it only catalogs them, generates thumbnails, and stores searchable metadata, tags, notes, ratings, and workflow status. The only files the app ever writes or removes on disk are its own SQLite catalog, settings, and generated thumbnail JPGs inside its data directory.
 
 ## Tech stack
 
@@ -17,7 +17,7 @@ A Windows desktop application for organizing a large local video archive across 
 FindThatShot.sln
 src/
   VideoArchiveManager.Core/   Models, enums, service interfaces, FfprobeService, ThumbnailService, FileSystemService, FolderNameParser, AppSettings
-  VideoArchiveManager.Data/   EF Core DbContext, entity configurations, migrations, TagService, SearchService, VideoScannerService
+  VideoArchiveManager.Data/   EF Core DbContext, entity configurations, migrations, TagService, SearchService, VideoScannerService, VideoLibraryService
   VideoArchiveManager.App/    WPF UI, Views, ViewModels, App startup, DI container
 ```
 
@@ -54,6 +54,12 @@ If FFmpeg / FFprobe is not on `PATH`, open **Settings** and point the app at `ff
 5. To preview a clip without leaving the app, click **Play in app** in the detail panel — the embedded VLC player handles `.mp4 / .mov / .mxf / .mkv / .avi` and modern codecs (H.264/H.265/ProRes/DNxHD/etc.) out of the box. Use **Pause** / **Resume** / **Stop** / **Close player** to control playback. **Play externally** always works and hands the file off to the OS default player.
 6. Select multiple cards (Ctrl/Shift+click) and click **Bulk edit** to apply status, rating, append notes, or add a tag to all of them.
 7. Missing files (e.g. external drive unplugged) stay searchable; an *Offline* badge appears on their card. Click **Refresh** to re-check availability.
+8. Clean up the catalog when you no longer need certain entries:
+   - **Remove single / multiple videos**: select one or more cards, then either right-click → *Remove from database…* or press <kbd>Delete</kbd>. Confirms first.
+   - **Remove offline**: toolbar button that drops every catalog row whose source file is no longer on disk (after the latest *Refresh* / scan).
+   - **Remove a root folder**: in the sidebar, select a root folder and click *Remove selected…*. The dialog tells you how many imported videos are under it and removes them along with the folder entry.
+
+   All three flows only affect the catalog database and the app's thumbnail cache — **source video files on disk are never touched**.
 
 ## Supported extensions
 

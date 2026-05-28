@@ -21,6 +21,7 @@ public partial class MainViewModel : ObservableObject
     private readonly ISearchService _searchService;
     private readonly ITagService _tagService;
     private readonly IVideoScannerService _scannerService;
+    private readonly IVideoLibraryService _libraryService;
     private readonly IFfprobeService _ffprobeService;
     private readonly IThumbnailService _thumbnailService;
     private readonly IServiceProvider _services;
@@ -36,6 +37,7 @@ public partial class MainViewModel : ObservableObject
         ISearchService searchService,
         ITagService tagService,
         IVideoScannerService scannerService,
+        IVideoLibraryService libraryService,
         IFfprobeService ffprobeService,
         IThumbnailService thumbnailService,
         IServiceProvider services,
@@ -45,6 +47,7 @@ public partial class MainViewModel : ObservableObject
         _searchService = searchService;
         _tagService = tagService;
         _scannerService = scannerService;
+        _libraryService = libraryService;
         _ffprobeService = ffprobeService;
         _thumbnailService = thumbnailService;
         _services = services;
@@ -200,12 +203,128 @@ public partial class MainViewModel : ObservableObject
     private async Task RemoveRootFolderAsync(RootFolder? folder)
     {
         if (folder is null) return;
-        await using var ctx = await _contextFactory.CreateDbContextAsync();
-        var entity = await ctx.RootFolders.FirstOrDefaultAsync(r => r.Id == folder.Id);
-        if (entity is null) return;
-        ctx.RootFolders.Remove(entity);
-        await ctx.SaveChangesAsync();
+
+        var videoCount = await _libraryService.CountUnderRootAsync(folder.Path);
+
+        var message = videoCount > 0
+            ? $"Remove the root folder \"{folder.Path}\" and {videoCount} video record(s) imported from it?\n\n" +
+              "This affects the catalog database and the app's thumbnail cache only. " +
+              "The source video files on disk will NOT be touched."
+            : $"Remove the root folder \"{folder.Path}\"?\n\n" +
+              "No video records were imported from this folder. The folder on disk will NOT be touched.";
+
+        var result = MessageBox.Show(
+            message,
+            "Remove root folder",
+            MessageBoxButton.OKCancel,
+            MessageBoxImage.Question,
+            MessageBoxResult.Cancel);
+        if (result != MessageBoxResult.OK) return;
+
+        await using (var ctx = await _contextFactory.CreateDbContextAsync())
+        {
+            var entity = await ctx.RootFolders.FirstOrDefaultAsync(r => r.Id == folder.Id);
+            if (entity is null)
+            {
+                RootFolders.Remove(folder);
+                return;
+            }
+            ctx.RootFolders.Remove(entity);
+            await ctx.SaveChangesAsync();
+        }
+
+        var removedVideos = videoCount > 0
+            ? await _libraryService.RemoveUnderRootAsync(folder.Path)
+            : 0;
+
         RootFolders.Remove(folder);
+        if (SelectedRootFolder?.Id == folder.Id) SelectedRootFolder = null;
+
+        StatusMessage = removedVideos > 0
+            ? $"Removed root folder and {removedVideos} video record(s) from the catalog. Source video files untouched."
+            : "Removed root folder. Source video files untouched.";
+
+        await ReloadFiltersAsync();
+        await SearchAsync();
+    }
+
+    [RelayCommand]
+    private async Task RemoveSelectedVideosAsync()
+    {
+        var ids = SelectedVideos.Select(v => v.Id).ToList();
+        if (ids.Count == 0)
+        {
+            StatusMessage = "Select one or more videos to remove";
+            return;
+        }
+
+        var preview = string.Join(
+            Environment.NewLine,
+            SelectedVideos.Take(5).Select(v => "  • " + v.FileName));
+        if (SelectedVideos.Count > 5)
+        {
+            preview += Environment.NewLine + $"  …and {SelectedVideos.Count - 5} more";
+        }
+
+        var message =
+            $"Remove {ids.Count} video record(s) from the database?\n\n" +
+            preview + "\n\n" +
+            "This removes the catalog entries (tags, ratings, notes, etc.) and their " +
+            "cached thumbnails. The source video files on disk will NOT be touched.";
+
+        var result = MessageBox.Show(
+            message,
+            "Remove videos from database",
+            MessageBoxButton.OKCancel,
+            MessageBoxImage.Question,
+            MessageBoxResult.Cancel);
+        if (result != MessageBoxResult.OK) return;
+
+        var removed = await _libraryService.RemoveByIdsAsync(ids);
+
+        if (SelectedVideo is not null && ids.Contains(SelectedVideo.Id))
+        {
+            SelectedVideo = null;
+        }
+        SelectedVideos.Clear();
+
+        StatusMessage = $"Removed {removed} video record(s) from the catalog. Source video files untouched.";
+        await SearchAsync();
+    }
+
+    [RelayCommand]
+    private async Task RemoveOfflineVideosAsync()
+    {
+        await using (var ctx = await _contextFactory.CreateDbContextAsync())
+        {
+            var offlineCount = await ctx.VideoItems.CountAsync(v => !v.FileExists);
+            if (offlineCount == 0)
+            {
+                MessageBox.Show(
+                    "There are no offline video records to remove.",
+                    "Remove offline videos",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+                return;
+            }
+
+            var result = MessageBox.Show(
+                $"Remove all {offlineCount} offline video record(s) from the database?\n\n" +
+                "These are records whose source file is no longer found on disk " +
+                "(based on the latest Refresh / scan).\n\n" +
+                "This cleans up the catalog and the app's thumbnail cache. " +
+                "No source video files will be touched.",
+                "Remove offline videos",
+                MessageBoxButton.OKCancel,
+                MessageBoxImage.Question,
+                MessageBoxResult.Cancel);
+            if (result != MessageBoxResult.OK) return;
+        }
+
+        var removed = await _libraryService.RemoveOfflineAsync();
+        StatusMessage = $"Removed {removed} offline video record(s) from the catalog. Source video files untouched.";
+        await ReloadFiltersAsync();
+        await SearchAsync();
     }
 
     [RelayCommand]

@@ -7,7 +7,8 @@
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         xmlns:vlc="clr-namespace:LibVLCSharp.WPF;assembly=LibVLCSharp.WPF"
         Title="Video Archive Manager"
-        Width="1500" Height="900"
+        Width="1800" Height="1000"
+        MinWidth="1280" MinHeight="720"
         WindowStartupLocation="CenterScreen"
         ui:WindowHelper.UseModernWindowStyle="True">
     <Window.Resources>
@@ -83,6 +84,9 @@
                             Command="{Binding RefreshCommand}" />
                     <Button Margin="6,0,0,0" Content="Bulk edit"
                             Command="{Binding OpenBulkEditCommand}" />
+                    <Button Margin="6,0,0,0" Content="Remove offline"
+                            ToolTip="Remove catalog entries whose source file is no longer on disk. Source video files will NOT be touched."
+                            Command="{Binding RemoveOfflineVideosCommand}" />
                     <Button Margin="6,0,0,0" Content="Settings"
                             Command="{Binding OpenSettingsCommand}" />
                 </StackPanel>
@@ -114,8 +118,9 @@
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
                         </ListBox>
-                        <Button Content="Remove selected"
+                        <Button Content="Remove selected…"
                                 Margin="0,4,0,0"
+                                ToolTip="Remove the selected root folder and any catalog entries imported from it. Source video files will NOT be touched."
                                 Command="{Binding RemoveRootFolderCommand}"
                                 CommandParameter="{Binding SelectedRootFolder}" />
 
@@ -138,6 +143,7 @@
             </Border>
 
             <ListBox Grid.Column="1"
+                     x:Name="VideoListBox"
                      ItemsSource="{Binding Videos}"
                      SelectedItem="{Binding SelectedVideo}"
                      SelectionMode="Extended"
@@ -149,6 +155,17 @@
                      VirtualizingPanel.ScrollUnit="Pixel"
                      SelectionChanged="VideoList_OnSelectionChanged"
                      HorizontalContentAlignment="Stretch">
+                <ListBox.InputBindings>
+                    <KeyBinding Key="Delete"
+                                Command="{Binding RemoveSelectedVideosCommand}" />
+                </ListBox.InputBindings>
+                <ListBox.ContextMenu>
+                    <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                        <MenuItem Header="Remove from database…"
+                                  InputGestureText="Del"
+                                  Command="{Binding RemoveSelectedVideosCommand}" />
+                    </ContextMenu>
+                </ListBox.ContextMenu>
                 <ListBox.ItemsPanel>
                     <ItemsPanelTemplate>
                         <WrapPanel Orientation="Horizontal" />

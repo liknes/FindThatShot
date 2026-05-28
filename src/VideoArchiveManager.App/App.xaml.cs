@@ -105,6 +105,7 @@ public partial class App : Application
                 services.AddSingleton<ITagService, TagService>();
                 services.AddSingleton<ISearchService, SearchService>();
                 services.AddSingleton<IVideoScannerService, VideoScannerService>();
+                services.AddSingleton<IVideoLibraryService, VideoLibraryService>();
 
                 services.AddTransient<MainViewModel>();
                 services.AddTransient<VideoDetailViewModel>();
