@@ -7,8 +7,8 @@
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         xmlns:vlc="clr-namespace:LibVLCSharp.WPF;assembly=LibVLCSharp.WPF"
         Title="Video Archive Manager"
-        Width="1800" Height="1000"
-        MinWidth="1280" MinHeight="720"
+        Width="1400" Height="880"
+        MinWidth="1024" MinHeight="640"
         WindowStartupLocation="CenterScreen"
         ui:WindowHelper.UseModernWindowStyle="True">
     <Window.Resources>
@@ -27,70 +27,71 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Padding="12,10"
+        <Border Grid.Row="0" Padding="12,8"
                 Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
                 BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                 BorderThickness="0,0,0,1">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-
-                <StackPanel Orientation="Horizontal" Grid.Column="0" VerticalAlignment="Center">
-                    <TextBox Width="320"
+            <StackPanel>
+                <!-- Primary actions row: search + commands. Wraps when window narrows. -->
+                <WrapPanel Orientation="Horizontal" ItemHeight="36">
+                    <TextBox Width="280"
+                             Margin="0,2,0,2"
                              Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                              ui:ControlHelper.PlaceholderText="Search filename, folder, tags, notes, camera..."
                              VerticalAlignment="Center" />
-                    <Button Margin="8,0,0,0" Content="Search"
+                    <Button Margin="6,2,0,2" Content="Search"
                             Command="{Binding SearchCommand}"
                             Style="{StaticResource AccentButtonStyle}" />
-                    <Button Margin="6,0,0,0" Content="Clear filters"
+                    <Button Margin="6,2,0,2" Content="Clear filters"
                             Command="{Binding ClearFiltersCommand}" />
-                    <Separator Margin="12,0" />
-                    <ComboBox Width="170" ItemsSource="{Binding AvailableStatuses}"
+                    <Separator Margin="10,2" />
+                    <Button Margin="0,2,0,2" Content="Add folder" Command="{Binding AddRootFolderCommand}" />
+                    <Button Margin="6,2,0,2" Content="Scan"
+                            Command="{Binding ScanCommand}"
+                            IsEnabled="{Binding IsScanning, Converter={StaticResource InverseBool}}"
+                            Style="{StaticResource AccentButtonStyle}" />
+                    <Button Margin="6,2,0,2" Content="Cancel"
+                            Command="{Binding CancelScanCommand}"
+                            Visibility="{Binding IsScanning, Converter={StaticResource BoolToVisibility}}" />
+                    <Button Margin="6,2,0,2" Content="Refresh"
+                            Command="{Binding RefreshCommand}" />
+                    <Button Margin="6,2,0,2" Content="Bulk edit"
+                            Command="{Binding OpenBulkEditCommand}" />
+                    <Button Margin="6,2,0,2" Content="Remove offline"
+                            ToolTip="Remove catalog entries whose source file is no longer on disk. Source video files will NOT be touched."
+                            Command="{Binding RemoveOfflineVideosCommand}" />
+                    <Button Margin="6,2,0,2" Content="Settings"
+                            Command="{Binding OpenSettingsCommand}" />
+                </WrapPanel>
+
+                <!-- Filters row: also wraps on narrow widths. -->
+                <WrapPanel Orientation="Horizontal" Margin="0,4,0,0" ItemHeight="36">
+                    <ComboBox Width="160" Margin="0,2,0,2"
+                              ItemsSource="{Binding AvailableStatuses}"
                               SelectedItem="{Binding StatusFilter}"
                               ui:ControlHelper.PlaceholderText="Status" />
-                    <ComboBox Width="150" Margin="6,0,0,0"
+                    <ComboBox Width="150" Margin="6,2,0,2"
                               ItemsSource="{Binding Cameras}"
                               SelectedItem="{Binding CameraFilter}"
                               ui:ControlHelper.PlaceholderText="Camera"
                               IsEditable="True" />
-                    <ComboBox Width="120" Margin="6,0,0,0"
+                    <ComboBox Width="120" Margin="6,2,0,2"
                               ItemsSource="{Binding AllTags}"
                               SelectedItem="{Binding SelectedTagFilter}"
                               DisplayMemberPath="Name"
                               ui:ControlHelper.PlaceholderText="Tag" />
-                    <TextBlock Text="Min ★" VerticalAlignment="Center" Margin="12,0,4,0" />
-                    <ui:NumberBox Width="80"
-                                  Minimum="0" Maximum="5"
-                                  Value="{Binding MinRatingFilter}" />
-                    <DatePicker Margin="12,0,0,0" SelectedDate="{Binding DateFrom}"
+                    <StackPanel Orientation="Horizontal" Margin="10,2,0,2">
+                        <TextBlock Text="Min ★" VerticalAlignment="Center" Margin="0,0,4,0" />
+                        <ui:NumberBox Width="80"
+                                      Minimum="0" Maximum="5"
+                                      Value="{Binding MinRatingFilter}" />
+                    </StackPanel>
+                    <DatePicker Margin="10,2,0,2" SelectedDate="{Binding DateFrom}"
                                 ui:ControlHelper.PlaceholderText="From" />
-                    <DatePicker Margin="6,0,0,0" SelectedDate="{Binding DateTo}"
+                    <DatePicker Margin="6,2,0,2" SelectedDate="{Binding DateTo}"
                                 ui:ControlHelper.PlaceholderText="To" />
-                </StackPanel>
-
-                <StackPanel Orientation="Horizontal" Grid.Column="1" VerticalAlignment="Center">
-                    <Button Content="Add folder" Command="{Binding AddRootFolderCommand}" />
-                    <Button Margin="6,0,0,0" Content="Scan"
-                            Command="{Binding ScanCommand}"
-                            IsEnabled="{Binding IsScanning, Converter={StaticResource InverseBool}}"
-                            Style="{StaticResource AccentButtonStyle}" />
-                    <Button Margin="6,0,0,0" Content="Cancel"
-                            Command="{Binding CancelScanCommand}"
-                            Visibility="{Binding IsScanning, Converter={StaticResource BoolToVisibility}}" />
-                    <Button Margin="6,0,0,0" Content="Refresh"
-                            Command="{Binding RefreshCommand}" />
-                    <Button Margin="6,0,0,0" Content="Bulk edit"
-                            Command="{Binding OpenBulkEditCommand}" />
-                    <Button Margin="6,0,0,0" Content="Remove offline"
-                            ToolTip="Remove catalog entries whose source file is no longer on disk. Source video files will NOT be touched."
-                            Command="{Binding RemoveOfflineVideosCommand}" />
-                    <Button Margin="6,0,0,0" Content="Settings"
-                            Command="{Binding OpenSettingsCommand}" />
-                </StackPanel>
-            </Grid>
+                </WrapPanel>
+            </StackPanel>
         </Border>
 
         <Grid Grid.Row="1">
@@ -258,36 +259,35 @@
                                 </Border>
                             </Grid>
 
-                            <Grid Visibility="{Binding IsPlayerVisible, Converter={StaticResource BoolToVisibility}}"
-                                  Margin="0,0,0,8">
-                                <StackPanel Orientation="Horizontal">
-                                    <Button Content="Pause" Click="PlayerPause_Click" />
-                                    <Button Content="Resume" Margin="6,0,0,0" Click="PlayerResume_Click" />
-                                    <Button Content="Stop" Margin="6,0,0,0" Click="PlayerStop_Click" />
-                                    <Button Content="Close player" Margin="6,0,0,0"
-                                            Command="{Binding ClosePlayerCommand}" />
-                                    <TextBlock x:Name="PlayerTimeText" Text="--:-- / --:--"
-                                               VerticalAlignment="Center" Margin="12,0,0,0" Opacity="0.8" />
-                                </StackPanel>
-                            </Grid>
+                            <WrapPanel Visibility="{Binding IsPlayerVisible, Converter={StaticResource BoolToVisibility}}"
+                                       Margin="0,0,0,8" ItemHeight="36">
+                                <Button Content="Pause" Margin="0,2,0,2" Click="PlayerPause_Click" />
+                                <Button Content="Resume" Margin="6,2,0,2" Click="PlayerResume_Click" />
+                                <Button Content="Stop" Margin="6,2,0,2" Click="PlayerStop_Click" />
+                                <Button Content="Close player" Margin="6,2,0,2"
+                                        Command="{Binding ClosePlayerCommand}" />
+                                <TextBlock x:Name="PlayerTimeText" Text="--:-- / --:--"
+                                           VerticalAlignment="Center" Margin="12,2,0,2" Opacity="0.8" />
+                            </WrapPanel>
 
                             <TextBlock Text="{Binding Current.FileName}" FontWeight="SemiBold"
                                        TextWrapping="Wrap" FontSize="14" />
                             <TextBlock Text="{Binding Current.FilePath}" Opacity="0.7"
                                        TextWrapping="Wrap" FontSize="11" Margin="0,2,0,8" />
 
-                            <StackPanel Orientation="Horizontal">
-                                <Button Content="Open location" Command="{Binding OpenFileLocationCommand}" />
-                                <Button Content="Copy path" Margin="6,0,0,0"
+                            <WrapPanel ItemHeight="36">
+                                <Button Content="Open location" Margin="0,2,0,2"
+                                        Command="{Binding OpenFileLocationCommand}" />
+                                <Button Content="Copy path" Margin="6,2,0,2"
                                         Command="{Binding CopyFilePathCommand}" />
-                                <Button Content="Play in app" Margin="6,0,0,0"
+                                <Button Content="Play in app" Margin="6,2,0,2"
                                         Command="{Binding PlayInAppCommand}"
                                         IsEnabled="{Binding CanPlayInApp}"
                                         Style="{StaticResource AccentButtonStyle}"
                                         Visibility="{Binding IsPlayerVisible, Converter={StaticResource BoolToVisibilityInverted}}" />
-                                <Button Content="Play externally" Margin="6,0,0,0"
+                                <Button Content="Play externally" Margin="6,2,0,2"
                                         Command="{Binding PlayCommand}" />
-                            </StackPanel>
+                            </WrapPanel>
                             <TextBlock Text="{Binding PlayerUnavailableMessage}"
                                        Foreground="Orange"
                                        TextWrapping="Wrap"
