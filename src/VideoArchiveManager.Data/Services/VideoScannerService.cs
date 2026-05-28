@@ -104,6 +104,18 @@ public class VideoScannerService : IVideoScannerService
         {
             await Parallel.ForEachAsync(allFiles, options, async (path, ct) =>
             {
+                progress?.Report(new ScanProgress
+                {
+                    TotalFound = total,
+                    Processed = processed,
+                    Added = added,
+                    Updated = updated,
+                    Skipped = skipped,
+                    Failed = failed,
+                    CurrentFile = path,
+                    Message = $"Processing {Path.GetFileName(path)}..."
+                });
+
                 try
                 {
                     var result = await ProcessFileAsync(path, ct).ConfigureAwait(false);

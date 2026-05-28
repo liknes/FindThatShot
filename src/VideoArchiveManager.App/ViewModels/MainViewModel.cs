@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows;
+using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.EntityFrameworkCore;
@@ -25,6 +26,10 @@ public partial class MainViewModel : ObservableObject
     private readonly IServiceProvider _services;
 
     private CancellationTokenSource? _scanCts;
+    private DispatcherTimer? _scanHeartbeatTimer;
+    private DateTime _scanStartedAt;
+    private DateTime _currentFileStartedAt;
+    private string? _currentFilePath;
 
     public MainViewModel(
         IDbContextFactory<VideoArchiveDbContext> contextFactory,
@@ -93,6 +98,9 @@ public partial class MainViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _isScanning;
+
+    [ObservableProperty]
+    private string _scanElapsedText = string.Empty;
 
     [ObservableProperty]
     private int _totalCount;
@@ -225,10 +233,21 @@ public partial class MainViewModel : ObservableObject
         ProgressValue = 0;
         ProgressMaximum = 100;
 
+        _scanStartedAt = DateTime.UtcNow;
+        _currentFileStartedAt = _scanStartedAt;
+        _currentFilePath = null;
+        ScanElapsedText = "Elapsed 00:00";
+        StartHeartbeat();
+
         var progress = new Progress<ScanProgress>(p =>
         {
             if (p.TotalFound > 0) ProgressMaximum = p.TotalFound;
             ProgressValue = p.Processed;
+            if (!string.Equals(p.CurrentFile, _currentFilePath, StringComparison.Ordinal))
+            {
+                _currentFilePath = p.CurrentFile;
+                _currentFileStartedAt = DateTime.UtcNow;
+            }
             StatusMessage = p.Message ?? p.CurrentFile ?? StatusMessage;
         });
 
@@ -247,6 +266,8 @@ public partial class MainViewModel : ObservableObject
         }
         finally
         {
+            StopHeartbeat();
+            ScanElapsedText = string.Empty;
             IsScanning = false;
             _scanCts?.Dispose();
             _scanCts = null;
@@ -308,5 +329,44 @@ public partial class MainViewModel : ObservableObject
         DateFrom = null;
         DateTo = null;
         await SearchAsync();
+    }
+
+    private void StartHeartbeat()
+    {
+        StopHeartbeat();
+        _scanHeartbeatTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(500)
+        };
+        _scanHeartbeatTimer.Tick += ScanHeartbeat_Tick;
+        _scanHeartbeatTimer.Start();
+    }
+
+    private void StopHeartbeat()
+    {
+        if (_scanHeartbeatTimer is null) return;
+        _scanHeartbeatTimer.Stop();
+        _scanHeartbeatTimer.Tick -= ScanHeartbeat_Tick;
+        _scanHeartbeatTimer = null;
+    }
+
+    private void ScanHeartbeat_Tick(object? sender, EventArgs e)
+    {
+        if (!IsScanning) return;
+        var now = DateTime.UtcNow;
+        var total = now - _scanStartedAt;
+        var onFile = now - _currentFileStartedAt;
+        ScanElapsedText = _currentFilePath is null
+            ? $"Elapsed {FormatDuration(total)}"
+            : $"Elapsed {FormatDuration(total)} · current file {FormatDuration(onFile)}";
+    }
+
+    private static string FormatDuration(TimeSpan t)
+    {
+        if (t.TotalHours >= 1)
+        {
+            return $"{(int)t.TotalHours}:{t.Minutes:D2}:{t.Seconds:D2}";
+        }
+        return $"{(int)t.TotalMinutes:D2}:{t.Seconds:D2}";
     }
 }
