@@ -79,6 +79,12 @@ public partial class App : Application
                     var dbPath = store.Current.EffectiveDatabasePath;
                     var dir = Path.GetDirectoryName(dbPath);
                     if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+
+                    // Apply any pending catalog restore BEFORE SQLite opens
+                    // the file. Safe no-op when no .restore-pending sibling
+                    // is present.
+                    CatalogBackupService.ApplyPendingRestoreIfAny(dbPath);
+
                     options.UseSqlite($"Data Source={dbPath}");
                 });
 
@@ -106,6 +112,8 @@ public partial class App : Application
                 services.AddSingleton<ISearchService, SearchService>();
                 services.AddSingleton<IVideoScannerService, VideoScannerService>();
                 services.AddSingleton<IVideoLibraryService, VideoLibraryService>();
+                services.AddSingleton<ICatalogBackupService, CatalogBackupService>();
+                services.AddSingleton<ISidecarService, JsonSidecarService>();
 
                 services.AddTransient<MainViewModel>();
                 services.AddTransient<VideoDetailViewModel>();
@@ -140,9 +148,29 @@ public partial class App : Application
             return;
         }
 
+        _ = RunAutoBackupAsync();
+
         var mainWindow = Host.Services.GetRequiredService<MainWindow>();
         MainWindow = mainWindow;
         mainWindow.Show();
+    }
+
+    private static async Task RunAutoBackupAsync()
+    {
+        try
+        {
+            if (Host is null) return;
+            var settings = Host.Services.GetRequiredService<ISettingsStore>().Current;
+            if (!settings.AutoBackupOnStartup) return;
+
+            var backup = Host.Services.GetRequiredService<ICatalogBackupService>();
+            await backup.BackupNowAsync().ConfigureAwait(false);
+        }
+        catch
+        {
+            // Backup failures must never bring the app down; the service
+            // already logs the underlying exception.
+        }
     }
 
     protected override async void OnExit(ExitEventArgs e)

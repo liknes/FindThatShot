@@ -13,13 +13,16 @@ public partial class BulkEditViewModel : ObservableObject
 {
     private readonly IDbContextFactory<VideoArchiveDbContext> _contextFactory;
     private readonly ITagService _tagService;
+    private readonly ISidecarService _sidecar;
 
     public BulkEditViewModel(
         IDbContextFactory<VideoArchiveDbContext> contextFactory,
-        ITagService tagService)
+        ITagService tagService,
+        ISidecarService sidecar)
     {
         _contextFactory = contextFactory;
         _tagService = tagService;
+        _sidecar = sidecar;
     }
 
     public IReadOnlyList<int> TargetIds { get; private set; } = Array.Empty<int>();
@@ -100,7 +103,31 @@ public partial class BulkEditViewModel : ObservableObject
             await _tagService.BulkAttachAsync(TargetIds, tag.Id);
         }
 
+        await TryWriteSidecarsAsync();
+
         Completed?.Invoke();
+    }
+
+    private async Task TryWriteSidecarsAsync()
+    {
+        if (!_sidecar.IsEnabled || TargetIds.Count == 0) return;
+
+        List<VideoItem> entities;
+        await using (var ctx = await _contextFactory.CreateDbContextAsync())
+        {
+            entities = await ctx.VideoItems
+                .Where(v => TargetIds.Contains(v.Id))
+                .ToListAsync();
+        }
+
+        var withTags = new List<(VideoItem Video, IReadOnlyList<Tag> Tags)>(entities.Count);
+        foreach (var entity in entities)
+        {
+            var tags = await _tagService.GetTagsForVideoAsync(entity.Id);
+            withTags.Add((entity, tags));
+        }
+
+        await _sidecar.WriteManyAsync(withTags);
     }
 
     [RelayCommand]

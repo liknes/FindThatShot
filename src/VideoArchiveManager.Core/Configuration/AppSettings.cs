@@ -10,6 +10,14 @@ public class AppSettings
 
     public string? DatabasePath { get; set; }
 
+    public string? BackupDirectory { get; set; }
+
+    public bool AutoBackupOnStartup { get; set; } = true;
+
+    public int BackupRetentionCount { get; set; } = 7;
+
+    public bool WriteSidecarFiles { get; set; } = false;
+
     public int MaxScanParallelism { get; set; } = 4;
 
     public int PageSize { get; set; } = 200;
@@ -51,6 +59,9 @@ public class AppSettings
     public static string DefaultThumbnailDirectory =>
         Path.Combine(DefaultBaseDirectory, "Thumbnails");
 
+    public static string DefaultBackupDirectory =>
+        Path.Combine(DefaultBaseDirectory, "Backups");
+
     public static string UserSettingsPath =>
         Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -62,4 +73,7 @@ public class AppSettings
 
     public string EffectiveThumbnailDirectory =>
         string.IsNullOrWhiteSpace(ThumbnailDirectory) ? DefaultThumbnailDirectory : ThumbnailDirectory;
+
+    public string EffectiveBackupDirectory =>
+        string.IsNullOrWhiteSpace(BackupDirectory) ? DefaultBackupDirectory : BackupDirectory;
 }

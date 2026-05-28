@@ -1,6 +1,9 @@
 # FindThatShot - Video Archive Manager
 
-A Windows desktop application for organizing a large local video archive across internal and external drives. **Source video files are never moved, renamed, deleted, or modified by this app under any circumstances** — it only catalogs them, generates thumbnails, and stores searchable metadata, tags, notes, ratings, and workflow status. The only files the app ever writes or removes on disk are its own SQLite catalog, settings, and generated thumbnail JPGs inside its data directory.
+A Windows desktop application for organizing a large local video archive across internal and external drives. **Source video files are never moved, renamed, deleted, or modified by this app under any circumstances** — it only catalogs them, generates thumbnails, and stores searchable metadata, tags, notes, ratings, and workflow status. The files the app writes or removes on disk are:
+
+- its own SQLite catalog, settings, generated thumbnail JPGs, and rotating catalog backups inside its data directory; and
+- optionally, when **Write sidecar JSON files next to videos** is enabled in Settings, a small `<videoname>.<ext>.findthatshot.json` companion file next to each video. Source video files themselves are still never modified.
 
 ## Tech stack
 
@@ -39,6 +42,7 @@ On first launch the app creates:
 
 - `%LOCALAPPDATA%\VideoArchiveManager\catalog.db` — SQLite catalog
 - `%LOCALAPPDATA%\VideoArchiveManager\Thumbnails\` — generated JPG thumbnails
+- `%LOCALAPPDATA%\VideoArchiveManager\Backups\` — rotating catalog database backups (the most recent N copies; configurable in Settings)
 - `%APPDATA%\VideoArchiveManager\settings.json` — user overrides (only when you save Settings)
 
 If FFmpeg / FFprobe is not on `PATH`, open **Settings** and point the app at `ffmpeg.exe` and `ffprobe.exe`.
@@ -60,6 +64,37 @@ If FFmpeg / FFprobe is not on `PATH`, open **Settings** and point the app at `ff
    - **Remove a root folder**: in the sidebar, select a root folder and click *Remove selected…*. The dialog tells you how many imported videos are under it and removes them along with the folder entry.
 
    All three flows only affect the catalog database and the app's thumbnail cache — **source video files on disk are never touched**.
+
+## Catalog backup
+
+All curation work — tags, ratings, notes, statuses, and workflow state — lives in `catalog.db`. The app protects that data with rotating backups:
+
+- **Automatic on startup** (on by default). At launch the app copies `catalog.db` into the configured **Backup directory** (`%LOCALAPPDATA%\VideoArchiveManager\Backups\` by default) with a timestamped filename like `catalog-20260528-093017.db`.
+- **On demand**. Open **Settings → Catalog backup → Back up now** to make an immediate backup.
+- **Retention**. Configure how many recent backups to keep (default: 7). Older backups are pruned automatically after each new backup.
+- **Restore**. Open **Settings → Catalog backup**, pick a backup from the list, click **Restore selected…** and confirm. The app stages the restore (no file is overwritten while the DB might be in use), prompts you to restart, and on the next startup atomically swaps the catalog into place before any database connection is opened. The current catalog is automatically copied first into the Backups folder as a `catalog-pre-restore-<timestamp>.db` safety snapshot so you can roll back if needed. Backups can also be copied off to external storage as a manual offsite backup.
+
+Backups only ever copy the SQLite catalog file. Source video files are never read, copied, modified, or referenced during backup.
+
+## Sidecar files (opt-in)
+
+By default the app keeps everything inside its own SQLite catalog and never writes to your video folders. If you'd like your tags / rating / notes / status to **travel with the footage** (e.g. when you move a drive to another computer or want a portable record of your curation), turn on **Settings → Sidecar files → Write sidecar JSON files next to videos**.
+
+When enabled, every save in the detail panel and every Bulk Edit operation writes a companion file next to each affected video:
+
+```
+D:\Footage\2025-05-20 City flight\clip.mov
+D:\Footage\2025-05-20 City flight\clip.mov.findthatshot.json   <-- sidecar
+```
+
+The JSON contains your tags, rating (0-5), status, notes, location/context text, folder date, and a small snapshot of the technical metadata (codec, resolution, duration, camera).
+
+Behavior:
+
+- The source video file itself is **never** modified, moved, or renamed.
+- Sidecars are written atomically (temp file + rename) so they're never left half-written if the process is killed.
+- Failures on read-only or offline drives (e.g. NAS unavailable, drive write-protected) are logged and skipped silently — the catalog save in `catalog.db` always succeeds regardless.
+- The sidecar extension `.findthatshot.json` is intentionally distinctive so other software (DaVinci Resolve, Premiere Pro, Lightroom, Final Cut Pro, Avid, Sony Catalyst, camera utilities, Explorer, etc.) doesn't try to read or write it. It is **not** an Adobe XMP sidecar.
 
 ## Supported extensions
 

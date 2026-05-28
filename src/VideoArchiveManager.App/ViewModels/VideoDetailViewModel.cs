@@ -18,15 +18,18 @@ public partial class VideoDetailViewModel : ObservableObject
     private readonly IDbContextFactory<VideoArchiveDbContext> _contextFactory;
     private readonly ITagService _tagService;
     private readonly IFileSystemService _fileSystem;
+    private readonly ISidecarService _sidecar;
 
     public VideoDetailViewModel(
         IDbContextFactory<VideoArchiveDbContext> contextFactory,
         ITagService tagService,
-        IFileSystemService fileSystem)
+        IFileSystemService fileSystem,
+        ISidecarService sidecar)
     {
         _contextFactory = contextFactory;
         _tagService = tagService;
         _fileSystem = fileSystem;
+        _sidecar = sidecar;
     }
 
     [ObservableProperty]
@@ -111,19 +114,24 @@ public partial class VideoDetailViewModel : ObservableObject
     {
         if (Current is null) return;
 
-        await using var ctx = await _contextFactory.CreateDbContextAsync();
-        var entity = await ctx.VideoItems.FirstOrDefaultAsync(v => v.Id == Current.Id);
-        if (entity is null) return;
+        VideoItem? entity;
+        await using (var ctx = await _contextFactory.CreateDbContextAsync())
+        {
+            entity = await ctx.VideoItems.FirstOrDefaultAsync(v => v.Id == Current.Id);
+            if (entity is null) return;
 
-        entity.Notes = Notes;
-        entity.Rating = Rating;
-        entity.Status = Status;
-        entity.UpdatedAt = DateTime.UtcNow;
-        await ctx.SaveChangesAsync();
+            entity.Notes = Notes;
+            entity.Rating = Rating;
+            entity.Status = Status;
+            entity.UpdatedAt = DateTime.UtcNow;
+            await ctx.SaveChangesAsync();
+        }
 
         Current.Model.Notes = Notes;
         Current.Rating = Rating;
         Current.Status = Status;
+
+        await TryWriteSidecarAsync(entity);
     }
 
     [RelayCommand]
@@ -138,6 +146,8 @@ public partial class VideoDetailViewModel : ObservableObject
         }
         NewTagName = string.Empty;
         Current.TagSummary = string.Join(", ", Tags.Select(t => t.Name));
+
+        await TryWriteSidecarAsync();
     }
 
     [RelayCommand]
@@ -147,6 +157,22 @@ public partial class VideoDetailViewModel : ObservableObject
         await _tagService.DetachAsync(Current.Id, tag.Id);
         Tags.Remove(tag);
         Current.TagSummary = string.Join(", ", Tags.Select(t => t.Name));
+
+        await TryWriteSidecarAsync();
+    }
+
+    private async Task TryWriteSidecarAsync(VideoItem? entity = null)
+    {
+        if (!_sidecar.IsEnabled || Current is null) return;
+
+        if (entity is null)
+        {
+            await using var ctx = await _contextFactory.CreateDbContextAsync();
+            entity = await ctx.VideoItems.FirstOrDefaultAsync(v => v.Id == Current.Id);
+            if (entity is null) return;
+        }
+
+        await _sidecar.WriteAsync(entity, Tags.ToArray());
     }
 
     [RelayCommand]
