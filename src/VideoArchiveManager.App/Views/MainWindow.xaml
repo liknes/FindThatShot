@@ -97,7 +97,7 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="260" MinWidth="200" />
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="380" MinWidth="320" />
+                <ColumnDefinition Width="460" MinWidth="420" />
             </Grid.ColumnDefinitions>
 
             <Border Grid.Column="0" Padding="10"
