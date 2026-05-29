@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -20,6 +21,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         _viewModel = viewModel;
         DataContext = viewModel;
+        Title = BuildWindowTitle();
 
         if (App.IsPlayerAvailable)
         {
@@ -153,6 +155,14 @@ public partial class MainWindow : Window
             Owner = this
         };
         dialog.ShowDialog();
+    }
+
+    private static string BuildWindowTitle()
+    {
+        var version = Assembly.GetExecutingAssembly().GetName().Version;
+        if (version is null) return "Video Archive Manager";
+        // Build is the third component; skip the trailing .0 that AssemblyVersion always adds.
+        return $"Video Archive Manager \u2014 {version.Major}.{version.Minor}.{version.Build}";
     }
 
     private void FocusSearchMenu_Click(object sender, RoutedEventArgs e)
