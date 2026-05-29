@@ -210,6 +210,21 @@ Behaviour:
 
 The installer and binaries are currently unsigned. End users will see a SmartScreen "Unknown publisher" warning the first time. For personal / internal use this is acceptable. If you ever distribute publicly, look into a code-signing certificate and `vpk pack --signParams …`.
 
+## Licensing & attribution
+
+Video Archive Manager itself is licensed under the **GNU General Public License v3** (see `LICENSE`). The installed application bundles several third-party components with their own licenses:
+
+- **FFmpeg** (Gyan.dev "full" build, version 8.1.1) — GPLv3, https://ffmpeg.org/. Invoked as separate `ffmpeg.exe` / `ffprobe.exe` processes.
+- **VLC / LibVLC** — LGPLv2.1+ (some bundled plugins are GPLv2+), https://www.videolan.org/vlc/.
+- **LibVLCSharp** — LGPLv2.1+, https://code.videolan.org/videolan/LibVLCSharp.
+- **Velopack** — MIT, https://github.com/velopack/velopack.
+- **OpenStreetMap / Nominatim** — map data © OpenStreetMap contributors, ODbL.
+- Plus a number of MIT-licensed .NET libraries (CommunityToolkit.Mvvm, ModernWpfUI, Entity Framework Core, Microsoft.Data.Sqlite, Microsoft.Extensions.\*).
+
+The full attribution list, including project URLs and links to the corresponding source code, ships with the application as `THIRD-PARTY-NOTICES.md` next to `VideoArchiveManager.exe`. It is also accessible from inside the app via **Help → About Video Archive Manager… → View third-party notices…**.
+
+If you redistribute the app (e.g. by sharing the installer with others), keep `LICENSE` and `THIRD-PARTY-NOTICES.md` alongside it. If you modify the source and distribute the result, you must do so under the GPLv3.
+
 ## Roadmap (not in v1)
 
 The database already contains an `AiTagSuggestions` table for future AI tagging (sea, fog, ships, birds, parrots, cars, people, beach, forest, mountains, city, snow, etc.). The current MVP focuses on manual tagging and searchable metadata only.

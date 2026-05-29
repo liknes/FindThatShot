@@ -1,6 +1,5 @@
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -149,14 +148,11 @@ public partial class MainWindow : Window
 
     private void About_Click(object sender, RoutedEventArgs e)
     {
-        var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown";
-        MessageBox.Show(
-            this,
-            $"Video Archive Manager\nVersion {version}\n\n" +
-            "A local-first catalog for browsing, tagging, and searching your video archive.",
-            "About Video Archive Manager",
-            MessageBoxButton.OK,
-            MessageBoxImage.Information);
+        var dialog = new AboutWindow
+        {
+            Owner = this
+        };
+        dialog.ShowDialog();
     }
 
     private void FocusSearchMenu_Click(object sender, RoutedEventArgs e)

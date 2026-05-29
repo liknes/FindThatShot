@@ -1,0 +1,83 @@
+<Window x:Class="VideoArchiveManager.App.Views.AboutWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.modernwpf.com/2019"
+        Title="About Video Archive Manager"
+        Width="520" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        ui:WindowHelper.UseModernWindowStyle="True"
+        ResizeMode="NoResize">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0">
+            <TextBlock Text="Video Archive Manager" FontSize="22" FontWeight="SemiBold" />
+            <TextBlock x:Name="VersionText" Margin="0,2,0,0" Opacity="0.75" />
+        </StackPanel>
+
+        <TextBlock Grid.Row="1" Margin="0,16,0,0" TextWrapping="Wrap">
+            A local-first catalog for browsing, tagging, and searching your video archive.
+        </TextBlock>
+
+        <Border Grid.Row="2" Margin="0,16,0,0" Padding="12"
+                Background="#1A000000" CornerRadius="4">
+            <StackPanel>
+                <TextBlock Text="License" FontWeight="SemiBold" />
+                <TextBlock TextWrapping="Wrap" Margin="0,4,0,0">
+                    <Run Text="This application is distributed under the " />
+                    <Hyperlink NavigateUri="https://www.gnu.org/licenses/gpl-3.0.html"
+                               RequestNavigate="Hyperlink_RequestNavigate">
+                        GNU General Public License v3
+                    </Hyperlink>
+                    <Run Text="." />
+                </TextBlock>
+                <TextBlock TextWrapping="Wrap" Margin="0,4,0,0">
+                    <Run Text="Source code: " />
+                    <Hyperlink NavigateUri="https://github.com/liknes/FindThatShot"
+                               RequestNavigate="Hyperlink_RequestNavigate">
+                        github.com/liknes/FindThatShot
+                    </Hyperlink>
+                </TextBlock>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="3" Margin="0,12,0,0" Padding="12"
+                Background="#1A000000" CornerRadius="4">
+            <StackPanel>
+                <TextBlock Text="Third-party components" FontWeight="SemiBold" />
+                <TextBlock TextWrapping="Wrap" Margin="0,4,0,0">
+                    This product uses
+                    <Hyperlink NavigateUri="https://ffmpeg.org/"
+                               RequestNavigate="Hyperlink_RequestNavigate">FFmpeg</Hyperlink>
+                    (GPLv3),
+                    <Hyperlink NavigateUri="https://www.videolan.org/vlc/"
+                               RequestNavigate="Hyperlink_RequestNavigate">VLC / LibVLC</Hyperlink>
+                    (LGPLv2.1+), and other open-source software.
+                </TextBlock>
+                <TextBlock TextWrapping="Wrap" Margin="0,4,0,0">
+                    Map data
+                    <LineBreak />
+                    <Run Text="© " />
+                    <Hyperlink NavigateUri="https://www.openstreetmap.org/copyright"
+                               RequestNavigate="Hyperlink_RequestNavigate">OpenStreetMap contributors</Hyperlink>
+                    <Run Text=", reverse-geocoded via " />
+                    <Hyperlink NavigateUri="https://nominatim.org/"
+                               RequestNavigate="Hyperlink_RequestNavigate">Nominatim</Hyperlink>
+                    <Run Text="." />
+                </TextBlock>
+                <TextBlock x:Name="NoticesPathText" Margin="0,8,0,0" Opacity="0.6" TextWrapping="Wrap" FontSize="11" />
+            </StackPanel>
+        </Border>
+
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="View third-party notices…" Click="ViewNotices_Click" />
+            <Button Content="OK" Margin="8,0,0,0" IsDefault="True" IsCancel="True" Style="{StaticResource AccentButtonStyle}" Click="Ok_Click" />
+        </StackPanel>
+    </Grid>
+</Window>

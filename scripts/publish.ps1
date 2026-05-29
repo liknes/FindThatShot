@@ -88,6 +88,19 @@ if (-not $SkipBundleFfmpeg -and (Test-Path $ToolsDir)) {
     Write-Host "[publish] No bundled ffmpeg (looked in $ToolsDir). End users will need ffmpeg/ffprobe on PATH." -ForegroundColor Yellow
 }
 
+# 5b. Ensure attribution files ship next to the executable, even if MSBuild Content copy
+#     misses them. These are required to satisfy the GPL/LGPL distribution obligations
+#     of bundled dependencies (FFmpeg, LibVLC) as well as this app's own GPLv3 license.
+foreach ($name in @('LICENSE', 'THIRD-PARTY-NOTICES.md')) {
+    $src = Join-Path $RepoRoot $name
+    if (Test-Path $src) {
+        Write-Host "[publish] Copying $name to publish/" -ForegroundColor Cyan
+        Copy-Item -Path $src -Destination (Join-Path $PublishDir $name) -Force
+    } else {
+        Write-Host "[publish] WARNING: $name not found at repo root — distribution may be non-compliant." -ForegroundColor Yellow
+    }
+}
+
 # 6. Pack with Velopack.
 if (-not (Test-Path $ReleaseDir)) {
     New-Item -ItemType Directory -Path $ReleaseDir | Out-Null
