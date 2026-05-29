@@ -24,9 +24,11 @@ public partial class MainViewModel : ObservableObject
     private readonly IVideoLibraryService _libraryService;
     private readonly IFfprobeService _ffprobeService;
     private readonly IThumbnailService _thumbnailService;
+    private readonly IVideoLocationService _locationService;
     private readonly IServiceProvider _services;
 
     private CancellationTokenSource? _scanCts;
+    private CancellationTokenSource? _geocodeCts;
     private DispatcherTimer? _scanHeartbeatTimer;
     private DateTime _scanStartedAt;
     private DateTime _currentFileStartedAt;
@@ -40,6 +42,7 @@ public partial class MainViewModel : ObservableObject
         IVideoLibraryService libraryService,
         IFfprobeService ffprobeService,
         IThumbnailService thumbnailService,
+        IVideoLocationService locationService,
         IServiceProvider services,
         VideoDetailViewModel detail)
     {
@@ -50,6 +53,7 @@ public partial class MainViewModel : ObservableObject
         _libraryService = libraryService;
         _ffprobeService = ffprobeService;
         _thumbnailService = thumbnailService;
+        _locationService = locationService;
         _services = services;
         Detail = detail;
     }
@@ -116,6 +120,29 @@ public partial class MainViewModel : ObservableObject
         _ = Detail.LoadAsync(value);
     }
 
+    // When true, filter setters that would normally trigger a re-search stay
+    // quiet. Used by ClearFiltersAsync so 7+ property updates result in one
+    // search rather than 7 overlapping ones.
+    private bool _suppressFilterSearch;
+
+    private void OnFilterChanged()
+    {
+        if (_suppressFilterSearch) return;
+        _ = SearchAsync();
+    }
+
+    // Auto-search whenever any filter changes via UI (combo boxes, date
+    // pickers, sidebar lists, checkboxes). Without these, the filter values
+    // only get applied when the user explicitly clicks Search.
+    partial void OnStatusFilterChanged(VideoStatus? value) => OnFilterChanged();
+    partial void OnMinRatingFilterChanged(int value) => OnFilterChanged();
+    partial void OnCameraFilterChanged(string? value) => OnFilterChanged();
+    partial void OnSelectedTagFilterChanged(Tag? value) => OnFilterChanged();
+    partial void OnSelectedRootFolderChanged(RootFolder? value) => OnFilterChanged();
+    partial void OnDateFromChanged(DateTime? value) => OnFilterChanged();
+    partial void OnDateToChanged(DateTime? value) => OnFilterChanged();
+    partial void OnShowOnlyAvailableChanged(bool value) => OnFilterChanged();
+
     public async Task InitializeAsync()
     {
         if (!_ffprobeService.IsAvailable() || !_thumbnailService.IsAvailable())
@@ -143,9 +170,24 @@ public partial class MainViewModel : ObservableObject
         foreach (var c in cams) Cameras.Add(c);
     }
 
+    // Tracks the currently-running search so that fast successive filter
+    // changes don't race — a newer call cancels any older one before its
+    // results can clobber the grid.
+    private CancellationTokenSource? _searchCts;
+
     [RelayCommand]
     private async Task SearchAsync()
     {
+        // Supersede any in-flight search. Cancelling makes the EF query in
+        // SearchService throw OperationCanceledException, which we catch
+        // below. Disposing the old CTS here is safe because it's idempotent
+        // and the awaiting code never touches the CTS itself again.
+        _searchCts?.Cancel();
+        _searchCts?.Dispose();
+        var cts = new CancellationTokenSource();
+        _searchCts = cts;
+        var token = cts.Token;
+
         var query = new SearchQuery
         {
             Text = SearchText,
@@ -160,14 +202,37 @@ public partial class MainViewModel : ObservableObject
             Take = 500
         };
 
-        var result = await _searchService.SearchAsync(query);
-        Videos.Clear();
-        foreach (var v in result.Items)
+        try
         {
-            Videos.Add(new VideoItemViewModel(v));
+            var result = await _searchService.SearchAsync(query, token);
+
+            // Belt-and-suspenders: if we were superseded after the await
+            // resumed but before we got here, bail out so we don't overwrite
+            // a fresher result.
+            if (token.IsCancellationRequested) return;
+
+            Videos.Clear();
+            foreach (var v in result.Items)
+            {
+                Videos.Add(new VideoItemViewModel(v));
+            }
+            TotalCount = result.TotalCount;
+            StatusMessage = $"Showing {Videos.Count} of {TotalCount} videos";
         }
-        TotalCount = result.TotalCount;
-        StatusMessage = $"Showing {Videos.Count} of {TotalCount} videos";
+        catch (OperationCanceledException)
+        {
+            // Superseded by a newer query — drop the stale result silently.
+        }
+        finally
+        {
+            // Only dispose if we're still the active CTS. If a newer call has
+            // already replaced (and disposed) us, it's not ours to clean up.
+            if (ReferenceEquals(_searchCts, cts))
+            {
+                cts.Dispose();
+                _searchCts = null;
+            }
+        }
     }
 
     [RelayCommand]
@@ -410,6 +475,60 @@ public partial class MainViewModel : ObservableObject
         await SearchAsync();
     }
 
+    [ObservableProperty]
+    private bool _isGeocodingLocations;
+
+    [RelayCommand]
+    private async Task FillMissingLocationsAsync()
+    {
+        if (IsGeocodingLocations) return;
+
+        _geocodeCts = new CancellationTokenSource();
+        IsGeocodingLocations = true;
+        ProgressValue = 0;
+        ProgressMaximum = 1;
+        StatusMessage = "Looking up missing locations…";
+
+        var progress = new Progress<GeocodeProgress>(p =>
+        {
+            if (p.TotalCandidates > 0) ProgressMaximum = p.TotalCandidates;
+            ProgressValue = p.Processed;
+            if (!string.IsNullOrWhiteSpace(p.Message)) StatusMessage = p.Message;
+        });
+
+        try
+        {
+            var filled = await _locationService.FillMissingLocationsAsync(progress, _geocodeCts.Token);
+            StatusMessage = filled > 0
+                ? $"Filled {filled} location(s) from GPS."
+                : "No locations needed updating.";
+            if (filled > 0)
+            {
+                await SearchAsync();
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            StatusMessage = "Location lookup cancelled.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Location lookup failed: {ex.Message}";
+        }
+        finally
+        {
+            IsGeocodingLocations = false;
+            _geocodeCts?.Dispose();
+            _geocodeCts = null;
+        }
+    }
+
+    [RelayCommand]
+    private void CancelFillMissingLocations()
+    {
+        _geocodeCts?.Cancel();
+    }
+
     [RelayCommand]
     private void OpenSettings()
     {
@@ -439,14 +558,23 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private async Task ClearFiltersAsync()
     {
-        SearchText = string.Empty;
-        StatusFilter = null;
-        MinRatingFilter = 0;
-        CameraFilter = null;
-        SelectedTagFilter = null;
-        SelectedRootFolder = null;
-        DateFrom = null;
-        DateTo = null;
+        // Batch: avoid 7+ overlapping searches as each property setter fires.
+        _suppressFilterSearch = true;
+        try
+        {
+            SearchText = string.Empty;
+            StatusFilter = null;
+            MinRatingFilter = 0;
+            CameraFilter = null;
+            SelectedTagFilter = null;
+            SelectedRootFolder = null;
+            DateFrom = null;
+            DateTo = null;
+        }
+        finally
+        {
+            _suppressFilterSearch = false;
+        }
         await SearchAsync();
     }
 

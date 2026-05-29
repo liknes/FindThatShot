@@ -24,6 +24,36 @@ public partial class VideoItemViewModel : ObservableObject
     public string? Codec => Model.Codec;
     public bool FileExists => Model.FileExists;
 
+    public string? LocationText => Model.LocationText;
+    public bool HasLocation => !string.IsNullOrWhiteSpace(Model.LocationText);
+
+    public double? GpsLatitude => Model.GpsLatitude;
+    public double? GpsLongitude => Model.GpsLongitude;
+    public bool HasGps => Model.GpsLatitude.HasValue && Model.GpsLongitude.HasValue;
+
+    public string? GpsText
+    {
+        get
+        {
+            if (Model.GpsLatitude is not double lat || Model.GpsLongitude is not double lon) return null;
+            // Use invariant culture so "60.4827, 6.9023" doesn't render as "60,4827; 6,9023"
+            // on locales that use comma as the decimal separator.
+            return string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:0.######}, {1:0.######}", lat, lon);
+        }
+    }
+
+    public string? GpsMapUrl
+    {
+        get
+        {
+            if (Model.GpsLatitude is not double lat || Model.GpsLongitude is not double lon) return null;
+            return string.Format(
+                System.Globalization.CultureInfo.InvariantCulture,
+                "https://www.openstreetmap.org/?mlat={0}&mlon={1}#map=13/{0}/{1}",
+                lat, lon);
+        }
+    }
+
     public string Resolution => Model.Width is int w && Model.Height is int h ? $"{w} x {h}" : "-";
 
     public string DurationText

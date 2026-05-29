@@ -1,6 +1,10 @@
 using System.ComponentModel;
+using System.Diagnostics;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Navigation;
 using LibVLCSharp.Shared;
 using VideoArchiveManager.App.ViewModels;
 
@@ -136,6 +140,60 @@ public partial class MainWindow : Window
     private void PlayerStop_Click(object sender, RoutedEventArgs e)
     {
         _mediaPlayer?.Stop();
+    }
+
+    private void ExitMenu_Click(object sender, RoutedEventArgs e)
+    {
+        Close();
+    }
+
+    private void About_Click(object sender, RoutedEventArgs e)
+    {
+        var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown";
+        MessageBox.Show(
+            this,
+            $"Video Archive Manager\nVersion {version}\n\n" +
+            "A local-first catalog for browsing, tagging, and searching your video archive.",
+            "About Video Archive Manager",
+            MessageBoxButton.OK,
+            MessageBoxImage.Information);
+    }
+
+    private void FocusSearchMenu_Click(object sender, RoutedEventArgs e)
+    {
+        FocusSearchBox();
+    }
+
+    private void FocusSearch_Executed(object sender, ExecutedRoutedEventArgs e)
+    {
+        FocusSearchBox();
+        e.Handled = true;
+    }
+
+    private void FocusSearchBox()
+    {
+        if (SearchBox is null) return;
+        SearchBox.Focus();
+        SearchBox.SelectAll();
+    }
+
+    private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e)
+    {
+        var url = e.Uri?.ToString();
+        if (string.IsNullOrWhiteSpace(url)) return;
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = url,
+                UseShellExecute = true
+            });
+            e.Handled = true;
+        }
+        catch
+        {
+            // Browser launch can fail on locked-down systems; swallow silently.
+        }
     }
 
     private void MediaPlayer_TimeChanged(object? sender, MediaPlayerTimeChangedEventArgs e)

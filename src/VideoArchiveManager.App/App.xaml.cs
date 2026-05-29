@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Net.Http;
 using System.Windows;
 using LibVLCSharp.Shared;
 using Microsoft.EntityFrameworkCore;
@@ -108,12 +109,39 @@ public partial class App : Application
                 services.AddSingleton<IFileSystemService, FileSystemService>();
                 services.AddSingleton<IFfprobeService, FfprobeService>();
                 services.AddSingleton<IThumbnailService, ThumbnailService>();
+                services.AddSingleton<IDjiSrtTelemetryReader, DjiSrtTelemetryReader>();
                 services.AddSingleton<ITagService, TagService>();
                 services.AddSingleton<ISearchService, SearchService>();
                 services.AddSingleton<IVideoScannerService, VideoScannerService>();
                 services.AddSingleton<IVideoLibraryService, VideoLibraryService>();
                 services.AddSingleton<ICatalogBackupService, CatalogBackupService>();
                 services.AddSingleton<ISidecarService, JsonSidecarService>();
+
+                // Reverse-geocoding via OpenStreetMap Nominatim. The User-Agent
+                // is mandatory per their usage policy. We register the service
+                // as a singleton so the per-instance rate limiter remains
+                // effective across calls; the HttpClient is created on demand
+                // via IHttpClientFactory so socket pooling + DNS refresh still
+                // benefit us.
+                services.AddHttpClient(NominatimReverseGeocodingService.HttpClientName, client =>
+                {
+                    client.BaseAddress = new Uri("https://nominatim.openstreetmap.org/");
+                    client.DefaultRequestHeaders.UserAgent.ParseAdd(
+                        "VideoArchiveManager/0.1.0 (https://github.com/ingvemoss/FindThatShot)");
+                    client.DefaultRequestHeaders.AcceptLanguage.ParseAdd("en;q=0.9, *;q=0.5");
+                    client.Timeout = TimeSpan.FromSeconds(15);
+                });
+                services.AddSingleton<IReverseGeocodingService>(sp =>
+                {
+                    var httpFactory = sp.GetRequiredService<IHttpClientFactory>();
+                    var dbFactory = sp.GetRequiredService<IDbContextFactory<VideoArchiveDbContext>>();
+                    var logger = sp.GetService<ILogger<NominatimReverseGeocodingService>>();
+                    return new NominatimReverseGeocodingService(
+                        () => httpFactory.CreateClient(NominatimReverseGeocodingService.HttpClientName),
+                        dbFactory,
+                        logger);
+                });
+                services.AddSingleton<IVideoLocationService, VideoLocationService>();
 
                 services.AddTransient<MainViewModel>();
                 services.AddTransient<VideoDetailViewModel>();

@@ -20,6 +20,20 @@
         </ObjectDataProvider>
     </Window.Resources>
 
+    <Window.InputBindings>
+        <KeyBinding Key="O" Modifiers="Control" Command="{Binding AddRootFolderCommand}" />
+        <KeyBinding Key="F5" Command="{Binding ScanCommand}" />
+        <KeyBinding Key="R" Modifiers="Control" Command="{Binding RefreshCommand}" />
+        <KeyBinding Key="B" Modifiers="Control" Command="{Binding OpenBulkEditCommand}" />
+        <KeyBinding Key="OemComma" Modifiers="Control" Command="{Binding OpenSettingsCommand}" />
+        <KeyBinding Key="L" Modifiers="Control+Shift" Command="{Binding ClearFiltersCommand}" />
+        <KeyBinding Key="F" Modifiers="Control" Command="{x:Static ApplicationCommands.Find}" />
+    </Window.InputBindings>
+
+    <Window.CommandBindings>
+        <CommandBinding Command="ApplicationCommands.Find" Executed="FocusSearch_Executed" />
+    </Window.CommandBindings>
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -27,71 +41,154 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Padding="12,8"
+        <!-- Row 0: single chrome row. Menu (left) + search/actions/filters (right).
+             Uses DockPanel + WrapPanel so it stays one line at normal widths and
+             wraps gracefully if the window gets very narrow. -->
+        <Border Grid.Row="0"
                 Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
                 BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                 BorderThickness="0,0,0,1">
-            <StackPanel>
-                <!-- Primary actions row: search + commands. Wraps when window narrows. -->
-                <WrapPanel Orientation="Horizontal" ItemHeight="36">
-                    <TextBox Width="280"
+            <DockPanel LastChildFill="True">
+                <Menu DockPanel.Dock="Left"
+                      Background="Transparent"
+                      VerticalAlignment="Center"
+                      Padding="4,2">
+                    <MenuItem Header="_File">
+                        <MenuItem Header="_Add folder…"
+                                  Command="{Binding AddRootFolderCommand}"
+                                  InputGestureText="Ctrl+O" />
+                        <MenuItem Header="_Remove selected folder…"
+                                  Command="{Binding RemoveRootFolderCommand}"
+                                  CommandParameter="{Binding SelectedRootFolder}"
+                                  ToolTip="Remove the selected root folder and any catalog entries imported from it. Source video files will NOT be touched." />
+                        <Separator />
+                        <MenuItem Header="_Settings…"
+                                  Command="{Binding OpenSettingsCommand}"
+                                  InputGestureText="Ctrl+," />
+                        <Separator />
+                        <MenuItem Header="E_xit" Click="ExitMenu_Click" InputGestureText="Alt+F4" />
+                    </MenuItem>
+                    <MenuItem Header="_Catalog">
+                        <MenuItem Header="_Scan"
+                                  Command="{Binding ScanCommand}"
+                                  IsEnabled="{Binding IsScanning, Converter={StaticResource InverseBool}}"
+                                  InputGestureText="F5" />
+                        <MenuItem Header="_Cancel scan"
+                                  Command="{Binding CancelScanCommand}"
+                                  IsEnabled="{Binding IsScanning}" />
+                        <MenuItem Header="_Refresh"
+                                  Command="{Binding RefreshCommand}"
+                                  InputGestureText="Ctrl+R" />
+                        <Separator />
+                        <MenuItem Header="_Bulk edit selection…"
+                                  Command="{Binding OpenBulkEditCommand}"
+                                  InputGestureText="Ctrl+B" />
+                        <Separator />
+                        <MenuItem Header="Fill missing _locations from GPS…"
+                                  Command="{Binding FillMissingLocationsCommand}"
+                                  IsEnabled="{Binding IsGeocodingLocations, Converter={StaticResource InverseBool}}"
+                                  ToolTip="For any video that has GPS coordinates but no location, look up a place name from OpenStreetMap and fill it in. Existing locations are not changed." />
+                        <MenuItem Header="Ca_ncel location lookup"
+                                  Command="{Binding CancelFillMissingLocationsCommand}"
+                                  IsEnabled="{Binding IsGeocodingLocations}" />
+                        <Separator />
+                        <MenuItem Header="Remove _offline videos…"
+                                  Command="{Binding RemoveOfflineVideosCommand}"
+                                  ToolTip="Remove catalog entries whose source file is no longer on disk. Source video files will NOT be touched." />
+                        <MenuItem Header="Remove _selected from catalog…"
+                                  Command="{Binding RemoveSelectedVideosCommand}"
+                                  InputGestureText="Del" />
+                    </MenuItem>
+                    <MenuItem Header="_View">
+                        <MenuItem Header="Show only _available files"
+                                  IsCheckable="True"
+                                  IsChecked="{Binding ShowOnlyAvailable}" />
+                        <Separator />
+                        <MenuItem Header="Focus _search"
+                                  Click="FocusSearchMenu_Click"
+                                  InputGestureText="Ctrl+F" />
+                        <MenuItem Header="_Clear all filters"
+                                  Command="{Binding ClearFiltersCommand}"
+                                  InputGestureText="Ctrl+Shift+L" />
+                    </MenuItem>
+                    <MenuItem Header="_Help">
+                        <MenuItem Header="_About Video Archive Manager…" Click="About_Click" />
+                    </MenuItem>
+                </Menu>
+
+                <WrapPanel Orientation="Horizontal"
+                           VerticalAlignment="Center"
+                           Margin="12,4,12,4">
+                    <TextBox x:Name="SearchBox"
+                             Width="260"
                              Margin="0,2,0,2"
                              Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                              ui:ControlHelper.PlaceholderText="Search filename, folder, tags, notes, camera..."
-                             VerticalAlignment="Center" />
-                    <Button Margin="6,2,0,2" Content="Search"
+                             VerticalAlignment="Center">
+                        <TextBox.InputBindings>
+                            <KeyBinding Key="Enter" Command="{Binding SearchCommand}" />
+                        </TextBox.InputBindings>
+                    </TextBox>
+                    <Button Content="Search"
+                            Margin="6,2,0,2"
                             Command="{Binding SearchCommand}"
                             Style="{StaticResource AccentButtonStyle}" />
-                    <Button Margin="6,2,0,2" Content="Clear filters"
-                            Command="{Binding ClearFiltersCommand}" />
-                    <Separator Margin="10,2" />
-                    <Button Margin="0,2,0,2" Content="Add folder" Command="{Binding AddRootFolderCommand}" />
-                    <Button Margin="6,2,0,2" Content="Scan"
+                    <Separator Margin="10,4" />
+                    <Button Content="Scan"
+                            Margin="0,2,0,2"
                             Command="{Binding ScanCommand}"
                             IsEnabled="{Binding IsScanning, Converter={StaticResource InverseBool}}"
-                            Style="{StaticResource AccentButtonStyle}" />
-                    <Button Margin="6,2,0,2" Content="Cancel"
+                            Style="{StaticResource AccentButtonStyle}"
+                            ToolTip="Scan all root folders for new or changed videos (F5)" />
+                    <Button Content="Cancel scan"
+                            Margin="6,2,0,2"
                             Command="{Binding CancelScanCommand}"
                             Visibility="{Binding IsScanning, Converter={StaticResource BoolToVisibility}}" />
-                    <Button Margin="6,2,0,2" Content="Refresh"
-                            Command="{Binding RefreshCommand}" />
-                    <Button Margin="6,2,0,2" Content="Bulk edit"
-                            Command="{Binding OpenBulkEditCommand}" />
-                    <Button Margin="6,2,0,2" Content="Remove offline"
-                            ToolTip="Remove catalog entries whose source file is no longer on disk. Source video files will NOT be touched."
-                            Command="{Binding RemoveOfflineVideosCommand}" />
-                    <Button Margin="6,2,0,2" Content="Settings"
-                            Command="{Binding OpenSettingsCommand}" />
-                </WrapPanel>
-
-                <!-- Filters row: also wraps on narrow widths. -->
-                <WrapPanel Orientation="Horizontal" Margin="0,4,0,0" ItemHeight="36">
-                    <ComboBox Width="160" Margin="0,2,0,2"
+                    <Separator Margin="10,4" />
+                    <!--
+                        HIDDEN: Status filter. The ViewModel property StatusFilter
+                        is still wired up; uncomment to bring it back.
+                    <ComboBox Width="150" Margin="0,2,0,2"
                               ItemsSource="{Binding AvailableStatuses}"
                               SelectedItem="{Binding StatusFilter}"
                               ui:ControlHelper.PlaceholderText="Status" />
-                    <ComboBox Width="150" Margin="6,2,0,2"
+                    -->
+                    <ComboBox Width="140"
+                              Margin="0,2,0,2"
                               ItemsSource="{Binding Cameras}"
                               SelectedItem="{Binding CameraFilter}"
                               ui:ControlHelper.PlaceholderText="Camera"
                               IsEditable="True" />
+                    <!--
+                        HIDDEN: Tag dropdown. The left sidebar's Tags list serves
+                        this purpose and scales better. Uncomment to restore.
                     <ComboBox Width="120" Margin="6,2,0,2"
                               ItemsSource="{Binding AllTags}"
                               SelectedItem="{Binding SelectedTagFilter}"
                               DisplayMemberPath="Name"
                               ui:ControlHelper.PlaceholderText="Tag" />
+                    -->
+                    <!--
+                        HIDDEN: Min rating filter (rating is usually managed in
+                        DaVinci / Lightroom / Bridge). Uncomment to restore.
                     <StackPanel Orientation="Horizontal" Margin="10,2,0,2">
                         <TextBlock Text="Min ★" VerticalAlignment="Center" Margin="0,0,4,0" />
-                        <ui:NumberBox Width="80"
-                                      Minimum="0" Maximum="5"
+                        <ui:NumberBox Width="80" Minimum="0" Maximum="5"
                                       Value="{Binding MinRatingFilter}" />
                     </StackPanel>
-                    <DatePicker Margin="10,2,0,2" SelectedDate="{Binding DateFrom}"
+                    -->
+                    <DatePicker Margin="6,2,0,2"
+                                SelectedDate="{Binding DateFrom}"
                                 ui:ControlHelper.PlaceholderText="From" />
-                    <DatePicker Margin="6,2,0,2" SelectedDate="{Binding DateTo}"
+                    <DatePicker Margin="6,2,0,2"
+                                SelectedDate="{Binding DateTo}"
                                 ui:ControlHelper.PlaceholderText="To" />
+                    <Button Margin="10,2,0,2"
+                            Content="Clear filters"
+                            Command="{Binding ClearFiltersCommand}"
+                            ToolTip="Reset search box, all filters, and date range (Ctrl+Shift+L)" />
                 </WrapPanel>
-            </StackPanel>
+            </DockPanel>
         </Border>
 
         <Grid Grid.Row="1">
@@ -304,6 +401,7 @@
                                 <Grid.RowDefinitions>
                                     <RowDefinition /><RowDefinition /><RowDefinition />
                                     <RowDefinition /><RowDefinition /><RowDefinition />
+                                    <RowDefinition /><RowDefinition />
                                 </Grid.RowDefinitions>
                                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Duration" Opacity="0.7" Margin="0,2,8,2" />
                                 <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Current.DurationText}" />
@@ -317,6 +415,27 @@
                                 <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Current.FileSizeText}" />
                                 <TextBlock Grid.Row="5" Grid.Column="0" Text="Folder" Opacity="0.7" Margin="0,2,8,2" />
                                 <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Current.FolderPath}" TextWrapping="Wrap" />
+
+                                <!-- Location row: only shown if LocationText is set (from folder parsing
+                                     today, or from reverse-geocoded GPS once that's wired up). -->
+                                <TextBlock Grid.Row="6" Grid.Column="0" Text="Location" Opacity="0.7" Margin="0,2,8,2"
+                                           Visibility="{Binding Current.HasLocation, Converter={StaticResource BoolToVisibility}}" />
+                                <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding Current.LocationText}" TextWrapping="Wrap"
+                                           Visibility="{Binding Current.HasLocation, Converter={StaticResource BoolToVisibility}}" />
+
+                                <!-- GPS row: only shown if coords were extracted from the file. -->
+                                <TextBlock Grid.Row="7" Grid.Column="0" Text="GPS" Opacity="0.7" Margin="0,2,8,2"
+                                           Visibility="{Binding Current.HasGps, Converter={StaticResource BoolToVisibility}}" />
+                                <StackPanel Grid.Row="7" Grid.Column="1" Orientation="Horizontal"
+                                            Visibility="{Binding Current.HasGps, Converter={StaticResource BoolToVisibility}}">
+                                    <TextBlock Text="{Binding Current.GpsText}" />
+                                    <TextBlock Margin="8,0,0,0">
+                                        <Hyperlink NavigateUri="{Binding Current.GpsMapUrl}"
+                                                   RequestNavigate="Hyperlink_RequestNavigate">
+                                            Open in map
+                                        </Hyperlink>
+                                    </TextBlock>
+                                </StackPanel>
                             </Grid>
 
                             <TextBlock Text="Tags" Style="{StaticResource SectionHeader}" />

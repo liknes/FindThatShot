@@ -14,6 +14,7 @@ public class VideoScannerService : IVideoScannerService
     private readonly IFileSystemService _fileSystem;
     private readonly IFfprobeService _ffprobe;
     private readonly IThumbnailService _thumbnails;
+    private readonly IDjiSrtTelemetryReader _djiSrt;
     private readonly ISettingsStore _settings;
     private readonly ILogger<VideoScannerService> _logger;
 
@@ -22,6 +23,7 @@ public class VideoScannerService : IVideoScannerService
         IFileSystemService fileSystem,
         IFfprobeService ffprobe,
         IThumbnailService thumbnails,
+        IDjiSrtTelemetryReader djiSrt,
         ISettingsStore settings,
         ILogger<VideoScannerService> logger)
     {
@@ -29,6 +31,7 @@ public class VideoScannerService : IVideoScannerService
         _fileSystem = fileSystem;
         _ffprobe = ffprobe;
         _thumbnails = thumbnails;
+        _djiSrt = djiSrt;
         _settings = settings;
         _logger = logger;
     }
@@ -263,6 +266,24 @@ public class VideoScannerService : IVideoScannerService
         }
 
         var ffprobeResult = await _ffprobe.ProbeAsync(path, cancellationToken).ConfigureAwait(false);
+
+        // Fallback for cameras (notably DJI drones) that don't populate the
+        // standard QuickTime location tag and instead write per-frame GPS into
+        // a companion .SRT file alongside the .MP4. We only consult it when
+        // ffprobe didn't find coordinates, so this is cheap and never overrides
+        // first-party metadata.
+        double? gpsLat = ffprobeResult?.GpsLatitude;
+        double? gpsLon = ffprobeResult?.GpsLongitude;
+        if (gpsLat is null || gpsLon is null)
+        {
+            var dji = await _djiSrt.TryReadAsync(path, cancellationToken).ConfigureAwait(false);
+            if (dji is not null && dji.Latitude.HasValue && dji.Longitude.HasValue)
+            {
+                gpsLat = dji.Latitude;
+                gpsLon = dji.Longitude;
+            }
+        }
+
         var folder = Path.GetDirectoryName(path) ?? string.Empty;
         var folderName = Path.GetFileName(folder);
         var parsed = FolderNameParser.Parse(folderName);
@@ -290,8 +311,8 @@ public class VideoScannerService : IVideoScannerService
                 FrameRate = ffprobeResult?.FrameRate,
                 Codec = ffprobeResult?.Codec,
                 Camera = ffprobeResult?.Camera,
-                GpsLatitude = ffprobeResult?.GpsLatitude,
-                GpsLongitude = ffprobeResult?.GpsLongitude
+                GpsLatitude = gpsLat,
+                GpsLongitude = gpsLon
             };
             ctx.VideoItems.Add(entity);
             await ctx.SaveChangesAsync(cancellationToken);
@@ -316,9 +337,9 @@ public class VideoScannerService : IVideoScannerService
                 existing.FrameRate = ffprobeResult.FrameRate ?? existing.FrameRate;
                 existing.Codec = ffprobeResult.Codec ?? existing.Codec;
                 existing.Camera ??= ffprobeResult.Camera;
-                existing.GpsLatitude ??= ffprobeResult.GpsLatitude;
-                existing.GpsLongitude ??= ffprobeResult.GpsLongitude;
             }
+            existing.GpsLatitude ??= gpsLat;
+            existing.GpsLongitude ??= gpsLon;
             await ctx.SaveChangesAsync(cancellationToken);
             return new ProcessResult(ProcessAction.Updated, existing.Id);
         }
