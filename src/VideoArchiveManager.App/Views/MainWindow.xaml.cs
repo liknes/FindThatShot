@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Navigation;
 using LibVLCSharp.Shared;
@@ -16,12 +17,27 @@ public partial class MainWindow : Window
     private readonly LibVLC? _libVlc;
     private MediaPlayer? _mediaPlayer;
 
+    // Set while the user is dragging the seek slider so the periodic
+    // MediaPlayer.PositionChanged updates don't fight the user's input.
+    private bool _isUserSeeking;
+
+    // Cached so we can restore the original 3-column layout when leaving review mode.
+    private GridLength _normalLeftWidth;
+    private GridLength _normalListWidth;
+    private GridLength _normalEditorWidth;
+
     public MainWindow(MainViewModel viewModel)
     {
         InitializeComponent();
         _viewModel = viewModel;
         DataContext = viewModel;
         Title = BuildWindowTitle();
+
+        // Remember the normal-mode column widths so we can restore them after
+        // the user closes the in-app player.
+        _normalLeftWidth = LeftSidebarColumn.Width;
+        _normalListWidth = VideoListColumn.Width;
+        _normalEditorWidth = EditorColumn.Width;
 
         if (App.IsPlayerAvailable)
         {
@@ -31,6 +47,10 @@ public partial class MainWindow : Window
                 _mediaPlayer = new MediaPlayer(_libVlc);
                 _mediaPlayer.TimeChanged += MediaPlayer_TimeChanged;
                 _mediaPlayer.LengthChanged += MediaPlayer_LengthChanged;
+                _mediaPlayer.PositionChanged += MediaPlayer_PositionChanged;
+                _mediaPlayer.Playing += MediaPlayer_PlayStateChanged;
+                _mediaPlayer.Paused += MediaPlayer_PlayStateChanged;
+                _mediaPlayer.Stopped += MediaPlayer_PlayStateChanged;
                 _mediaPlayer.EndReached += MediaPlayer_EndReached;
                 _mediaPlayer.EncounteredError += MediaPlayer_EncounteredError;
                 VideoPlayer.MediaPlayer = _mediaPlayer;
@@ -59,6 +79,10 @@ public partial class MainWindow : Window
             {
                 _mediaPlayer.TimeChanged -= MediaPlayer_TimeChanged;
                 _mediaPlayer.LengthChanged -= MediaPlayer_LengthChanged;
+                _mediaPlayer.PositionChanged -= MediaPlayer_PositionChanged;
+                _mediaPlayer.Playing -= MediaPlayer_PlayStateChanged;
+                _mediaPlayer.Paused -= MediaPlayer_PlayStateChanged;
+                _mediaPlayer.Stopped -= MediaPlayer_PlayStateChanged;
                 _mediaPlayer.EndReached -= MediaPlayer_EndReached;
                 _mediaPlayer.EncounteredError -= MediaPlayer_EncounteredError;
                 if (_mediaPlayer.IsPlaying) _mediaPlayer.Stop();
@@ -78,6 +102,12 @@ public partial class MainWindow : Window
     private void Detail_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (sender is not VideoDetailViewModel detail) return;
+
+        if (e.PropertyName == nameof(VideoDetailViewModel.IsPlayerVisible))
+        {
+            ApplyReviewModeLayout(detail.IsPlayerVisible);
+        }
+
         if (_mediaPlayer is null) return;
 
         if (e.PropertyName is not (nameof(VideoDetailViewModel.MediaSource) or nameof(VideoDetailViewModel.IsPlayerVisible)))
@@ -101,12 +131,41 @@ public partial class MainWindow : Window
                 var oldMedia = _mediaPlayer.Media;
                 _mediaPlayer.Media = null;
                 oldMedia?.Dispose();
-                PlayerTimeText.Text = "--:-- / --:--";
+                PlayerCurrentTimeText.Text = "00:00";
+                PlayerDurationText.Text = "00:00";
+                PlayerSeekSlider.Value = 0;
+                PlayPauseButton.Content = "Play";
             }
         }
         catch (Exception ex)
         {
-            PlayerTimeText.Text = $"Player error: {ex.Message}";
+            PlayerCurrentTimeText.Text = "error";
+            PlayerDurationText.Text = ex.Message.Length > 20 ? ex.Message[..20] : ex.Message;
+        }
+    }
+
+    // Swap the main row's column widths so the sidebar + list collapse and the
+    // player takes the central area when review mode opens. Restores the cached
+    // original widths when leaving. Cheap (just sets four GridLength values).
+    private void ApplyReviewModeLayout(bool reviewMode)
+    {
+        if (reviewMode)
+        {
+            LeftSidebarColumn.Width = new GridLength(0);
+            LeftSidebarColumn.MinWidth = 0;
+            VideoListColumn.Width = new GridLength(0);
+            PlayerColumn.Width = new GridLength(1, GridUnitType.Star);
+            EditorColumn.Width = new GridLength(380);
+            EditorColumn.MinWidth = 340;
+        }
+        else
+        {
+            LeftSidebarColumn.Width = _normalLeftWidth;
+            LeftSidebarColumn.MinWidth = 200;
+            VideoListColumn.Width = _normalListWidth;
+            PlayerColumn.Width = new GridLength(0);
+            EditorColumn.Width = _normalEditorWidth;
+            EditorColumn.MinWidth = 420;
         }
     }
 
@@ -124,15 +183,14 @@ public partial class MainWindow : Window
         }
     }
 
-    private void PlayerPause_Click(object sender, RoutedEventArgs e)
-    {
-        _mediaPlayer?.Pause();
-    }
-
-    private void PlayerResume_Click(object sender, RoutedEventArgs e)
+    private void PlayerPlayPause_Click(object sender, RoutedEventArgs e)
     {
         if (_mediaPlayer is null) return;
-        if (!_mediaPlayer.IsPlaying)
+        if (_mediaPlayer.IsPlaying)
+        {
+            _mediaPlayer.Pause();
+        }
+        else
         {
             _mediaPlayer.Play();
         }
@@ -141,6 +199,53 @@ public partial class MainWindow : Window
     private void PlayerStop_Click(object sender, RoutedEventArgs e)
     {
         _mediaPlayer?.Stop();
+    }
+
+    private void PlayerSkipBack_Click(object sender, RoutedEventArgs e)
+    {
+        SeekRelative(TimeSpan.FromSeconds(-5));
+    }
+
+    private void PlayerSkipForward_Click(object sender, RoutedEventArgs e)
+    {
+        SeekRelative(TimeSpan.FromSeconds(5));
+    }
+
+    private void SeekRelative(TimeSpan delta)
+    {
+        if (_mediaPlayer is null) return;
+        if (!_mediaPlayer.IsSeekable) return;
+        var target = Math.Max(0, _mediaPlayer.Time + (long)delta.TotalMilliseconds);
+        if (_mediaPlayer.Length > 0 && target >= _mediaPlayer.Length)
+        {
+            target = Math.Max(0, _mediaPlayer.Length - 100);
+        }
+        _mediaPlayer.Time = target;
+    }
+
+    private void PlayerSeekSlider_DragStarted(object sender, DragStartedEventArgs e)
+    {
+        _isUserSeeking = true;
+    }
+
+    private void PlayerSeekSlider_DragCompleted(object sender, DragCompletedEventArgs e)
+    {
+        ApplySliderPosition();
+        _isUserSeeking = false;
+    }
+
+    private void PlayerSeekSlider_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        // Fires on a click directly on the track (no thumb drag). Apply once.
+        ApplySliderPosition();
+    }
+
+    private void ApplySliderPosition()
+    {
+        if (_mediaPlayer is null) return;
+        if (!_mediaPlayer.IsSeekable) return;
+        var position = (float)Math.Clamp(PlayerSeekSlider.Value / PlayerSeekSlider.Maximum, 0.0, 1.0);
+        _mediaPlayer.Position = position;
     }
 
     private void ExitMenu_Click(object sender, RoutedEventArgs e)
@@ -183,6 +288,28 @@ public partial class MainWindow : Window
         SearchBox.SelectAll();
     }
 
+    // Window-level shortcut: Space toggles play/pause when review mode is open
+    // AND focus is not inside a text input (so typing tag names / notes still works).
+    private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (!_viewModel.Detail.IsPlayerVisible) return;
+        if (_mediaPlayer is null) return;
+        if (e.Key != Key.Space) return;
+
+        var focused = Keyboard.FocusedElement;
+        if (focused is TextBoxBase or PasswordBox or ComboBox) return;
+
+        if (_mediaPlayer.IsPlaying)
+        {
+            _mediaPlayer.Pause();
+        }
+        else
+        {
+            _mediaPlayer.Play();
+        }
+        e.Handled = true;
+    }
+
     private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e)
     {
         var url = e.Uri?.ToString();
@@ -212,16 +339,32 @@ public partial class MainWindow : Window
         Dispatcher.BeginInvoke(UpdatePlayerTime);
     }
 
+    private void MediaPlayer_PositionChanged(object? sender, MediaPlayerPositionChangedEventArgs e)
+    {
+        // VLC raises this several times a second; cheap UI update only.
+        Dispatcher.BeginInvoke(SyncSliderFromPlayer);
+    }
+
+    private void MediaPlayer_PlayStateChanged(object? sender, EventArgs e)
+    {
+        Dispatcher.BeginInvoke(UpdatePlayPauseLabel);
+    }
+
     private void MediaPlayer_EndReached(object? sender, EventArgs e)
     {
-        Dispatcher.BeginInvoke(UpdatePlayerTime);
+        Dispatcher.BeginInvoke(() =>
+        {
+            UpdatePlayerTime();
+            UpdatePlayPauseLabel();
+        });
     }
 
     private void MediaPlayer_EncounteredError(object? sender, EventArgs e)
     {
         Dispatcher.BeginInvoke(() =>
         {
-            PlayerTimeText.Text = "Playback error";
+            PlayerCurrentTimeText.Text = "error";
+            PlayerDurationText.Text = "--:--";
         });
     }
 
@@ -230,11 +373,32 @@ public partial class MainWindow : Window
         if (_mediaPlayer is null) return;
         var pos = TimeSpan.FromMilliseconds(Math.Max(0, _mediaPlayer.Time));
         var dur = TimeSpan.FromMilliseconds(Math.Max(0, _mediaPlayer.Length));
-        PlayerTimeText.Text = $"{Format(pos)} / {Format(dur)}";
+        PlayerCurrentTimeText.Text = Format(pos);
+        PlayerDurationText.Text = Format(dur);
+        SyncSliderFromPlayer();
 
         static string Format(TimeSpan t)
             => t.TotalHours >= 1
                 ? $"{(int)t.TotalHours}:{t.Minutes:D2}:{t.Seconds:D2}"
                 : $"{t.Minutes:D2}:{t.Seconds:D2}";
+    }
+
+    private void SyncSliderFromPlayer()
+    {
+        if (_mediaPlayer is null) return;
+        if (_isUserSeeking) return;
+        var position = Math.Clamp(_mediaPlayer.Position, 0.0f, 1.0f);
+        var newValue = position * PlayerSeekSlider.Maximum;
+        // Avoid feedback loops with bound ValueChanged events.
+        if (Math.Abs(PlayerSeekSlider.Value - newValue) > 0.5)
+        {
+            PlayerSeekSlider.Value = newValue;
+        }
+    }
+
+    private void UpdatePlayPauseLabel()
+    {
+        if (_mediaPlayer is null) return;
+        PlayPauseButton.Content = _mediaPlayer.IsPlaying ? "Pause" : "Play";
     }
 }

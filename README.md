@@ -55,7 +55,15 @@ If FFmpeg / FFprobe is not on `PATH`, open **Settings** and point the app at `ff
    - Tokens are AND-matched across filename, folder path, location, context, notes, camera, codec, and tag names.
    - Filter by status, camera, tag, minimum rating, date range, root folder, and online/offline availability.
 4. Select a card to view full metadata in the right panel. Edit notes, rating, status, and tags there. Click **Save** to persist.
-5. To preview a clip without leaving the app, click **Play in app** in the detail panel — the embedded VLC player handles `.mp4 / .mov / .mxf / .mkv / .avi` and modern codecs (H.264/H.265/ProRes/DNxHD/etc.) out of the box. Use **Pause** / **Resume** / **Stop** / **Close player** to control playback. **Play externally** always works and hands the file off to the OS default player.
+5. To preview a clip without leaving the app, click **Play in app** in the detail panel. This opens **Review mode**: the root folder list and the video grid collapse, the embedded VLC player takes the main area, and the tag / notes / rating / status editor docks on the right at full height so you can tag while watching. The embedded player handles `.mp4 / .mov / .mxf / .mkv / .avi` and modern codecs (H.264/H.265/ProRes/DNxHD/etc.) out of the box.
+
+   Review-mode controls:
+   - **Play / Pause** toggle button (or press **Space** when keyboard focus is not in a text box).
+   - **Stop**, **−5s** / **+5s** skip, draggable **seek slider** with current time and duration.
+   - **Close player** restores the normal three-pane layout.
+   - The right-hand editor stays fully functional — add tags, type notes, change rating or status, click **Save** without leaving Review mode.
+
+   **Play externally** always works and hands the file off to the OS default player; it doesn't enter Review mode.
 6. Select multiple cards (Ctrl/Shift+click) and click **Bulk edit** to apply status, rating, append notes, or add a tag to all of them.
 7. Missing files (e.g. external drive unplugged) stay searchable; an *Offline* badge appears on their card. Click **Refresh** to re-check availability.
 8. Clean up the catalog when you no longer need certain entries:
