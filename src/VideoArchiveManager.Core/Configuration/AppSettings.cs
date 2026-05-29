@@ -18,6 +18,11 @@ public class AppSettings
 
     public bool WriteSidecarFiles { get; set; } = false;
 
+    // GitHub repo (https://github.com/owner/repo) that hosts Velopack
+    // release artifacts. The app's "Check for updates" command reads this
+    // value at runtime. Empty / null disables the check.
+    public string? UpdateRepoUrl { get; set; } = "https://github.com/liknes/FindThatShot";
+
     public int MaxScanParallelism { get; set; } = 4;
 
     public int PageSize { get; set; } = 200;

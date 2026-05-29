@@ -112,6 +112,11 @@
                                   InputGestureText="Ctrl+Shift+L" />
                     </MenuItem>
                     <MenuItem Header="_Help">
+                        <MenuItem Header="Check for _updates…"
+                                  Command="{Binding CheckForUpdatesCommand}"
+                                  IsEnabled="{Binding IsCheckingForUpdates, Converter={StaticResource InverseBool}}"
+                                  ToolTip="Look for a newer version on GitHub Releases and install it. Only works when running from an installed build (Setup.exe)." />
+                        <Separator />
                         <MenuItem Header="_About Video Archive Manager…" Click="About_Click" />
                     </MenuItem>
                 </Menu>

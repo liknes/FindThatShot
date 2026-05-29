@@ -172,23 +172,43 @@ The next `./scripts/publish.ps1` run will bundle these into the installer. The a
 
 ### Releasing a new version
 
-1. Bump `<Version>` in `src/VideoArchiveManager.App/VideoArchiveManager.App.csproj` (or use `-Version` on the script).
-2. `pwsh ./scripts/publish.ps1`.
-3. Share `VideoArchiveManager-win-Setup.exe` with demo users.
+The release pipeline targets a **GitHub Release** as the update host. Required tools on the dev machine: `dotnet`, `pwsh`, and the [GitHub CLI](https://cli.github.com/) (`gh`) authenticated against your account.
 
-### Auto-update wiring (optional, not yet enabled)
+1. Bump `<Version>` in `src/VideoArchiveManager.App/VideoArchiveManager.App.csproj` (or use `-Version` on the script). Use semver, e.g. `0.3.0`.
+2. Build the artifacts:
+   ```powershell
+   pwsh ./scripts/publish.ps1 -Version 0.3.0
+   ```
+   This populates `./releases/` with the installer, portable zip, nupkg, and `RELEASES` manifest.
+3. Tag and create a GitHub Release with the artifacts attached:
+   ```powershell
+   git tag v0.3.0
+   git push origin v0.3.0
+   gh release create v0.3.0 ./releases/* --title "v0.3.0" --notes "Release notes…"
+   ```
+4. On any installed copy of the app (laptop, multimedia PC), open **Help → Check for updates…** to pull the new version. The app verifies the version, downloads the delta or full package, applies the update, and restarts on the new version. Your catalog database, settings, sidecar files, and backups are not touched.
 
-`VelopackApp.Build().Run()` is already wired into `App.Main`. To enable updates, host the contents of `./releases/` somewhere (S3, GitHub Releases, Azure Blob, etc.) and add an `UpdateManager` call somewhere in the app (e.g. on startup or via a menu item):
+### In-app update flow
 
-```csharp
-var mgr = new Velopack.UpdateManager("https://example.com/releases");
-var newVersion = await mgr.CheckForUpdatesAsync();
-if (newVersion is not null)
-{
-    await mgr.DownloadUpdatesAsync(newVersion);
-    mgr.ApplyUpdatesAndRestart(newVersion);
-}
+`VelopackApp.Build().Run()` is wired in `App.Main`, and the app exposes a manual updater via **Help → Check for updates…**. It is configured by:
+
+```jsonc
+// appsettings.json (or user-overridable settings.json)
+"UpdateRepoUrl": "https://github.com/liknes/FindThatShot"
 ```
+
+Behaviour:
+
+- Only the **public** GitHub Releases of that repo are considered (no access token required at runtime).
+- Updates are detected via the `RELEASES` manifest attached to the latest release.
+- The check is **manual** — nothing happens on app startup. Click **Help → Check for updates…**.
+- The flow is: check → confirmation dialog → progress in the status bar → app exits → Velopack applies the swap → app relaunches on the new version.
+- Running from `dotnet run` or a raw `dotnet publish` output (i.e. not from the `Setup.exe` installer) shows a friendly "This build is not an installed copy" message instead of trying to apply.
+- Source video files, the catalog database, settings, thumbnails, and sidecars are never read or modified by the update process — only the app's own binaries inside its install directory.
+
+### Code signing (not enabled)
+
+The installer and binaries are currently unsigned. End users will see a SmartScreen "Unknown publisher" warning the first time. For personal / internal use this is acceptable. If you ever distribute publicly, look into a code-signing certificate and `vpk pack --signParams …`.
 
 ## Roadmap (not in v1)
 

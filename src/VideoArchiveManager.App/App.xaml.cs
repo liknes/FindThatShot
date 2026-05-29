@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Velopack;
+using VideoArchiveManager.App.Services;
 using VideoArchiveManager.App.ViewModels;
 using VideoArchiveManager.App.Views;
 using VideoArchiveManager.Core.Configuration;
@@ -139,6 +140,7 @@ public partial class App : Application
                 services.AddSingleton<IVideoLibraryService, VideoLibraryService>();
                 services.AddSingleton<ICatalogBackupService, CatalogBackupService>();
                 services.AddSingleton<ISidecarService, JsonSidecarService>();
+                services.AddSingleton<IUpdateService, VelopackUpdateService>();
 
                 // Reverse-geocoding via OpenStreetMap Nominatim. The User-Agent
                 // is mandatory per their usage policy. We register the service
@@ -150,7 +152,7 @@ public partial class App : Application
                 {
                     client.BaseAddress = new Uri("https://nominatim.openstreetmap.org/");
                     client.DefaultRequestHeaders.UserAgent.ParseAdd(
-                        "VideoArchiveManager/0.1.0 (https://github.com/ingvemoss/FindThatShot)");
+                        "VideoArchiveManager/0.1.0 (https://github.com/liknes/FindThatShot)");
                     client.DefaultRequestHeaders.AcceptLanguage.ParseAdd("en;q=0.9, *;q=0.5");
                     client.Timeout = TimeSpan.FromSeconds(15);
                 });

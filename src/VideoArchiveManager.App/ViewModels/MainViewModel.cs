@@ -27,6 +27,7 @@ public partial class MainViewModel : ObservableObject
     private readonly IThumbnailService _thumbnailService;
     private readonly IVideoLocationService _locationService;
     private readonly ISettingsStore _settingsStore;
+    private readonly IUpdateService _updateService;
     private readonly IServiceProvider _services;
 
     private CancellationTokenSource? _scanCts;
@@ -46,6 +47,7 @@ public partial class MainViewModel : ObservableObject
         IThumbnailService thumbnailService,
         IVideoLocationService locationService,
         ISettingsStore settingsStore,
+        IUpdateService updateService,
         IServiceProvider services,
         VideoDetailViewModel detail)
     {
@@ -58,6 +60,7 @@ public partial class MainViewModel : ObservableObject
         _thumbnailService = thumbnailService;
         _locationService = locationService;
         _settingsStore = settingsStore;
+        _updateService = updateService;
         _services = services;
         Detail = detail;
 
@@ -566,6 +569,109 @@ public partial class MainViewModel : ObservableObject
         // bar indicator regardless of how the window was closed (Save / X
         // / Cancel all funnel through this point).
         OnPropertyChanged(nameof(SidecarStatusText));
+    }
+
+    [ObservableProperty]
+    private bool _isCheckingForUpdates;
+
+    [RelayCommand]
+    private async Task CheckForUpdatesAsync()
+    {
+        if (IsCheckingForUpdates) return;
+        IsCheckingForUpdates = true;
+        try
+        {
+            StatusMessage = "Checking for updates…";
+
+            var result = await _updateService.CheckAsync();
+
+            if (!result.Success)
+            {
+                StatusMessage = $"Update check failed: {result.ErrorMessage}";
+                MessageBox.Show(
+                    $"Could not check for updates.\n\n{result.ErrorMessage}",
+                    "Check for updates",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                return;
+            }
+
+            if (result.NotInstalledMode)
+            {
+                var msg = "This build is not running from an installer, so updates can't be applied.\n\n" +
+                          "To test the update flow:\n" +
+                          "  1. Run scripts/publish.ps1\n" +
+                          "  2. Install the produced VideoArchiveManager-win-Setup.exe\n" +
+                          "  3. Open the installed app and try Check for updates again.\n\n" +
+                          (result.CurrentVersion is null
+                              ? string.Empty
+                              : $"Current build version: {result.CurrentVersion}");
+                StatusMessage = "Update check skipped (not an installed build)";
+                MessageBox.Show(msg, "Check for updates", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            if (!result.UpdateAvailable)
+            {
+                var v = result.CurrentVersion is null ? string.Empty : $" (v{result.CurrentVersion})";
+                StatusMessage = $"Up to date{v}";
+                MessageBox.Show(
+                    $"You're on the latest version{v}.",
+                    "Check for updates",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+                return;
+            }
+
+            StatusMessage = $"Update available: v{result.AvailableVersion}";
+            var confirm = MessageBox.Show(
+                $"An update is available.\n\n" +
+                $"Current: v{result.CurrentVersion}\n" +
+                $"New:     v{result.AvailableVersion}\n\n" +
+                "Download and install it now? The app will close and restart on the new version when ready.\n\n" +
+                "Your catalog database, settings, and sidecar files will NOT be affected.",
+                "Update available",
+                MessageBoxButton.OKCancel,
+                MessageBoxImage.Question,
+                MessageBoxResult.OK);
+            if (confirm != MessageBoxResult.OK)
+            {
+                StatusMessage = $"Update deferred (v{result.AvailableVersion} available)";
+                return;
+            }
+
+            StatusMessage = $"Downloading v{result.AvailableVersion}…";
+            var apply = await _updateService.DownloadAndApplyAsync(onProgress: p =>
+            {
+                // Velopack reports 0..100 ints. Throttle the UI updates a bit
+                // so we don't spam the property change pipeline.
+                if (p % 5 == 0)
+                {
+                    Application.Current?.Dispatcher.BeginInvoke(() =>
+                    {
+                        StatusMessage = $"Downloading v{result.AvailableVersion}… {p}%";
+                    });
+                }
+            });
+
+            // We only reach this point if apply did NOT exit the process
+            // (typical case is it never returns because ApplyUpdatesAndRestart
+            // tears the process down). So this path == failure.
+            if (!apply.Success)
+            {
+                StatusMessage = $"Update failed: {apply.ErrorMessage}";
+                MessageBox.Show(
+                    $"The update could not be installed.\n\n{apply.ErrorMessage}\n\n" +
+                    "Your current version is unaffected.",
+                    "Update failed",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+        }
+        finally
+        {
+            IsCheckingForUpdates = false;
+        }
     }
 
     [RelayCommand]

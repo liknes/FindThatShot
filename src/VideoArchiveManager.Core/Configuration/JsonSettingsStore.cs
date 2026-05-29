@@ -74,6 +74,7 @@ public class JsonSettingsStore : ISettingsStore
                 AutoBackupOnStartup = loaded.AutoBackupOnStartup,
                 BackupRetentionCount = loaded.BackupRetentionCount > 0 ? loaded.BackupRetentionCount : baseline.BackupRetentionCount,
                 WriteSidecarFiles = loaded.WriteSidecarFiles,
+                UpdateRepoUrl = !string.IsNullOrWhiteSpace(loaded.UpdateRepoUrl) ? loaded.UpdateRepoUrl : baseline.UpdateRepoUrl,
                 MaxScanParallelism = loaded.MaxScanParallelism > 0 ? loaded.MaxScanParallelism : baseline.MaxScanParallelism,
                 PageSize = loaded.PageSize > 0 ? loaded.PageSize : baseline.PageSize,
                 SupportedExtensions = DedupePreserveOrder(
