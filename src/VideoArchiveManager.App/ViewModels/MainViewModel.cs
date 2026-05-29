@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;
 using VideoArchiveManager.App.Views;
+using VideoArchiveManager.Core.Configuration;
 using VideoArchiveManager.Core.Models;
 using VideoArchiveManager.Core.Models.Enums;
 using VideoArchiveManager.Core.Services;
@@ -25,6 +26,7 @@ public partial class MainViewModel : ObservableObject
     private readonly IFfprobeService _ffprobeService;
     private readonly IThumbnailService _thumbnailService;
     private readonly IVideoLocationService _locationService;
+    private readonly ISettingsStore _settingsStore;
     private readonly IServiceProvider _services;
 
     private CancellationTokenSource? _scanCts;
@@ -43,6 +45,7 @@ public partial class MainViewModel : ObservableObject
         IFfprobeService ffprobeService,
         IThumbnailService thumbnailService,
         IVideoLocationService locationService,
+        ISettingsStore settingsStore,
         IServiceProvider services,
         VideoDetailViewModel detail)
     {
@@ -54,9 +57,30 @@ public partial class MainViewModel : ObservableObject
         _ffprobeService = ffprobeService;
         _thumbnailService = thumbnailService;
         _locationService = locationService;
+        _settingsStore = settingsStore;
         _services = services;
         Detail = detail;
+
+        // Mirror VideoDetailViewModel's LastSaveStatus into the main status
+        // bar so users get immediate confirmation of what just happened
+        // (saved · sidecar written / disabled / failed). This is the
+        // primary visibility fix for "I clicked Save and nothing seemed
+        // to happen with the sidecar".
+        Detail.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName == nameof(VideoDetailViewModel.LastSaveStatus)
+                && !string.IsNullOrEmpty(Detail.LastSaveStatus))
+            {
+                StatusMessage = Detail.LastSaveStatus!;
+            }
+        };
     }
+
+    // Live indicator for the bottom status bar; reflects the current
+    // WriteSidecarFiles setting. Re-evaluated after the Settings dialog
+    // closes (see OpenSettings).
+    public string SidecarStatusText =>
+        _settingsStore.Current.WriteSidecarFiles ? "Sidecars: ON" : "Sidecars: OFF";
 
     public ObservableCollection<RootFolder> RootFolders { get; } = new();
     public ObservableCollection<Tag> AllTags { get; } = new();
@@ -537,6 +561,11 @@ public partial class MainViewModel : ObservableObject
             Owner = App.Current.MainWindow
         };
         window.ShowDialog();
+
+        // Settings may have flipped WriteSidecarFiles; refresh the status
+        // bar indicator regardless of how the window was closed (Save / X
+        // / Cancel all funnel through this point).
+        OnPropertyChanged(nameof(SidecarStatusText));
     }
 
     [RelayCommand]

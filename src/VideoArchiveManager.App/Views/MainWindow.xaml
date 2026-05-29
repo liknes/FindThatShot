@@ -510,6 +510,7 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Text="{Binding StatusMessage}"
                            VerticalAlignment="Center"
@@ -526,6 +527,17 @@
                              Maximum="{Binding ProgressMaximum}"
                              Value="{Binding ProgressValue}"
                              Visibility="{Binding IsScanning, Converter={StaticResource BoolToVisibility}}" />
+                <Border Grid.Column="4"
+                        Margin="12,0,0,0"
+                        Padding="6,2"
+                        CornerRadius="3"
+                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                        ToolTip="Shows whether sidecar JSON files are being written next to videos. Toggle in Settings → Sidecar files.">
+                    <TextBlock Text="{Binding SidecarStatusText}"
+                               VerticalAlignment="Center"
+                               FontSize="11"
+                               Opacity="0.8" />
+                </Border>
             </Grid>
         </Border>
     </Grid>

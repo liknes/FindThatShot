@@ -68,8 +68,31 @@ public partial class App : Application
             })
             .ConfigureServices((ctx, services) =>
             {
-                var appSettings = new AppSettings();
+                // IMPORTANT: zero out collection-typed defaults BEFORE Bind.
+                // Microsoft.Extensions.Configuration's Bind() APPENDS array
+                // values from JSON to whatever's already in the instance,
+                // which would otherwise turn the 5 default extensions
+                // + 5 appsettings.json extensions into a 10-item list that
+                // grows over time. JsonSettingsStore dedupes defensively too,
+                // but stopping the duplication at the source is cleanest.
+                var appSettings = new AppSettings
+                {
+                    SupportedExtensions = Array.Empty<string>(),
+                    ExcludedFolderNames = Array.Empty<string>(),
+                    ExcludedFileNamePatterns = Array.Empty<string>()
+                };
                 ctx.Configuration.GetSection("AppSettings").Bind(appSettings);
+
+                // Fall back to constructor defaults if appsettings.json didn't
+                // provide any values for these lists.
+                var defaults = new AppSettings();
+                if (appSettings.SupportedExtensions.Count == 0)
+                    appSettings.SupportedExtensions = defaults.SupportedExtensions;
+                if (appSettings.ExcludedFolderNames.Count == 0)
+                    appSettings.ExcludedFolderNames = defaults.ExcludedFolderNames;
+                if (appSettings.ExcludedFileNamePatterns.Count == 0)
+                    appSettings.ExcludedFileNamePatterns = defaults.ExcludedFileNamePatterns;
+
                 var store = new JsonSettingsStore(appSettings);
 
                 services.AddSingleton<ISettingsStore>(store);

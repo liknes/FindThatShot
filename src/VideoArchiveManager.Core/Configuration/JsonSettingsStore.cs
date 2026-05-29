@@ -15,6 +15,9 @@ public class JsonSettingsStore : ISettingsStore
     public JsonSettingsStore(AppSettings? initial = null)
     {
         _current = initial ?? new AppSettings();
+        _current.SupportedExtensions = DedupePreserveOrder(_current.SupportedExtensions);
+        _current.ExcludedFolderNames = DedupePreserveOrder(_current.ExcludedFolderNames);
+        _current.ExcludedFileNamePatterns = DedupePreserveOrder(_current.ExcludedFileNamePatterns);
         _current = MergeWithUserOverrides(_current);
     }
 
@@ -34,6 +37,13 @@ public class JsonSettingsStore : ISettingsStore
         {
             Directory.CreateDirectory(dir);
         }
+
+        // Sanitize list-typed fields before persisting so the file never
+        // accumulates duplicates (which Microsoft.Extensions.Configuration's
+        // Bind() can introduce when defaults + JSON both contribute values).
+        settings.SupportedExtensions = DedupePreserveOrder(settings.SupportedExtensions);
+        settings.ExcludedFolderNames = DedupePreserveOrder(settings.ExcludedFolderNames);
+        settings.ExcludedFileNamePatterns = DedupePreserveOrder(settings.ExcludedFileNamePatterns);
 
         var json = JsonSerializer.Serialize(settings, JsonOptions);
         await File.WriteAllTextAsync(path, json, cancellationToken).ConfigureAwait(false);
@@ -66,14 +76,30 @@ public class JsonSettingsStore : ISettingsStore
                 WriteSidecarFiles = loaded.WriteSidecarFiles,
                 MaxScanParallelism = loaded.MaxScanParallelism > 0 ? loaded.MaxScanParallelism : baseline.MaxScanParallelism,
                 PageSize = loaded.PageSize > 0 ? loaded.PageSize : baseline.PageSize,
-                SupportedExtensions = loaded.SupportedExtensions is { Count: > 0 } ? loaded.SupportedExtensions : baseline.SupportedExtensions,
-                ExcludedFolderNames = loaded.ExcludedFolderNames is not null ? loaded.ExcludedFolderNames : baseline.ExcludedFolderNames,
-                ExcludedFileNamePatterns = loaded.ExcludedFileNamePatterns is not null ? loaded.ExcludedFileNamePatterns : baseline.ExcludedFileNamePatterns
+                SupportedExtensions = DedupePreserveOrder(
+                    loaded.SupportedExtensions is { Count: > 0 } ? loaded.SupportedExtensions : baseline.SupportedExtensions),
+                ExcludedFolderNames = DedupePreserveOrder(
+                    loaded.ExcludedFolderNames is not null ? loaded.ExcludedFolderNames : baseline.ExcludedFolderNames),
+                ExcludedFileNamePatterns = DedupePreserveOrder(
+                    loaded.ExcludedFileNamePatterns is not null ? loaded.ExcludedFileNamePatterns : baseline.ExcludedFileNamePatterns)
             };
         }
         catch
         {
             return baseline;
         }
+    }
+
+    private static IReadOnlyList<string> DedupePreserveOrder(IReadOnlyList<string>? values)
+    {
+        if (values is null || values.Count == 0) return Array.Empty<string>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var result = new List<string>(values.Count);
+        foreach (var v in values)
+        {
+            if (string.IsNullOrWhiteSpace(v)) continue;
+            if (seen.Add(v)) result.Add(v);
+        }
+        return result;
     }
 }

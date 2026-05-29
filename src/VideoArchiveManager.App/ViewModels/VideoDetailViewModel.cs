@@ -67,6 +67,13 @@ public partial class VideoDetailViewModel : ObservableObject
     [ObservableProperty]
     private VideoStatus _status;
 
+    // Surface the result of the most recent save / tag-add / tag-remove,
+    // including whether a sidecar was written, skipped, or failed. The main
+    // window subscribes to this and mirrors it into the status bar so the
+    // user always knows what just happened.
+    [ObservableProperty]
+    private string? _lastSaveStatus;
+
     public async Task LoadAsync(VideoItemViewModel? item)
     {
         ClosePlayer();
@@ -131,7 +138,8 @@ public partial class VideoDetailViewModel : ObservableObject
         Current.Rating = Rating;
         Current.Status = Status;
 
-        await TryWriteSidecarAsync(entity);
+        var sidecarStatus = await WriteSidecarStatusAsync(entity);
+        LastSaveStatus = $"Saved · {sidecarStatus}";
     }
 
     [RelayCommand]
@@ -147,7 +155,8 @@ public partial class VideoDetailViewModel : ObservableObject
         NewTagName = string.Empty;
         Current.TagSummary = string.Join(", ", Tags.Select(t => t.Name));
 
-        await TryWriteSidecarAsync();
+        var sidecarStatus = await WriteSidecarStatusAsync();
+        LastSaveStatus = $"Tag added · {sidecarStatus}";
     }
 
     [RelayCommand]
@@ -158,21 +167,41 @@ public partial class VideoDetailViewModel : ObservableObject
         Tags.Remove(tag);
         Current.TagSummary = string.Join(", ", Tags.Select(t => t.Name));
 
-        await TryWriteSidecarAsync();
+        var sidecarStatus = await WriteSidecarStatusAsync();
+        LastSaveStatus = $"Tag removed · {sidecarStatus}";
     }
 
-    private async Task TryWriteSidecarAsync(VideoItem? entity = null)
+    // Writes a sidecar (if enabled) and returns a short human-readable
+    // status of what happened. NEVER throws; the caller is responsible for
+    // user-visible labelling around the returned text.
+    private async Task<string> WriteSidecarStatusAsync(VideoItem? entity = null)
     {
-        if (!_sidecar.IsEnabled || Current is null) return;
+        if (!_sidecar.IsEnabled)
+        {
+            return "sidecar disabled";
+        }
+        if (Current is null)
+        {
+            return "sidecar skipped (no video selected)";
+        }
 
         if (entity is null)
         {
             await using var ctx = await _contextFactory.CreateDbContextAsync();
             entity = await ctx.VideoItems.FirstOrDefaultAsync(v => v.Id == Current.Id);
-            if (entity is null) return;
+            if (entity is null) return "sidecar skipped (video not found in catalog)";
         }
 
-        await _sidecar.WriteAsync(entity, Tags.ToArray());
+        var result = await _sidecar.WriteAsync(entity, Tags.ToArray());
+        if (result.Written && !string.IsNullOrEmpty(result.Path))
+        {
+            return $"sidecar written: {result.Path}";
+        }
+        if (result.Skipped)
+        {
+            return "sidecar disabled";
+        }
+        return $"sidecar FAILED: {result.ErrorMessage ?? "unknown error"}";
     }
 
     [RelayCommand]
