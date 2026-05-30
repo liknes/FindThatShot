@@ -28,6 +28,7 @@
         <KeyBinding Key="B" Modifiers="Control" Command="{Binding OpenBulkEditCommand}" />
         <KeyBinding Key="OemComma" Modifiers="Control" Command="{Binding OpenSettingsCommand}" />
         <KeyBinding Key="L" Modifiers="Control+Shift" Command="{Binding ClearFiltersCommand}" />
+        <KeyBinding Key="R" Modifiers="Control+Shift" Command="{Binding StartReviewSessionCommand}" />
         <KeyBinding Key="F" Modifiers="Control" Command="{x:Static ApplicationCommands.Find}" />
     </Window.InputBindings>
 
@@ -104,6 +105,15 @@
                         <MenuItem Header="Show only _available files"
                                   IsCheckable="True"
                                   IsChecked="{Binding ShowOnlyAvailable}" />
+                        <MenuItem Header="Show only _unreviewed"
+                                  IsCheckable="True"
+                                  IsChecked="{Binding OnlyUnreviewed}"
+                                  ToolTip="Limit the catalog to clips whose status is still Unreviewed OR that have no tags yet." />
+                        <Separator />
+                        <MenuItem Header="_Start review session"
+                                  Command="{Binding StartReviewSessionCommand}"
+                                  InputGestureText="Ctrl+Shift+R"
+                                  ToolTip="Clear all filters, show only unreviewed clips, and select the first one." />
                         <Separator />
                         <MenuItem Header="Focus _search"
                                   Click="FocusSearchMenu_Click"
@@ -193,7 +203,7 @@
                             Content="Start review session"
                             Command="{Binding StartReviewSessionCommand}"
                             Style="{StaticResource AccentButtonStyle}"
-                            ToolTip="Clear all filters and show only unreviewed clips (no status set or no tags). Selects the first clip so you can start reviewing right away." />
+                            ToolTip="Clear all filters and show only unreviewed clips (no status set or no tags). Selects the first clip so you can start reviewing right away. (Ctrl+Shift+R)" />
                     <Button Margin="6,2,0,2"
                             Content="Clear filters"
                             Command="{Binding ClearFiltersCommand}"

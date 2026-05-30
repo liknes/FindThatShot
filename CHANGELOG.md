@@ -15,7 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
   - **Multiple tag filters combine with AND** — videos must carry every selected tag to appear in the result grid. Useful for queries like *Birds* ∩ *DJI Mini5Pro*.
   - **Clear** button next to the *Tags* heading drops all chips in one click; it auto-disables when nothing is selected.
   - The catalog Clear Filters command also resets the chip selection and the filter input.
-- **"Start review session" workflow.** New top-toolbar button (accent-styled, next to *Clear filters*) and a matching *Show only unreviewed* sidebar checkbox surface clips that haven't been reviewed yet:
+- **"Start review session" workflow.** New top-toolbar button (accent-styled, next to *Clear filters*), a matching *View → Start review session* menu item, and a *Show only unreviewed* sidebar checkbox / view-menu toggle surface clips that haven't been reviewed yet:
+  - **`Ctrl+Shift+R` shortcut** triggers *Start review session* from anywhere in the main window (mirrors `Ctrl+Shift+L` for *Clear filters*).
   - **Union signal.** A clip counts as "unreviewed" if EITHER its status is still the default *Unreviewed*, OR it has no tags. Catches both forgetful workflows (status never bumped) and behavioural ones (never tagged) with one filter.
   - **One-click batch start.** *Start review session* clears all other filters (search text, status, camera, dates, tag chips, root folder), turns the unreviewed filter on, runs the search, and pre-selects the first result so you can press *Play in app* immediately. Shows *"Review session: N clip(s) waiting"* or *"… you're caught up."* in the status bar.
   - **Persistent toggle.** The sidebar *Show only unreviewed* checkbox is a normal filter — combine it with the tag chips, date pickers, camera, etc. for narrower review queues (e.g. "unreviewed DJI Mini5Pro clips from May").
