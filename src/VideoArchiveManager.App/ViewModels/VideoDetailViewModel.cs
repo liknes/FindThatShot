@@ -74,6 +74,13 @@ public partial class VideoDetailViewModel : ObservableObject
     [ObservableProperty]
     private string? _lastSaveStatus;
 
+    // Fires every time the editor attaches a tag to the current video.
+    // MainViewModel listens so the sidebar's tag picker can show newly
+    // created tags immediately, without requiring an app restart or
+    // a re-scan. The Tag may already exist in the catalog (Add typed an
+    // existing name) — subscribers deduplicate by Id.
+    public event EventHandler<Tag>? TagCatalogChanged;
+
     public async Task LoadAsync(VideoItemViewModel? item)
     {
         ClosePlayer();
@@ -154,6 +161,10 @@ public partial class VideoDetailViewModel : ObservableObject
         }
         NewTagName = string.Empty;
         Current.TagSummary = string.Join(", ", Tags.Select(t => t.Name));
+
+        // Notify the main window so the sidebar tag picker can pick up a
+        // brand-new tag without waiting for the next ReloadFiltersAsync.
+        TagCatalogChanged?.Invoke(this, tag);
 
         // Tagging is the clearest behavioural signal that a clip has been
         // looked at, so the first tag promotes the default Unreviewed status

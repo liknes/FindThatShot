@@ -184,6 +184,16 @@ public partial class MainWindow : Window
         }
     }
 
+    // Re-entrancy guard for the tag picker. Adding a chip mutates
+    // SelectedTagFilters, which synchronously rebuilds FilteredTags
+    // (Clear + Add). That mutation re-fires SelectionChanged on the
+    // ListBox with whatever item now sits at the previously-selected
+    // index, which used to cascade into adding several chips per click.
+    // We capture the clicked tag from e.AddedItems, clear the selection
+    // BEFORE the rebuild, and refuse to re-enter while the click is being
+    // processed.
+    private bool _isHandlingTagFilterSelection;
+
     // Sidebar tag picker: clicking a tag promotes it to a chip and immediately
     // clears the ListBox selection so the same row can be re-used after we
     // re-add the tag (e.g. user removes the chip, the tag reappears in the
@@ -192,11 +202,24 @@ public partial class MainWindow : Window
     // to manage.
     private void TagFilterList_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
+        if (_isHandlingTagFilterSelection) return;
         if (sender is not ListBox lb) return;
-        if (lb.SelectedItem is not Tag tag) return;
+        if (e.AddedItems.Count == 0) return;
+        if (e.AddedItems[0] is not Tag tag) return;
 
-        _viewModel.AddTagFilterCommand.Execute(tag);
-        lb.SelectedItem = null;
+        _isHandlingTagFilterSelection = true;
+        try
+        {
+            // Clear the selection BEFORE the chip-add triggers a rebuild,
+            // so any SelectionChanged echoes during the rebuild see a null
+            // SelectedItem and exit early via the guard above.
+            lb.SelectedItem = null;
+            _viewModel.AddTagFilterCommand.Execute(tag);
+        }
+        finally
+        {
+            _isHandlingTagFilterSelection = false;
+        }
     }
 
     private void PlayerPlayPause_Click(object sender, RoutedEventArgs e)

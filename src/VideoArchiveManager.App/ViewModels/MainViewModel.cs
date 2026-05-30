@@ -87,6 +87,12 @@ public partial class MainViewModel : ObservableObject
             ClearTagFiltersCommand.NotifyCanExecuteChanged();
             OnFilterChanged();
         };
+
+        // Keep the sidebar tag picker in sync when the editor (or any other
+        // path) attaches a tag. Previously a brand-new tag would only show
+        // up after an app restart or a re-scan because AllTags was only
+        // populated by ReloadFiltersAsync.
+        Detail.TagCatalogChanged += Detail_TagCatalogChanged;
     }
 
     // Live indicator for the bottom status bar; reflects the current
@@ -236,6 +242,35 @@ public partial class MainViewModel : ObservableObject
         var cams = await _searchService.GetDistinctCamerasAsync();
         Cameras.Clear();
         foreach (var c in cams) Cameras.Add(c);
+    }
+
+    // Called when the editor attaches a tag. Inserts the tag into AllTags
+    // at the position it would occupy if reloaded from scratch (same
+    // Type → Name ordering as TagService.GetAllAsync), so the picker
+    // stays alphabetised. Deduplicates by Id so adding an existing tag
+    // is a silent no-op for the sidebar.
+    private void Detail_TagCatalogChanged(object? sender, Tag tag)
+    {
+        if (AllTags.Any(t => t.Id == tag.Id))
+        {
+            return;
+        }
+
+        var insertIndex = 0;
+        while (insertIndex < AllTags.Count)
+        {
+            var existing = AllTags[insertIndex];
+            var typeCmp = ((int)tag.Type).CompareTo((int)existing.Type);
+            if (typeCmp < 0) break;
+            if (typeCmp == 0 &&
+                string.Compare(tag.Name, existing.Name, StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                break;
+            }
+            insertIndex++;
+        }
+        AllTags.Insert(insertIndex, tag);
+        RebuildFilteredTags();
     }
 
     // Repopulates FilteredTags from AllTags, excluding anything the user
@@ -776,6 +811,10 @@ public partial class MainViewModel : ObservableObject
             Owner = App.Current.MainWindow
         };
         window.ShowDialog();
+        // Bulk edit can create a brand-new tag via "Add tag"; pick it up
+        // in the sidebar picker without requiring a restart. Cheap and
+        // keeps cameras / root folders in sync too.
+        await ReloadFiltersAsync();
         await SearchAsync();
     }
 
