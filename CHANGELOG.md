@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-05-30
+
 ### Added
 
 - **Application icon.** The executable, every window's title bar / Alt-Tab / taskbar entry, and the Velopack installer + Start-menu shortcut now all use a proper application icon (`Assets/AppIcon.ico` for the EXE / installer, `Assets/AppIcon.png` for the WPF windows). Previously every surface fell back to the generic .NET WPF icon. The artwork is the `Apps-kmplayer` icon from the Oxygen icon set (KDE, LGPL-3.0); attribution added to `THIRD-PARTY-NOTICES.md`.
@@ -88,7 +90,8 @@ First public release.
 
 - Responsive default window size; date pickers and the *Play externally* button are no longer clipped at common screen widths.
 
-[Unreleased]: https://github.com/liknes/FindThatShot/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/liknes/FindThatShot/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/liknes/FindThatShot/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/liknes/FindThatShot/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/liknes/FindThatShot/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/liknes/FindThatShot/releases/tag/v0.2.0

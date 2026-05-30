@@ -24,7 +24,7 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>VideoArchiveManager.App</RootNamespace>
     <AssemblyName>VideoArchiveManager</AssemblyName>
-    <Version>0.4.0</Version>
+    <Version>0.4.1</Version>
     <StartupObject>VideoArchiveManager.App.App</StartupObject>
     <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
   </PropertyGroup>
