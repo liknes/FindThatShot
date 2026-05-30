@@ -235,9 +235,32 @@ public partial class MainWindow : Window
         }
     }
 
+    // We deliberately do NOT call MediaPlayer.Stop() here. Stop() releases
+    // the VLC decoder, after which the underlying HwndHost surface is
+    // repainted by Windows using the window class's default WhiteBrush —
+    // a hard white flash against the cinematic black backdrop. Pausing and
+    // seeking to 0 gives the same "stopped at the beginning" user model
+    // while keeping the first frame on screen.
     private void PlayerStop_Click(object sender, RoutedEventArgs e)
     {
-        _mediaPlayer?.Stop();
+        if (_mediaPlayer is null) return;
+
+        try
+        {
+            if (_mediaPlayer.IsPlaying)
+            {
+                _mediaPlayer.Pause();
+            }
+            if (_mediaPlayer.IsSeekable)
+            {
+                _mediaPlayer.Time = 0;
+            }
+        }
+        catch
+        {
+            // VLC's state machine can be fussy mid-transition; never let
+            // this button throw into the dispatcher.
+        }
     }
 
     private void PlayerSkipBack_Click(object sender, RoutedEventArgs e)

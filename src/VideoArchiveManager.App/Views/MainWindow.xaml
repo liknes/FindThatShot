@@ -45,11 +45,22 @@
 
         <!-- Row 0: single chrome row. Menu (left) + search/actions/filters (right).
              Uses DockPanel + WrapPanel so it stays one line at normal widths and
-             wraps gracefully if the window gets very narrow. -->
+             wraps gracefully if the window gets very narrow.
+             In review mode the bottom 1px separator is collapsed so it can't draw
+             a pale chrome line on top of the cinematic black backdrop. -->
         <Border Grid.Row="0"
                 Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
-                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
-                BorderThickness="0,0,0,1">
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="BorderThickness" Value="0,0,0,1" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Detail.IsPlayerVisible}" Value="True">
+                            <Setter Property="BorderThickness" Value="0" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
             <DockPanel LastChildFill="True">
                 <Menu DockPanel.Dock="Left"
                       Background="Transparent"
@@ -439,9 +450,13 @@
 
                     <!-- Player toolbar. Visible only in review mode (IsPlayerVisible),
                          but we also hide it via column width=0 in normal mode so this
-                         binding is mostly belt-and-braces. -->
+                         binding is mostly belt-and-braces.
+                         Black background matches the player column so the transport row
+                         visually flows into the video frame instead of dropping a bright
+                         chrome panel under the picture; time-readout text is explicitly
+                         white so it stays legible on the dark backdrop. -->
                     <Border Grid.Row="1"
-                            Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+                            Background="Black"
                             Padding="10,8"
                             Visibility="{Binding IsPlayerVisible, Converter={StaticResource BoolToVisibility}}">
                         <Grid>
@@ -459,6 +474,7 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock x:Name="PlayerCurrentTimeText" Grid.Column="0"
                                            Text="00:00" FontFamily="Consolas"
+                                           Foreground="White"
                                            VerticalAlignment="Center" Width="60"
                                            TextAlignment="Right" />
                                 <Slider x:Name="PlayerSeekSlider" Grid.Column="1"
@@ -472,6 +488,7 @@
                                         PreviewMouseLeftButtonUp="PlayerSeekSlider_PreviewMouseLeftButtonUp" />
                                 <TextBlock x:Name="PlayerDurationText" Grid.Column="2"
                                            Text="00:00" FontFamily="Consolas"
+                                           Foreground="White"
                                            VerticalAlignment="Center" Width="60"
                                            TextAlignment="Left" />
                             </Grid>
@@ -503,9 +520,22 @@
                 </Grid>
             </Border>
 
+            <!-- Editor column. The left 1px separator visually divides the
+                 catalog grid from the editor in normal mode, but draws an
+                 unwanted pale line down the right edge of the in-app player
+                 in review mode, so it's collapsed while IsPlayerVisible. -->
             <Border Grid.Column="3"
-                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
-                    BorderThickness="1,0,0,0">
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="BorderThickness" Value="1,0,0,0" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Detail.IsPlayerVisible}" Value="True">
+                                <Setter Property="BorderThickness" Value="0" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
                 <Grid>
                     <TextBlock Text="Select a video to view details"
                                HorizontalAlignment="Center"
