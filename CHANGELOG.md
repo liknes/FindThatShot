@@ -15,9 +15,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
   - **Multiple tag filters combine with AND** — videos must carry every selected tag to appear in the result grid. Useful for queries like *Birds* ∩ *DJI Mini5Pro*.
   - **Clear** button next to the *Tags* heading drops all chips in one click; it auto-disables when nothing is selected.
   - The catalog Clear Filters command also resets the chip selection and the filter input.
+- **"Start review session" workflow.** New top-toolbar button (accent-styled, next to *Clear filters*) and a matching *Show only unreviewed* sidebar checkbox surface clips that haven't been reviewed yet:
+  - **Union signal.** A clip counts as "unreviewed" if EITHER its status is still the default *Unreviewed*, OR it has no tags. Catches both forgetful workflows (status never bumped) and behavioural ones (never tagged) with one filter.
+  - **One-click batch start.** *Start review session* clears all other filters (search text, status, camera, dates, tag chips, root folder), turns the unreviewed filter on, runs the search, and pre-selects the first result so you can press *Play in app* immediately. Shows *"Review session: N clip(s) waiting"* or *"… you're caught up."* in the status bar.
+  - **Persistent toggle.** The sidebar *Show only unreviewed* checkbox is a normal filter — combine it with the tag chips, date pickers, camera, etc. for narrower review queues (e.g. "unreviewed DJI Mini5Pro clips from May").
+  - **Implemented as a new `SearchQuery.OnlyUnreviewed` flag** in the data layer, applied in `SearchService` as `Status == Unreviewed OR !Tags.Any()`.
 
 ### Changed
 
+- **Status now auto-promotes from *Unreviewed* to *Keep* on the first tag.** Adding the first tag to a clip whose status is still the default *Unreviewed* now silently bumps it to *Keep* (status bar shows *"Tag added · status → Keep · …"* so you notice the first time). Removes one chore from the review loop and keeps the new *Show only unreviewed* filter honest over time — no more reviewed-but-still-listed clips because you forgot to flip the dropdown.
 - **Tag filter is now multi-select.** The sidebar's *Tags* list used to be a single-select list that scrolled through every tag in the catalog. Replaced with the chip + search pattern above. The hidden top-bar *Tag* dropdown (which used `SelectedTagFilter`) remains commented out in the XAML for reference but is no longer wired up — the sidebar serves this purpose and scales better.
 
 ### Fixed

@@ -143,6 +143,12 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private bool _showOnlyAvailable = true;
 
+    // Backs the sidebar "Show only unreviewed" checkbox AND the toolbar
+    // "Start review session" button. Treated as a union filter server-side
+    // (Status == Unreviewed OR no tags) — see SearchService.
+    [ObservableProperty]
+    private bool _onlyUnreviewed;
+
     [ObservableProperty]
     private string _statusMessage = "Ready";
 
@@ -191,6 +197,7 @@ public partial class MainViewModel : ObservableObject
     partial void OnDateFromChanged(DateTime? value) => OnFilterChanged();
     partial void OnDateToChanged(DateTime? value) => OnFilterChanged();
     partial void OnShowOnlyAvailableChanged(bool value) => OnFilterChanged();
+    partial void OnOnlyUnreviewedChanged(bool value) => OnFilterChanged();
 
     public async Task InitializeAsync()
     {
@@ -307,6 +314,7 @@ public partial class MainViewModel : ObservableObject
             DateTo = DateTo,
             RootFolderPath = SelectedRootFolder?.Path,
             FileExists = ShowOnlyAvailable ? true : null,
+            OnlyUnreviewed = OnlyUnreviewed ? true : null,
             Take = 500
         };
 
@@ -771,6 +779,48 @@ public partial class MainViewModel : ObservableObject
         await SearchAsync();
     }
 
+    // One-click "I want to do a review batch now" affordance.
+    // Strips every other filter so candidate clips aren't hidden by stale
+    // state (e.g. an old tag chip still in play), flips OnlyUnreviewed on,
+    // runs the search once at the end, and selects the first result so the
+    // user can start reviewing immediately. Keeps ShowOnlyAvailable in
+    // whatever state the user prefers — offline drives shouldn't appear in
+    // a review queue unless they've explicitly opted in.
+    [RelayCommand]
+    private async Task StartReviewSessionAsync()
+    {
+        _suppressFilterSearch = true;
+        try
+        {
+            SearchText = string.Empty;
+            StatusFilter = null;
+            MinRatingFilter = 0;
+            CameraFilter = null;
+            SelectedTagFilters.Clear();
+            TagFilterSearchText = string.Empty;
+            SelectedRootFolder = null;
+            DateFrom = null;
+            DateTo = null;
+            OnlyUnreviewed = true;
+        }
+        finally
+        {
+            _suppressFilterSearch = false;
+        }
+
+        await SearchAsync();
+
+        if (Videos.Count > 0)
+        {
+            SelectedVideo = Videos[0];
+            StatusMessage = $"Review session: {Videos.Count} clip(s) waiting";
+        }
+        else
+        {
+            StatusMessage = "Review session: nothing to review — you're caught up.";
+        }
+    }
+
     [RelayCommand]
     private async Task ClearFiltersAsync()
     {
@@ -787,6 +837,7 @@ public partial class MainViewModel : ObservableObject
             SelectedRootFolder = null;
             DateFrom = null;
             DateTo = null;
+            OnlyUnreviewed = false;
         }
         finally
         {

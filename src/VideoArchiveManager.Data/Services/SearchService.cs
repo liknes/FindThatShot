@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using VideoArchiveManager.Core.Models;
+using VideoArchiveManager.Core.Models.Enums;
 using VideoArchiveManager.Core.Services;
 
 namespace VideoArchiveManager.Data.Services;
@@ -95,6 +96,16 @@ public class SearchService : ISearchService
         {
             var fe = query.FileExists.Value;
             q = q.Where(v => v.FileExists == fe);
+        }
+
+        // Union semantics: a video is "unreviewed" if EITHER the user has
+        // never bumped its status off the default, OR they've never tagged
+        // it. Catches forgetful workflows (status untouched) and behavioural
+        // workflows (no tags yet) without requiring the user to remember
+        // both gestures.
+        if (query.OnlyUnreviewed == true)
+        {
+            q = q.Where(v => v.Status == VideoStatus.Unreviewed || !v.VideoTags.Any());
         }
 
         var total = await q.CountAsync(cancellationToken);

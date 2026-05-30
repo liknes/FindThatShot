@@ -14,6 +14,12 @@ public class SearchQuery
     public string? RootFolderPath { get; set; }
     public bool? FileExists { get; set; }
 
+    // True ⇒ restrict to videos that look untouched: either still have the
+    // default Status of Unreviewed, or carry no tags. Defined as a UNION so a
+    // forgetful reviewer (didn't update Status) and a behavioural reviewer
+    // (no tags yet) both surface the same way.
+    public bool? OnlyUnreviewed { get; set; }
+
     public int Skip { get; set; }
     public int Take { get; set; } = 200;
 

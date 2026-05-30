@@ -190,6 +190,11 @@
                                 SelectedDate="{Binding DateTo}"
                                 ui:ControlHelper.PlaceholderText="To" />
                     <Button Margin="10,2,0,2"
+                            Content="Start review session"
+                            Command="{Binding StartReviewSessionCommand}"
+                            Style="{StaticResource AccentButtonStyle}"
+                            ToolTip="Clear all filters and show only unreviewed clips (no status set or no tags). Selects the first clip so you can start reviewing right away." />
+                    <Button Margin="6,2,0,2"
                             Content="Clear filters"
                             Command="{Binding ClearFiltersCommand}"
                             ToolTip="Reset search box, all filters, and date range (Ctrl+Shift+L)" />
@@ -305,6 +310,11 @@
                         <CheckBox Content="Show only available files"
                                   IsChecked="{Binding ShowOnlyAvailable}"
                                   Margin="0,12,0,0" />
+
+                        <CheckBox Content="Show only unreviewed"
+                                  IsChecked="{Binding OnlyUnreviewed}"
+                                  Margin="0,4,0,0"
+                                  ToolTip="Limit the catalog to clips that look untouched: still marked Unreviewed OR have no tags yet. Same signal used by the &quot;Start review session&quot; button." />
                     </StackPanel>
                 </ScrollViewer>
             </Border>

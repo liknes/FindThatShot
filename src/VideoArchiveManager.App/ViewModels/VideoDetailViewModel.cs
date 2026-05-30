@@ -155,8 +155,43 @@ public partial class VideoDetailViewModel : ObservableObject
         NewTagName = string.Empty;
         Current.TagSummary = string.Join(", ", Tags.Select(t => t.Name));
 
+        // Tagging is the clearest behavioural signal that a clip has been
+        // looked at, so the first tag promotes the default Unreviewed status
+        // to Keep automatically. This keeps the catalog's review queue
+        // (StartReviewSession / OnlyUnreviewed filter) honest without
+        // forcing the user to remember to flip Status manually.
+        var statusBumped = await TryAutoBumpFromUnreviewedAsync();
+
         var sidecarStatus = await WriteSidecarStatusAsync();
-        LastSaveStatus = $"Tag added · {sidecarStatus}";
+        LastSaveStatus = statusBumped
+            ? $"Tag added · status → Keep · {sidecarStatus}"
+            : $"Tag added · {sidecarStatus}";
+    }
+
+    // Promotes Status from Unreviewed → Keep on the very first tag for a
+    // clip. Returns true if a bump happened so the caller can surface it.
+    // Re-reads from the DB to avoid racing with a stale in-memory Status,
+    // and writes the bump in the same transaction as the timestamp update.
+    private async Task<bool> TryAutoBumpFromUnreviewedAsync()
+    {
+        if (Current is null) return false;
+        if (Status != VideoStatus.Unreviewed) return false;
+
+        await using var ctx = await _contextFactory.CreateDbContextAsync();
+        var entity = await ctx.VideoItems.FirstOrDefaultAsync(v => v.Id == Current.Id);
+        if (entity is null) return false;
+        if (entity.Status != VideoStatus.Unreviewed) return false;
+
+        entity.Status = VideoStatus.Keep;
+        entity.UpdatedAt = DateTime.UtcNow;
+        await ctx.SaveChangesAsync();
+
+        // VideoItemViewModel.Status writes through to Model.Status and
+        // raises change notifications, so the catalog grid + binding
+        // listeners both see the new value with a single setter call.
+        Current.Status = VideoStatus.Keep;
+        Status = VideoStatus.Keep;
+        return true;
     }
 
     [RelayCommand]
