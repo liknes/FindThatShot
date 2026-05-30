@@ -552,7 +552,11 @@
                             <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                                 <TextBox Width="140"
                                          Text="{Binding NewTagName, UpdateSourceTrigger=PropertyChanged}"
-                                         ui:ControlHelper.PlaceholderText="New tag" />
+                                         ui:ControlHelper.PlaceholderText="New tag">
+                                    <TextBox.InputBindings>
+                                        <KeyBinding Key="Enter" Command="{Binding AddTagCommand}" />
+                                    </TextBox.InputBindings>
+                                </TextBox>
                                 <ComboBox Width="110" Margin="6,0,0,0"
                                           ItemsSource="{Binding AvailableTagTypes}"
                                           SelectedItem="{Binding NewTagType}" />
