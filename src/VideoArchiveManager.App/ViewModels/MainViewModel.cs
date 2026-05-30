@@ -77,6 +77,16 @@ public partial class MainViewModel : ObservableObject
                 StatusMessage = Detail.LastSaveStatus!;
             }
         };
+
+        // Any change to the user's chip selection re-runs the catalog
+        // search AND refreshes the picker list (so just-added tags no
+        // longer appear in the list, just-removed tags reappear).
+        SelectedTagFilters.CollectionChanged += (_, _) =>
+        {
+            RebuildFilteredTags();
+            ClearTagFiltersCommand.NotifyCanExecuteChanged();
+            OnFilterChanged();
+        };
     }
 
     // Live indicator for the bottom status bar; reflects the current
@@ -88,6 +98,16 @@ public partial class MainViewModel : ObservableObject
     public ObservableCollection<RootFolder> RootFolders { get; } = new();
     public ObservableCollection<Tag> AllTags { get; } = new();
     public ObservableCollection<string> Cameras { get; } = new();
+
+    // Tag filters the user has picked. Search applies them as AND
+    // (a video must carry every selected tag). Backed by the Tag picker
+    // list + chip buttons in the sidebar.
+    public ObservableCollection<Tag> SelectedTagFilters { get; } = new();
+
+    // Subset of AllTags filtered by TagFilterSearchText and excluding any
+    // tag that is already a chip. Rebuilt by RebuildFilteredTags(). The
+    // sidebar list binds to this so typing narrows what's shown.
+    public ObservableCollection<Tag> FilteredTags { get; } = new();
     public ObservableCollection<VideoStatus> AvailableStatuses { get; } = new(Enum.GetValues<VideoStatus>());
     public ObservableCollection<VideoItemViewModel> Videos { get; } = new();
     public ObservableCollection<VideoItemViewModel> SelectedVideos { get; } = new();
@@ -106,8 +126,10 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private string? _cameraFilter;
 
+    // Live filter for the tag picker list. Doesn't itself filter the
+    // catalog — only narrows which tags the user sees while choosing.
     [ObservableProperty]
-    private Tag? _selectedTagFilter;
+    private string _tagFilterSearchText = string.Empty;
 
     [ObservableProperty]
     private RootFolder? _selectedRootFolder;
@@ -164,7 +186,7 @@ public partial class MainViewModel : ObservableObject
     partial void OnStatusFilterChanged(VideoStatus? value) => OnFilterChanged();
     partial void OnMinRatingFilterChanged(int value) => OnFilterChanged();
     partial void OnCameraFilterChanged(string? value) => OnFilterChanged();
-    partial void OnSelectedTagFilterChanged(Tag? value) => OnFilterChanged();
+    partial void OnTagFilterSearchTextChanged(string value) => RebuildFilteredTags();
     partial void OnSelectedRootFolderChanged(RootFolder? value) => OnFilterChanged();
     partial void OnDateFromChanged(DateTime? value) => OnFilterChanged();
     partial void OnDateToChanged(DateTime? value) => OnFilterChanged();
@@ -192,10 +214,67 @@ public partial class MainViewModel : ObservableObject
         AllTags.Clear();
         foreach (var t in tags) AllTags.Add(t);
 
+        // Drop chips whose tag no longer exists (e.g. cleaned up via bulk
+        // edit or admin tools) and refresh the picker against the new set.
+        var validIds = AllTags.Select(t => t.Id).ToHashSet();
+        for (var i = SelectedTagFilters.Count - 1; i >= 0; i--)
+        {
+            if (!validIds.Contains(SelectedTagFilters[i].Id))
+            {
+                SelectedTagFilters.RemoveAt(i);
+            }
+        }
+        RebuildFilteredTags();
+
         var cams = await _searchService.GetDistinctCamerasAsync();
         Cameras.Clear();
         foreach (var c in cams) Cameras.Add(c);
     }
+
+    // Repopulates FilteredTags from AllTags, excluding anything the user
+    // already picked as a chip and applying the live text filter.
+    // Case-insensitive substring match keeps "birds" / "Birds" equivalent.
+    private void RebuildFilteredTags()
+    {
+        var search = TagFilterSearchText?.Trim() ?? string.Empty;
+        var selectedIds = SelectedTagFilters.Select(t => t.Id).ToHashSet();
+
+        FilteredTags.Clear();
+        foreach (var t in AllTags)
+        {
+            if (selectedIds.Contains(t.Id)) continue;
+            if (search.Length > 0
+                && t.Name.IndexOf(search, StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                continue;
+            }
+            FilteredTags.Add(t);
+        }
+    }
+
+    [RelayCommand]
+    private void AddTagFilter(Tag? tag)
+    {
+        if (tag is null) return;
+        if (SelectedTagFilters.Any(t => t.Id == tag.Id)) return;
+        SelectedTagFilters.Add(tag);
+    }
+
+    [RelayCommand]
+    private void RemoveTagFilter(Tag? tag)
+    {
+        if (tag is null) return;
+        var existing = SelectedTagFilters.FirstOrDefault(t => t.Id == tag.Id);
+        if (existing is not null)
+        {
+            SelectedTagFilters.Remove(existing);
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanClearTagFilters))]
+    private void ClearTagFilters() => SelectedTagFilters.Clear();
+
+    private bool CanClearTagFilters() => SelectedTagFilters.Count > 0;
 
     // Tracks the currently-running search so that fast successive filter
     // changes don't race — a newer call cancels any older one before its
@@ -221,7 +300,9 @@ public partial class MainViewModel : ObservableObject
             Status = StatusFilter,
             MinRating = MinRatingFilter > 0 ? MinRatingFilter : null,
             Camera = string.IsNullOrWhiteSpace(CameraFilter) ? null : CameraFilter,
-            TagIds = SelectedTagFilter is null ? null : new[] { SelectedTagFilter.Id },
+            TagIds = SelectedTagFilters.Count == 0
+                ? null
+                : SelectedTagFilters.Select(t => t.Id).ToArray(),
             DateFrom = DateFrom,
             DateTo = DateTo,
             RootFolderPath = SelectedRootFolder?.Path,
@@ -701,7 +782,8 @@ public partial class MainViewModel : ObservableObject
             StatusFilter = null;
             MinRatingFilter = 0;
             CameraFilter = null;
-            SelectedTagFilter = null;
+            SelectedTagFilters.Clear();
+            TagFilterSearchText = string.Empty;
             SelectedRootFolder = null;
             DateFrom = null;
             DateTo = null;
