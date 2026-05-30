@@ -8,6 +8,7 @@ using System.Windows.Input;
 using System.Windows.Navigation;
 using LibVLCSharp.Shared;
 using VideoArchiveManager.App.ViewModels;
+using VideoArchiveManager.Core.Models;
 
 namespace VideoArchiveManager.App.Views;
 
@@ -181,6 +182,21 @@ public partial class MainWindow : Window
                 _viewModel.SelectedVideos.Add(vm);
             }
         }
+    }
+
+    // Sidebar tag picker: clicking a tag promotes it to a chip and immediately
+    // clears the ListBox selection so the same row can be re-used after we
+    // re-add the tag (e.g. user removes the chip, the tag reappears in the
+    // list, click works again). Treating it as a "single-shot picker" instead
+    // of a stateful selection keeps the VM simple — no orphaned SelectedItem
+    // to manage.
+    private void TagFilterList_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is not ListBox lb) return;
+        if (lb.SelectedItem is not Tag tag) return;
+
+        _viewModel.AddTagFilterCommand.Execute(tag);
+        lb.SelectedItem = null;
     }
 
     private void PlayerPlayPause_Click(object sender, RoutedEventArgs e)

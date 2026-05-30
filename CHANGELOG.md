@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+### Added
+
+- **Press Enter to add a tag.** The "New tag" textbox in the editor now accepts Enter as a shortcut for the *Add* button. Type a tag, press Enter, and the field clears so you can immediately type the next one — much faster when entering several tags in a row. The *Add* button still works exactly as before.
+- **Multi-tag filtering with live search in the sidebar.** The Tags filter in the left sidebar has been redesigned to scale to hundreds of tags:
+  - **Type-to-filter input** above the tag list narrows the list as you type (case-insensitive substring match).
+  - **Click a tag** to add it as a removable chip; the tag disappears from the picker list while it's selected.
+  - **Multiple tag filters combine with AND** — videos must carry every selected tag to appear in the result grid. Useful for queries like *Birds* ∩ *DJI Mini5Pro*.
+  - **Clear** button next to the *Tags* heading drops all chips in one click; it auto-disables when nothing is selected.
+  - The catalog Clear Filters command also resets the chip selection and the filter input.
+
+### Changed
+
+- **Tag filter is now multi-select.** The sidebar's *Tags* list used to be a single-select list that scrolled through every tag in the catalog. Replaced with the chip + search pattern above. The hidden top-bar *Tag* dropdown (which used `SelectedTagFilter`) remains commented out in the XAML for reference but is no longer wired up — the sidebar serves this purpose and scales better.
+
 ## [0.3.0] - 2026-05-29
 
 ### Added

@@ -237,11 +237,65 @@
                                 Command="{Binding RemoveRootFolderCommand}"
                                 CommandParameter="{Binding SelectedRootFolder}" />
 
-                        <TextBlock Text="Tags" Style="{StaticResource SectionHeader}" />
-                        <ListBox ItemsSource="{Binding AllTags}"
-                                 SelectedItem="{Binding SelectedTagFilter}"
+                        <Grid Margin="0,0,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="Tags"
+                                       Style="{StaticResource SectionHeader}" />
+                            <Button Grid.Column="1"
+                                    Content="Clear"
+                                    Padding="6,0"
+                                    FontSize="11"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    VerticalAlignment="Center"
+                                    ToolTip="Remove all selected tag filters."
+                                    Command="{Binding ClearTagFiltersCommand}" />
+                        </Grid>
+
+                        <ItemsControl ItemsSource="{Binding SelectedTagFilters}"
+                                      Margin="0,0,0,4">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource TagChipBorder}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding Name}" Foreground="Black" />
+                                            <Button Content="x"
+                                                    Margin="6,0,0,0"
+                                                    Padding="2,0"
+                                                    FontSize="10"
+                                                    Foreground="Black"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    ToolTip="Remove this tag filter."
+                                                    Command="{Binding DataContext.RemoveTagFilterCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBox Text="{Binding TagFilterSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                 ui:ControlHelper.PlaceholderText="Type to filter tags…"
+                                 Margin="0,0,0,4" />
+
+                        <ListBox x:Name="TagFilterList"
+                                 ItemsSource="{Binding FilteredTags}"
                                  Height="180"
-                                 DisplayMemberPath="Name" />
+                                 DisplayMemberPath="Name"
+                                 SelectionChanged="TagFilterList_OnSelectionChanged"
+                                 VirtualizingPanel.IsVirtualizing="True"
+                                 VirtualizingPanel.VirtualizationMode="Recycling"
+                                 ToolTip="Click a tag to add it as a filter. Multiple tags are combined with AND (videos must have every selected tag)." />
 
                         <TextBlock Text="Cameras" Style="{StaticResource SectionHeader}" />
                         <ListBox ItemsSource="{Binding Cameras}"
