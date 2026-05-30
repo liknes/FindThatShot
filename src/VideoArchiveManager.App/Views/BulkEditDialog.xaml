@@ -6,6 +6,7 @@
         Width="520" Height="540"
         WindowStartupLocation="CenterOwner"
         ui:WindowHelper.UseModernWindowStyle="True"
+        Icon="pack://application:,,,/Assets/AppIcon.png"
         ResizeMode="NoResize">
     <Grid Margin="16">
         <Grid.RowDefinitions>

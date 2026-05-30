@@ -11,6 +11,7 @@
         MinWidth="1024" MinHeight="640"
         WindowStartupLocation="CenterScreen"
         ui:WindowHelper.UseModernWindowStyle="True"
+        Icon="pack://application:,,,/Assets/AppIcon.png"
         PreviewKeyDown="Window_PreviewKeyDown">
     <Window.Resources>
         <ObjectDataProvider x:Key="StatusValues" MethodName="GetValues"

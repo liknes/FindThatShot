@@ -41,6 +41,7 @@ $AppProj    = Join-Path $RepoRoot 'src\VideoArchiveManager.App\VideoArchiveManag
 $PublishDir = Join-Path $RepoRoot 'publish'
 $ReleaseDir = Join-Path $RepoRoot 'releases'
 $ToolsDir   = Join-Path $RepoRoot 'tools\ffmpeg'
+$AppIcon    = Join-Path $RepoRoot 'src\VideoArchiveManager.App\Assets\AppIcon.ico'
 
 if (-not (Test-Path $AppProj)) {
     throw "App csproj not found: $AppProj"
@@ -107,14 +108,23 @@ if (-not (Test-Path $ReleaseDir)) {
 }
 
 Write-Host "[publish] Running vpk pack..." -ForegroundColor Cyan
-dotnet vpk pack `
-    --packId VideoArchiveManager `
-    --packVersion $Version `
-    --packDir $PublishDir `
-    --packTitle "Video Archive Manager" `
-    --packAuthors "Find That Shot" `
-    --mainExe VideoArchiveManager.exe `
-    --outputDir $ReleaseDir | Out-Host
+$vpkArgs = @(
+    'vpk', 'pack',
+    '--packId', 'VideoArchiveManager',
+    '--packVersion', $Version,
+    '--packDir', $PublishDir,
+    '--packTitle', 'Video Archive Manager',
+    '--packAuthors', 'Find That Shot',
+    '--mainExe', 'VideoArchiveManager.exe',
+    '--outputDir', $ReleaseDir
+)
+if (Test-Path $AppIcon) {
+    Write-Host "[publish] Using app icon: $AppIcon" -ForegroundColor Cyan
+    $vpkArgs += @('--icon', $AppIcon)
+} else {
+    Write-Host "[publish] WARNING: $AppIcon not found - installer / shortcut will use the default Velopack icon." -ForegroundColor Yellow
+}
+dotnet @vpkArgs | Out-Host
 if ($LASTEXITCODE -ne 0) { throw "vpk pack failed." }
 
 Write-Host ""

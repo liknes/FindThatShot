@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+### Added
+
+- **Application icon.** The executable, every window's title bar / Alt-Tab / taskbar entry, and the Velopack installer + Start-menu shortcut now all use a proper application icon (`Assets/AppIcon.ico` for the EXE / installer, `Assets/AppIcon.png` for the WPF windows). Previously every surface fell back to the generic .NET WPF icon. The artwork is the `Apps-kmplayer` icon from the Oxygen icon set (KDE, LGPL-3.0); attribution added to `THIRD-PARTY-NOTICES.md`.
+
 ### Fixed
 
 - **Stop button no longer flashes the player white.** Clicking *Stop* used to call `MediaPlayer.Stop()`, which tears down VLC's decoder; after that, Windows repaints the underlying `HwndHost` surface with the window class's default `WhiteBrush` — a hard bright flash against the cinematic black backdrop. The button now pauses playback and seeks to 0 instead, preserving the "stopped at the beginning" user model while leaving the first frame on screen.

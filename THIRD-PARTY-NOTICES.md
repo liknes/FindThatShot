@@ -70,6 +70,14 @@ The installed application bundles or links to several third-party components. Th
 - **Service:** Nominatim, https://nominatim.org/
 - **How it is used:** Reverse-geocoding GPS coordinates to place names. The application sends optional, user-initiated queries to the public Nominatim instance. Returned data is subject to the ODbL.
 
+## Oxygen Icons
+
+- **License:** GNU Lesser General Public License v3 (LGPL-3.0), https://www.gnu.org/licenses/lgpl-3.0.html
+- **Designer:** Oxygen Team / KDE
+- **Project home:** https://github.com/KDE/oxygen-icons
+- **Specific icon used:** `Apps-kmplayer` from the Oxygen icon set, redistributed by IconArchive (https://www.iconarchive.com/show/oxygen-icons-by-oxygen-icons.org/Apps-kmplayer-icon.html).
+- **How it is used:** Shipped unmodified as the application icon (`AppIcon.ico` / `AppIcon.png`) for the main window, secondary windows, the executable, and the Velopack installer / Start-menu shortcut.
+
 ---
 
 If you redistribute Video Archive Manager, you must keep this file and the `LICENSE` file alongside the executable. If you modify the application and distribute the result, you must do so under the GNU General Public License v3.
