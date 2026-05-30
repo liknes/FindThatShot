@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+### Fixed
+
+- **Newly created tags now appear in the sidebar picker immediately.** Adding a brand-new tag via the editor (or as part of a Bulk Edit) used to require an app restart before the tag showed up in the sidebar's Tags filter list. `VideoDetailViewModel` now raises a `TagCatalogChanged` event that `MainViewModel` listens for, inserting the new tag into `AllTags` at its alphabetised position (matching `TagService.GetAllAsync` ordering) and refreshing the picker. Bulk Edit additionally calls `ReloadFiltersAsync` after the dialog closes so its newly created tags / cameras land in the sidebar the same way.
+- **Clicking one tag in the sidebar picker no longer adds several chips.** The picker's `SelectionChanged` handler used to read `ListBox.SelectedItem` and call `AddTagFilterCommand`, which synchronously rebuilds `FilteredTags` (`Clear` + `Add`). The mutation re-fired `SelectionChanged` with whatever item now sat at the previously-selected index, cascading into multiple chips per click. The handler now captures the clicked tag from `e.AddedItems`, clears the selection *before* the chip-add, and guards against re-entry — one click adds exactly one chip.
+
 ## [0.4.0] - 2026-05-30
 
 ### Added
