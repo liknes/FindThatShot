@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-05-30
+
 ### Added
 
 - **Press Enter to add a tag.** The "New tag" textbox in the editor now accepts Enter as a shortcut for the *Add* button. Type a tag, press Enter, and the field clears so you can immediately type the next one — much faster when entering several tags in a row. The *Add* button still works exactly as before.
@@ -72,6 +74,7 @@ First public release.
 
 - Responsive default window size; date pickers and the *Play externally* button are no longer clipped at common screen widths.
 
-[Unreleased]: https://github.com/liknes/FindThatShot/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/liknes/FindThatShot/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/liknes/FindThatShot/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/liknes/FindThatShot/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/liknes/FindThatShot/releases/tag/v0.2.0
