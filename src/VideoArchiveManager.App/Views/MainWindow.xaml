@@ -408,8 +408,6 @@
                  destroyed and re-created. -->
             <Border Grid.Column="2"
                     Background="Black"
-                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
-                    BorderThickness="1,0,1,0"
                     DataContext="{Binding Detail}">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -425,8 +423,6 @@
                     <Border Grid.Row="1"
                             Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
                             Padding="10,8"
-                            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
-                            BorderThickness="0,1,0,0"
                             Visibility="{Binding IsPlayerVisible, Converter={StaticResource BoolToVisibility}}">
                         <Grid>
                             <Grid.RowDefinitions>

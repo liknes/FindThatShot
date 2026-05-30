@@ -20,6 +20,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 - **Tag filter is now multi-select.** The sidebar's *Tags* list used to be a single-select list that scrolled through every tag in the catalog. Replaced with the chip + search pattern above. The hidden top-bar *Tag* dropdown (which used `SelectedTagFilter`) remains commented out in the XAML for reference but is no longer wired up — the sidebar serves this purpose and scales better.
 
+### Fixed
+
+- **Removed the thin light borders around the in-app video player.** The player column and toolbar were drawing 1px chrome lines (`SystemControlForegroundBaseLowBrush`) on the sides of the video and between the video and the transport controls. Dropped the borders so review mode shows a clean, edge-to-edge frame against the black backdrop.
+
 ## [0.3.0] - 2026-05-29
 
 ### Added
