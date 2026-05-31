@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+### Fixed
+
+- **Tag picker no longer adds a phantom second chip when virtualization is on.** The 0.4.1 fix for "one click → multiple chips" caught the *synchronous* `SelectionChanged` echo (the picker's own `lb.SelectedItem = null` and the `Clear`/`Add` rebuild of `FilteredTags` re-firing the event on the same call stack) but missed a *deferred* path: with `VirtualizingPanel.IsVirtualizing="True"`, the picker recycles containers asynchronously when its `ItemsSource` changes, and WPF dispatches a focus/selection restore at a lower priority that fires `SelectionChanged` *after* our `finally` block returns. By that point the guard had already been reset, so whatever tag now sat at the previously-selected index (e.g. *Birds* after clicking *AQS*, since *AQS* was excluded from the rebuilt list) got promoted to a chip too, producing impossible AND-filters with empty result sets. The handler now releases the re-entrancy guard via `Dispatcher.BeginInvoke` at `DispatcherPriority.Background` so the deferred echo arrives while the guard is still set and is ignored. One click → exactly one chip, regardless of virtualization.
+
+### Added
+
+- **"Open file location" in the catalog right-click menu.** Right-clicking a thumbnail in the catalog grid now offers an *Open file location* item alongside the existing *Remove from database…* — picks reveal the source video file in Windows Explorer with the file pre-selected. Reuses the existing `VideoDetailViewModel.OpenFileLocationCommand` (the same command behind the editor pane's *Open location* button), so it goes through the existing `IFileSystemService.RevealInExplorer` path. As with the Remove command, it operates on the currently selected clip — make sure the right-clicked thumbnail is actually selected first.
+
 ### Changed
 
 - **Cleaner thumbnail card metadata.** Each catalog card now shows just resolution, camera, and tag summary (in addition to the thumbnail, duration overlay, and offline badge). Filename, status, and rating were dropped to reduce visual noise on the grid: filenames are long and decorative on a visual browser, status is best edited in the right-hand panel where it lives anyway, and ratings are typically managed in DaVinci / Lightroom / Bridge.

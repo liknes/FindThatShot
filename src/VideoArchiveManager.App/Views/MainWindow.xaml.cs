@@ -189,9 +189,19 @@ public partial class MainWindow : Window
     // (Clear + Add). That mutation re-fires SelectionChanged on the
     // ListBox with whatever item now sits at the previously-selected
     // index, which used to cascade into adding several chips per click.
-    // We capture the clicked tag from e.AddedItems, clear the selection
-    // BEFORE the rebuild, and refuse to re-enter while the click is being
-    // processed.
+    //
+    // Two echo paths to defend against:
+    //   1. SYNCHRONOUS — the lb.SelectedItem = null assignment, and the
+    //      Clear/Add side effects, raise SelectionChanged on the same call
+    //      stack. The guard is set before either, so they bail out immediately.
+    //   2. DEFERRED — VirtualizingPanel.IsVirtualizing="True" makes the picker
+    //      recycle containers asynchronously when its ItemsSource changes.
+    //      WPF dispatches a focus/selection restore at a lower priority that
+    //      fires SelectionChanged AFTER our finally block returns, with
+    //      e.AddedItems[0] set to whatever item now sits at the previously-
+    //      selected index. We have to keep the guard set until that deferred
+    //      work has drained, so we reset it via Dispatcher.BeginInvoke at
+    //      DispatcherPriority.Background instead of synchronously.
     private bool _isHandlingTagFilterSelection;
 
     // Sidebar tag picker: clicking a tag promotes it to a chip and immediately
@@ -208,18 +218,19 @@ public partial class MainWindow : Window
         if (e.AddedItems[0] is not Tag tag) return;
 
         _isHandlingTagFilterSelection = true;
-        try
-        {
-            // Clear the selection BEFORE the chip-add triggers a rebuild,
-            // so any SelectionChanged echoes during the rebuild see a null
-            // SelectedItem and exit early via the guard above.
-            lb.SelectedItem = null;
-            _viewModel.AddTagFilterCommand.Execute(tag);
-        }
-        finally
-        {
-            _isHandlingTagFilterSelection = false;
-        }
+        // Clear the selection BEFORE the chip-add triggers a rebuild,
+        // so any SelectionChanged echoes during the rebuild see a null
+        // SelectedItem and exit early via the guard above.
+        lb.SelectedItem = null;
+        _viewModel.AddTagFilterCommand.Execute(tag);
+
+        // Reset the guard at Background priority so the deferred SelectionChanged
+        // raised by the virtualizing panel after FilteredTags is rebuilt arrives
+        // while the guard is still set — otherwise the picker auto-selects index 0
+        // (now the next tag in alphabetical order) and adds that as a second chip.
+        Dispatcher.BeginInvoke(
+            new Action(() => _isHandlingTagFilterSelection = false),
+            System.Windows.Threading.DispatcherPriority.Background);
     }
 
     private void PlayerPlayPause_Click(object sender, RoutedEventArgs e)

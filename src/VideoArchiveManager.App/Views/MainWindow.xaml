@@ -360,8 +360,16 @@
                                 Command="{Binding RemoveSelectedVideosCommand}" />
                 </ListBox.InputBindings>
                 <ListBox.ContextMenu>
+                    <!-- Context menu DataContext is the ListBox's DataContext (MainViewModel),
+                         so we can reach Detail.OpenFileLocationCommand directly. The Open
+                         and Remove commands both operate on the current selection — make
+                         sure the right-clicked clip is actually selected first. -->
                     <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
-                        <MenuItem Header="Remove from database…"
+                        <MenuItem Header="_Open file location"
+                                  Command="{Binding Detail.OpenFileLocationCommand}"
+                                  ToolTip="Reveal the source video file in Windows Explorer." />
+                        <Separator />
+                        <MenuItem Header="_Remove from database…"
                                   InputGestureText="Del"
                                   Command="{Binding RemoveSelectedVideosCommand}" />
                     </ContextMenu>
