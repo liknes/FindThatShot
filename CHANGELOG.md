@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+### Changed
+
+- **Cleaner thumbnail card metadata.** Each catalog card now shows just resolution, camera, and tag summary (in addition to the thumbnail, duration overlay, and offline badge). Filename, status, and rating were dropped to reduce visual noise on the grid: filenames are long and decorative on a visual browser, status is best edited in the right-hand panel where it lives anyway, and ratings are typically managed in DaVinci / Lightroom / Bridge.
+- **Catalog thumbnails now fill the entire space between the sidebars.** The video grid used to be a `WrapPanel` with hard-coded `Width="240"` cards, so any leftover horizontal space (often 100–200px on smaller windows) showed up as empty gutter on the right and the column count jumped between 2 and 4 in coarse steps as you resized. The grid now uses a custom `AdaptiveWrapPanel` (in `Helpers/Controls/`) that picks `columns = floor(availableWidth / MinItemWidth)` (240px minimum) and gives every cell in a row the same width so each row exactly spans the catalog column at any window size. Cards in the last partial row left-align at the same width as the rest, matching the look of standard photo grids. Thumbnail tiles also keep a true 16:9 shape as cards stretch (a small `WidthToAspectHeightConverter` binds the tile's `Height` to its own `ActualWidth × 9/16`) instead of being locked at 135px regardless of card width.
+
 ## [0.4.1] - 2026-05-30
 
 ### Added

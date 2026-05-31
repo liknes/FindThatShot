@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.modernwpf.com/2019"
         xmlns:vm="clr-namespace:VideoArchiveManager.App.ViewModels"
+        xmlns:controls="clr-namespace:VideoArchiveManager.App.Helpers.Controls"
         xmlns:enums="clr-namespace:VideoArchiveManager.Core.Models.Enums;assembly=VideoArchiveManager.Core"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         xmlns:vlc="clr-namespace:LibVLCSharp.WPF;assembly=LibVLCSharp.WPF"
@@ -366,8 +367,12 @@
                     </ContextMenu>
                 </ListBox.ContextMenu>
                 <ListBox.ItemsPanel>
+                    <!-- Custom adaptive panel: derives the column count from the
+                         available width and MinItemWidth, then gives every cell in
+                         a row the same width so cards exactly fill the catalog
+                         column at any window size (no leftover gutter on the right). -->
                     <ItemsPanelTemplate>
-                        <WrapPanel Orientation="Horizontal" />
+                        <controls:AdaptiveWrapPanel MinItemWidth="240" />
                     </ItemsPanelTemplate>
                 </ListBox.ItemsPanel>
                 <ListBox.ItemContainerStyle>
@@ -380,9 +385,14 @@
                 </ListBox.ItemContainerStyle>
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <Border Style="{StaticResource VideoCardBorder}" Width="240">
+                        <!-- Width is no longer fixed: AdaptiveWrapPanel sizes each
+                             card to availableWidth / columnCount. The thumbnail
+                             box keeps a true 16:9 shape by binding its Height to
+                             its own ActualWidth via WidthTo16x9Height. -->
+                        <Border Style="{StaticResource VideoCardBorder}">
                             <StackPanel>
-                                <Grid Background="Black" Height="135">
+                                <Grid Background="Black"
+                                      Height="{Binding ActualWidth, RelativeSource={RelativeSource Self}, Converter={StaticResource WidthTo16x9Height}}">
                                     <Image Source="{Binding Thumbnail}"
                                            Stretch="UniformToFill"
                                            HorizontalAlignment="Stretch"
@@ -407,22 +417,19 @@
                                                    FontWeight="SemiBold" />
                                     </Border>
                                 </Grid>
-                                <TextBlock Text="{Binding FileName}"
-                                           FontWeight="SemiBold"
-                                           TextTrimming="CharacterEllipsis"
-                                           Margin="0,6,0,0" />
+                                <!-- Compact card metadata. Filename, status and rating
+                                     are intentionally omitted: filename is long and
+                                     decorative on a visual grid, while status and
+                                     rating live in the editor pane / are managed
+                                     externally (DaVinci, Lightroom, Bridge). -->
                                 <TextBlock Text="{Binding Resolution}"
                                            Opacity="0.7"
-                                           FontSize="11" />
+                                           FontSize="11"
+                                           Margin="0,6,0,0" />
                                 <TextBlock Text="{Binding Camera}"
                                            Opacity="0.7"
                                            FontSize="11"
                                            TextTrimming="CharacterEllipsis" />
-                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                                    <TextBlock Text="{Binding Status}" FontSize="11" />
-                                    <TextBlock Text="  ★ " FontSize="11" Margin="6,0,0,0" />
-                                    <TextBlock Text="{Binding Rating}" FontSize="11" />
-                                </StackPanel>
                                 <TextBlock Text="{Binding TagSummary}"
                                            Opacity="0.6"
                                            FontSize="11"
