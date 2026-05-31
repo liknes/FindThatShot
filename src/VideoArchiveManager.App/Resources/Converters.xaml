@@ -9,4 +9,6 @@
     <conv:BoolToVisibilityConverter x:Key="BoolToVisibilityInverted" Invert="True" />
     <conv:InverseBoolConverter x:Key="InverseBool" />
     <conv:WidthToAspectHeightConverter x:Key="WidthTo16x9Height" Ratio="0.5625" />
+    <conv:CountToVisibilityConverter x:Key="EmptyToVisibility" />
+    <conv:CountToVisibilityConverter x:Key="NotEmptyToVisibility" ShowWhenZero="False" />
 </ResourceDictionary>

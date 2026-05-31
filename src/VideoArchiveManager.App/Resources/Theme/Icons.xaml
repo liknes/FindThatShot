@@ -1,0 +1,101 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!--
+        Iconography.
+        Primary: Segoe Fluent Icons (ships on Win11 / Win10 1903+ Insider).
+        Fallback: Segoe MDL2 Assets (Win10 from launch). Both fonts share
+        the codepoints we use, so the fallback is silent.
+        Glyph constants are exposed as named string resources so call sites
+        can write {StaticResource Icon.Play} without juggling literal Unicode.
+    -->
+
+    <FontFamily x:Key="App.Icon.FontFamily">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+
+    <!-- Playback -->
+    <sys:String x:Key="Icon.Play">&#xE768;</sys:String>
+    <sys:String x:Key="Icon.Pause">&#xE769;</sys:String>
+    <sys:String x:Key="Icon.Stop">&#xE71A;</sys:String>
+    <sys:String x:Key="Icon.SkipBack">&#xEB9E;</sys:String>
+    <sys:String x:Key="Icon.SkipForward">&#xEB9D;</sys:String>
+
+    <!-- Catalog / files -->
+    <sys:String x:Key="Icon.Folder">&#xE8B7;</sys:String>
+    <sys:String x:Key="Icon.FolderOpen">&#xE838;</sys:String>
+    <sys:String x:Key="Icon.Document">&#xE8A5;</sys:String>
+    <sys:String x:Key="Icon.Movie">&#xE714;</sys:String>
+    <sys:String x:Key="Icon.Camera">&#xE722;</sys:String>
+    <sys:String x:Key="Icon.External">&#xE8A7;</sys:String>
+    <sys:String x:Key="Icon.Copy">&#xE8C8;</sys:String>
+    <sys:String x:Key="Icon.Map">&#xE707;</sys:String>
+
+    <!-- Filters / search -->
+    <sys:String x:Key="Icon.Search">&#xE721;</sys:String>
+    <sys:String x:Key="Icon.Filter">&#xE71C;</sys:String>
+    <sys:String x:Key="Icon.Refresh">&#xE72C;</sys:String>
+    <sys:String x:Key="Icon.Calendar">&#xE787;</sys:String>
+    <sys:String x:Key="Icon.Sync">&#xE895;</sys:String>
+    <sys:String x:Key="Icon.Eye">&#xE7B3;</sys:String>
+
+    <!-- Tags / metadata -->
+    <sys:String x:Key="Icon.Tag">&#xE8EC;</sys:String>
+    <sys:String x:Key="Icon.Star">&#xE735;</sys:String>
+    <sys:String x:Key="Icon.Time">&#xE823;</sys:String>
+
+    <!-- Actions -->
+    <sys:String x:Key="Icon.Add">&#xE710;</sys:String>
+    <sys:String x:Key="Icon.Save">&#xE74E;</sys:String>
+    <sys:String x:Key="Icon.Trash">&#xE74D;</sys:String>
+    <sys:String x:Key="Icon.Cancel">&#xE711;</sys:String>
+    <sys:String x:Key="Icon.Close">&#xE8BB;</sys:String>
+    <sys:String x:Key="Icon.Edit">&#xE70F;</sys:String>
+    <sys:String x:Key="Icon.More">&#xE712;</sys:String>
+
+    <!-- Settings / about -->
+    <sys:String x:Key="Icon.Settings">&#xE713;</sys:String>
+    <sys:String x:Key="Icon.Info">&#xE946;</sys:String>
+    <sys:String x:Key="Icon.Globe">&#xE774;</sys:String>
+    <sys:String x:Key="Icon.Cloud">&#xE753;</sys:String>
+    <sys:String x:Key="Icon.Download">&#xE896;</sys:String>
+    <sys:String x:Key="Icon.Help">&#xE897;</sys:String>
+
+    <!-- Window chrome -->
+    <sys:String x:Key="Icon.WindowMin">&#xE921;</sys:String>
+    <sys:String x:Key="Icon.WindowMax">&#xE922;</sys:String>
+    <sys:String x:Key="Icon.WindowRestore">&#xE923;</sys:String>
+    <sys:String x:Key="Icon.WindowClose">&#xE8BB;</sys:String>
+
+    <!-- Chevrons -->
+    <sys:String x:Key="Icon.ChevronDown">&#xE70D;</sys:String>
+    <sys:String x:Key="Icon.ChevronUp">&#xE70E;</sys:String>
+    <sys:String x:Key="Icon.ChevronRight">&#xE76C;</sys:String>
+    <sys:String x:Key="Icon.ChevronLeft">&#xE76B;</sys:String>
+
+    <!-- Default icon styles. Use App.Icon for inline-with-text glyphs;
+         App.Icon.XLarge for empty-state hero glyphs. -->
+    <Style x:Key="App.Icon" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource App.Icon.FontFamily}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
+        <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
+        <Setter Property="UseLayoutRounding" Value="True" />
+        <Setter Property="Foreground" Value="{DynamicResource App.Foreground.Primary}" />
+    </Style>
+
+    <Style x:Key="App.Icon.Small" TargetType="TextBlock" BasedOn="{StaticResource App.Icon}">
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+
+    <Style x:Key="App.Icon.Large" TargetType="TextBlock" BasedOn="{StaticResource App.Icon}">
+        <Setter Property="FontSize" Value="20" />
+    </Style>
+
+    <Style x:Key="App.Icon.XLarge" TargetType="TextBlock" BasedOn="{StaticResource App.Icon}">
+        <Setter Property="FontSize" Value="48" />
+        <Setter Property="Foreground" Value="{DynamicResource App.Foreground.Tertiary}" />
+    </Style>
+
+</ResourceDictionary>

@@ -1,0 +1,45 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!--
+        Spacing rhythm: 4 / 8 / 12 / 16 / 24 / 32 / 48
+        Replaces the old ad-hoc 2 / 4 / 6 / 8 mix that made the UI feel cramped.
+        Use as static values (`{StaticResource App.Space.3}`) or via the
+        named Thickness resources for common Padding/Margin presets.
+    -->
+
+    <sys:Double x:Key="App.Space.1">4</sys:Double>
+    <sys:Double x:Key="App.Space.2">8</sys:Double>
+    <sys:Double x:Key="App.Space.3">12</sys:Double>
+    <sys:Double x:Key="App.Space.4">16</sys:Double>
+    <sys:Double x:Key="App.Space.5">24</sys:Double>
+    <sys:Double x:Key="App.Space.6">32</sys:Double>
+    <sys:Double x:Key="App.Space.7">48</sys:Double>
+
+    <Thickness x:Key="App.Pad.S">8</Thickness>
+    <Thickness x:Key="App.Pad.M">12</Thickness>
+    <Thickness x:Key="App.Pad.L">16</Thickness>
+    <Thickness x:Key="App.Pad.XL">24</Thickness>
+
+    <Thickness x:Key="App.Pad.Button">12,6</Thickness>
+    <Thickness x:Key="App.Pad.Input">12,8</Thickness>
+    <Thickness x:Key="App.Pad.Card">10</Thickness>
+
+    <!-- Radii. 12 on a 24h chip = full pill; the rest match standard surface tiers. -->
+    <CornerRadius x:Key="App.Radius.Chip">12</CornerRadius>
+    <CornerRadius x:Key="App.Radius.Button">4</CornerRadius>
+    <CornerRadius x:Key="App.Radius.Card">8</CornerRadius>
+    <CornerRadius x:Key="App.Radius.Panel">10</CornerRadius>
+
+    <!-- Common control heights for cross-component consistency. -->
+    <sys:Double x:Key="App.Height.ButtonSmall">28</sys:Double>
+    <sys:Double x:Key="App.Height.Button">32</sys:Double>
+    <sys:Double x:Key="App.Height.ButtonLarge">36</sys:Double>
+    <sys:Double x:Key="App.Height.Input">32</sys:Double>
+    <sys:Double x:Key="App.Height.Chip">24</sys:Double>
+
+    <!-- Card margin re-export for back-compat with original Styles.xaml. -->
+    <Thickness x:Key="CardMargin">6</Thickness>
+
+</ResourceDictionary>

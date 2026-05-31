@@ -1,0 +1,83 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        Type scale.
+        Segoe UI Variable ships with Win11; falls back to Segoe UI on Win10.
+        Hierarchy is achieved via size + weight + Foreground tier (Primary/
+        Secondary/Tertiary), NOT Opacity, so dark backgrounds render cleanly.
+    -->
+
+    <FontFamily x:Key="App.FontFamily">Segoe UI Variable Text, Segoe UI</FontFamily>
+    <FontFamily x:Key="App.FontFamily.Display">Segoe UI Variable Display, Segoe UI</FontFamily>
+    <FontFamily x:Key="App.FontFamily.Mono">Cascadia Mono, Consolas</FontFamily>
+
+    <Style x:Key="App.Type.Display" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource App.FontFamily.Display}" />
+        <Setter Property="FontSize" Value="20" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource App.Foreground.Primary}" />
+    </Style>
+
+    <Style x:Key="App.Type.H1" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource App.FontFamily}" />
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource App.Foreground.Primary}" />
+    </Style>
+
+    <Style x:Key="App.Type.H2" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource App.FontFamily}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource App.Foreground.Primary}" />
+    </Style>
+
+    <!--
+        Section header: 11px UPPERCASE-tracked label used to anchor sidebar
+        groups and editor sections. Replaces the old SectionHeader (13px
+        SemiBold + Opacity 0.8). Kept slightly tertiary so it reads as a
+        rail label, not a heading that competes with content.
+        Text content should be authored in upper case at the call site.
+    -->
+    <Style x:Key="App.Type.Section" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource App.FontFamily}" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource App.Foreground.Tertiary}" />
+        <Setter Property="Margin" Value="0,16,0,8" />
+        <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
+    </Style>
+
+    <Style x:Key="App.Type.Body" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource App.FontFamily}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="{DynamicResource App.Foreground.Primary}" />
+    </Style>
+
+    <Style x:Key="App.Type.BodyMuted" TargetType="TextBlock" BasedOn="{StaticResource App.Type.Body}">
+        <Setter Property="Foreground" Value="{DynamicResource App.Foreground.Secondary}" />
+    </Style>
+
+    <Style x:Key="App.Type.BodySmall" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource App.FontFamily}" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="Foreground" Value="{DynamicResource App.Foreground.Secondary}" />
+    </Style>
+
+    <Style x:Key="App.Type.Caption" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource App.FontFamily}" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="Foreground" Value="{DynamicResource App.Foreground.Tertiary}" />
+    </Style>
+
+    <Style x:Key="App.Type.Mono" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource App.FontFamily.Mono}" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="Foreground" Value="{DynamicResource App.Foreground.Primary}" />
+    </Style>
+
+    <!-- Back-compat key from the original Styles.xaml. New design mapped on. -->
+    <Style x:Key="SectionHeader" TargetType="TextBlock" BasedOn="{StaticResource App.Type.Section}" />
+
+</ResourceDictionary>
