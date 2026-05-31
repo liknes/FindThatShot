@@ -56,6 +56,23 @@ public partial class VideoItemViewModel : ObservableObject
 
     public string Resolution => Model.Width is int w && Model.Height is int h ? $"{w} x {h}" : "-";
 
+    // Native aspect ratio (width / height) from the metadata. Used by the
+    // in-app player to size its render area to the actual video aspect so
+    // VLC fills 100% of the surface and never produces letterbox bars (which
+    // it would otherwise paint with the system default white brush, since
+    // the DXGI surface bypasses any host-side GDI background brush). Returns
+    // null when dimensions are unknown so callers can apply their own
+    // fallback (typically 16:9).
+    public double? AspectRatio
+    {
+        get
+        {
+            if (Model.Width is not int w || w <= 0) return null;
+            if (Model.Height is not int h || h <= 0) return null;
+            return (double)w / h;
+        }
+    }
+
     public string DurationText
     {
         get
