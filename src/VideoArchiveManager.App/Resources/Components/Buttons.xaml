@@ -1,0 +1,193 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:helpers="clr-namespace:VideoArchiveManager.App.Helpers.Controls">
+
+    <!--
+        Button system.
+
+        4 variants share the same ControlTemplate (icon-on-left + content,
+        accent-radius border, SnapsToDevicePixels). Variants differ only in
+        the Background/BorderBrush/Foreground pair set by the Style and
+        swapped by the IsMouseOver / IsPressed triggers.
+
+        Icons are carried by the helpers:Theme.Icon attached property so a
+        call site looks like:
+
+            <Button Style="{StaticResource App.Button.Primary}"
+                    helpers:Theme.Icon="{StaticResource Icon.Play}"
+                    Content="Play in app" />
+
+        If Theme.Icon is null/empty the icon TextBlock collapses, so the
+        same style works for icon+label or label-only buttons.
+    -->
+
+    <ControlTemplate x:Key="App.Button.Template" TargetType="Button">
+        <Border x:Name="Bd"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{StaticResource App.Radius.Button}"
+                SnapsToDevicePixels="True">
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Margin="{TemplateBinding Padding}">
+                <TextBlock x:Name="IconGlyph"
+                           FontFamily="{StaticResource App.Icon.FontFamily}"
+                           FontSize="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=(helpers:Theme.IconSize)}"
+                           Text="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=(helpers:Theme.Icon)}"
+                           Foreground="{TemplateBinding Foreground}"
+                           VerticalAlignment="Center"
+                           Margin="0,0,6,0"
+                           TextOptions.TextRenderingMode="ClearType"
+                           UseLayoutRounding="True">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=(helpers:Theme.Icon)}" Value="{x:Null}">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=(helpers:Theme.Icon)}" Value="">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+                <ContentPresenter VerticalAlignment="Center"
+                                  HorizontalAlignment="Center"
+                                  TextElement.FontSize="13"
+                                  TextElement.FontWeight="Medium"
+                                  TextElement.Foreground="{TemplateBinding Foreground}" />
+            </StackPanel>
+        </Border>
+        <ControlTemplate.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.4" />
+            </Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True">
+                <Setter TargetName="Bd" Property="Effect">
+                    <Setter.Value>
+                        <DropShadowEffect Color="{StaticResource App.Accent.Color}"
+                                          BlurRadius="8"
+                                          ShadowDepth="0"
+                                          Opacity="0.6" />
+                    </Setter.Value>
+                </Setter>
+            </Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
+    <Style x:Key="App.Button.Base" TargetType="Button">
+        <Setter Property="FontFamily" Value="{StaticResource App.FontFamily}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="Height" Value="{StaticResource App.Height.Button}" />
+        <Setter Property="Padding" Value="{StaticResource App.Pad.Button}" />
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Focusable" Value="True" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template" Value="{StaticResource App.Button.Template}" />
+    </Style>
+
+    <!-- Primary: accent-filled. Use sparingly — at most one per "row of intent". -->
+    <Style x:Key="App.Button.Primary" TargetType="Button" BasedOn="{StaticResource App.Button.Base}">
+        <Setter Property="Background" Value="{DynamicResource App.Accent}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource App.Accent}" />
+        <Setter Property="Foreground" Value="{DynamicResource App.Accent.OnAccent}" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{DynamicResource App.Accent.Hover}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource App.Accent.Hover}" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="{DynamicResource App.Accent.Pressed}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource App.Accent.Pressed}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Secondary: transparent + subtle border. Default for neutral actions. -->
+    <Style x:Key="App.Button.Secondary" TargetType="Button" BasedOn="{StaticResource App.Button.Base}">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="{DynamicResource App.Border.Subtle}" />
+        <Setter Property="Foreground" Value="{DynamicResource App.Foreground.Primary}" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{DynamicResource App.Background.Hover}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource App.Border.Strong}" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="{DynamicResource App.Background.Highest}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Ghost: no fill, no border. For inline tertiary actions (Cancel,
+         "Clear", remove-chip close button, etc.). -->
+    <Style x:Key="App.Button.Ghost" TargetType="Button" BasedOn="{StaticResource App.Button.Base}">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource App.Foreground.Secondary}" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{DynamicResource App.Background.Hover}" />
+                <Setter Property="Foreground" Value="{DynamicResource App.Foreground.Primary}" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="{DynamicResource App.Background.Highest}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Destructive: red ghost at rest, fills red on hover. The destructive
+         intent only reveals on mouse-over so it doesn't shout from the rest
+         pose. Use for Remove / Stop / hard-delete actions. -->
+    <Style x:Key="App.Button.Destructive" TargetType="Button" BasedOn="{StaticResource App.Button.Base}">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="{DynamicResource App.Destructive.Subtle}" />
+        <Setter Property="Foreground" Value="{DynamicResource App.Destructive}" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{DynamicResource App.Destructive}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource App.Destructive}" />
+                <Setter Property="Foreground" Value="White" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="{DynamicResource App.Destructive.Hover}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource App.Destructive.Hover}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Icon-only square button (toolbar-style). Used for player transport
+         ±5s skip / step controls and similar compact toolbars. -->
+    <Style x:Key="App.Button.IconOnly" TargetType="Button" BasedOn="{StaticResource App.Button.Secondary}">
+        <Setter Property="Width" Value="36" />
+        <Setter Property="Height" Value="36" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="helpers:Theme.IconSize" Value="16" />
+    </Style>
+
+    <!-- Compact close-glyph button (used by tag chips). Pure ghost, no padding. -->
+    <Style x:Key="App.Button.ChipClose" TargetType="Button" BasedOn="{StaticResource App.Button.Base}">
+        <Setter Property="Width" Value="16" />
+        <Setter Property="Height" Value="16" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Foreground" Value="{DynamicResource App.Foreground.Tertiary}" />
+        <Setter Property="helpers:Theme.IconSize" Value="10" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Foreground" Value="{DynamicResource App.Destructive}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+</ResourceDictionary>

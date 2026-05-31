@@ -1,0 +1,112 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        Cinematic dark palette inspired by DaVinci Resolve / Adobe Bridge.
+        Layered near-blacks with a 1% warm tilt; one warm-amber accent that
+        deliberately departs from the default Windows blue so the app reads as
+        a creative tool rather than a generic WinUI shell.
+
+        Colors are exposed both as Color and SolidColorBrush so they can be
+        consumed by templates that need either type. The tail of the file
+        also re-aliases the most-used ModernWpfUI system brushes onto the
+        same colors, so existing references in MainWindow.xaml (e.g.
+        SystemControlBackgroundChromeMediumLowBrush) automatically pick up
+        the new palette without having to touch every binding.
+    -->
+
+    <!-- Surfaces -->
+    <Color x:Key="App.Background.Base.Color">#FF16161A</Color>
+    <Color x:Key="App.Background.Elevated.Color">#FF1E1E22</Color>
+    <Color x:Key="App.Background.Highest.Color">#FF26262C</Color>
+    <Color x:Key="App.Background.Inset.Color">#FF101013</Color>
+    <Color x:Key="App.Background.Hover.Color">#FF2A2A30</Color>
+
+    <SolidColorBrush x:Key="App.Background.Base" Color="{StaticResource App.Background.Base.Color}" />
+    <SolidColorBrush x:Key="App.Background.Elevated" Color="{StaticResource App.Background.Elevated.Color}" />
+    <SolidColorBrush x:Key="App.Background.Highest" Color="{StaticResource App.Background.Highest.Color}" />
+    <SolidColorBrush x:Key="App.Background.Inset" Color="{StaticResource App.Background.Inset.Color}" />
+    <SolidColorBrush x:Key="App.Background.Hover" Color="{StaticResource App.Background.Hover.Color}" />
+
+    <!-- Borders -->
+    <Color x:Key="App.Border.Subtle.Color">#FF2E2E36</Color>
+    <Color x:Key="App.Border.Strong.Color">#FF40404A</Color>
+
+    <SolidColorBrush x:Key="App.Border.Subtle" Color="{StaticResource App.Border.Subtle.Color}" />
+    <SolidColorBrush x:Key="App.Border.Strong" Color="{StaticResource App.Border.Strong.Color}" />
+
+    <!-- Foreground -->
+    <Color x:Key="App.Foreground.Primary.Color">#FFEDEDEF</Color>
+    <Color x:Key="App.Foreground.Secondary.Color">#FF9A9AA2</Color>
+    <Color x:Key="App.Foreground.Tertiary.Color">#FF6A6A72</Color>
+    <Color x:Key="App.Foreground.Disabled.Color">#FF4A4A50</Color>
+
+    <SolidColorBrush x:Key="App.Foreground.Primary" Color="{StaticResource App.Foreground.Primary.Color}" />
+    <SolidColorBrush x:Key="App.Foreground.Secondary" Color="{StaticResource App.Foreground.Secondary.Color}" />
+    <SolidColorBrush x:Key="App.Foreground.Tertiary" Color="{StaticResource App.Foreground.Tertiary.Color}" />
+    <SolidColorBrush x:Key="App.Foreground.Disabled" Color="{StaticResource App.Foreground.Disabled.Color}" />
+
+    <!-- Accent: warm amber. Deliberately distinct from Windows blue. -->
+    <Color x:Key="App.Accent.Color">#FFF5A623</Color>
+    <Color x:Key="App.Accent.Hover.Color">#FFFFB836</Color>
+    <Color x:Key="App.Accent.Pressed.Color">#FFD48F1A</Color>
+    <Color x:Key="App.Accent.Subtle.Color">#33F5A623</Color>
+    <Color x:Key="App.Accent.Faint.Color">#1AF5A623</Color>
+    <Color x:Key="App.Accent.OnAccent.Color">#FF1A0F00</Color>
+
+    <SolidColorBrush x:Key="App.Accent" Color="{StaticResource App.Accent.Color}" />
+    <SolidColorBrush x:Key="App.Accent.Hover" Color="{StaticResource App.Accent.Hover.Color}" />
+    <SolidColorBrush x:Key="App.Accent.Pressed" Color="{StaticResource App.Accent.Pressed.Color}" />
+    <SolidColorBrush x:Key="App.Accent.Subtle" Color="{StaticResource App.Accent.Subtle.Color}" />
+    <SolidColorBrush x:Key="App.Accent.Faint" Color="{StaticResource App.Accent.Faint.Color}" />
+    <SolidColorBrush x:Key="App.Accent.OnAccent" Color="{StaticResource App.Accent.OnAccent.Color}" />
+
+    <!-- Semantic -->
+    <Color x:Key="App.Destructive.Color">#FFE15050</Color>
+    <Color x:Key="App.Destructive.Hover.Color">#FFEC6363</Color>
+    <Color x:Key="App.Destructive.Subtle.Color">#33E15050</Color>
+    <Color x:Key="App.Success.Color">#FF3FB87A</Color>
+    <Color x:Key="App.Warning.Color">#FFEFB54B</Color>
+
+    <SolidColorBrush x:Key="App.Destructive" Color="{StaticResource App.Destructive.Color}" />
+    <SolidColorBrush x:Key="App.Destructive.Hover" Color="{StaticResource App.Destructive.Hover.Color}" />
+    <SolidColorBrush x:Key="App.Destructive.Subtle" Color="{StaticResource App.Destructive.Subtle.Color}" />
+    <SolidColorBrush x:Key="App.Success" Color="{StaticResource App.Success.Color}" />
+    <SolidColorBrush x:Key="App.Warning" Color="{StaticResource App.Warning.Color}" />
+
+    <!--
+        Override the most-used ModernWpfUI brushes onto our palette so existing
+        references in MainWindow.xaml keep working. Must be merged AFTER
+        XamlControlsResources in App.xaml or these get overwritten.
+    -->
+    <SolidColorBrush x:Key="SystemControlBackgroundChromeMediumLowBrush" Color="{StaticResource App.Background.Elevated.Color}" />
+    <SolidColorBrush x:Key="SystemControlBackgroundChromeMediumBrush" Color="{StaticResource App.Background.Highest.Color}" />
+    <SolidColorBrush x:Key="SystemControlBackgroundChromeBlackHighBrush" Color="{StaticResource App.Background.Base.Color}" />
+    <SolidColorBrush x:Key="SystemControlBackgroundBaseLowBrush" Color="{StaticResource App.Background.Highest.Color}" />
+    <SolidColorBrush x:Key="SystemControlForegroundBaseLowBrush" Color="{StaticResource App.Border.Subtle.Color}" />
+    <SolidColorBrush x:Key="SystemControlForegroundBaseMediumLowBrush" Color="{StaticResource App.Border.Strong.Color}" />
+
+    <!-- Make ModernWpfUI's built-in AccentButtonStyle pick up the warm amber
+         by overriding the brushes its template binds against. We also push
+         the accent through ThemeManager.Current.AccentColor at startup
+         (App.xaml.cs) for belt-and-braces. -->
+    <Color x:Key="SystemAccentColor">#FFF5A623</Color>
+    <Color x:Key="SystemAccentColorLight1">#FFFFB836</Color>
+    <Color x:Key="SystemAccentColorLight2">#FFFFC85B</Color>
+    <Color x:Key="SystemAccentColorLight3">#FFFFD584</Color>
+    <Color x:Key="SystemAccentColorDark1">#FFD48F1A</Color>
+    <Color x:Key="SystemAccentColorDark2">#FFAE7212</Color>
+    <Color x:Key="SystemAccentColorDark3">#FF7A4F0A</Color>
+
+    <SolidColorBrush x:Key="SystemAccentColorBrush" Color="{StaticResource App.Accent.Color}" />
+    <SolidColorBrush x:Key="SystemAccentColorLight1Brush" Color="{StaticResource App.Accent.Hover.Color}" />
+    <SolidColorBrush x:Key="SystemAccentColorLight2Brush" Color="#FFFFC85B" />
+    <SolidColorBrush x:Key="SystemAccentColorLight3Brush" Color="#FFFFD584" />
+    <SolidColorBrush x:Key="SystemAccentColorDark1Brush" Color="{StaticResource App.Accent.Pressed.Color}" />
+    <SolidColorBrush x:Key="SystemAccentColorDark2Brush" Color="#FFAE7212" />
+    <SolidColorBrush x:Key="SystemAccentColorDark3Brush" Color="#FF7A4F0A" />
+
+    <SolidColorBrush x:Key="SystemControlHighlightAccentBrush" Color="{StaticResource App.Accent.Color}" />
+    <SolidColorBrush x:Key="SystemControlBackgroundAccentBrush" Color="{StaticResource App.Accent.Color}" />
+
+</ResourceDictionary>

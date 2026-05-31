@@ -45,6 +45,32 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
+        // Force ModernWpfUI's accent-derived brushes to pick up the warm
+        // amber from Theme/Colors.xaml. The XAML brush overrides cover
+        // explicit references but ThemeManager owns the runtime accent
+        // for built-in templates (e.g. AccentButtonStyle, focus visuals).
+        // Keeping both belt-and-braces means the accent is consistent
+        // whether a brush is resolved at template-build time or via the
+        // ThemeManager.AccentColor property.
+        ModernWpf.ThemeManager.Current.AccentColor =
+            System.Windows.Media.Color.FromArgb(0xFF, 0xF5, 0xA6, 0x23);
+
+        // Splash window. Shown immediately so the user gets visual feedback
+        // while DI / DB migration / FFmpeg probe runs. Dismissed with a
+        // fade-out once MainWindow is ready (see end of OnStartup). Failures
+        // here must not gate startup — if construction or Show throws, the
+        // app proceeds without a splash.
+        Views.SplashWindow? splash = null;
+        try
+        {
+            splash = new Views.SplashWindow();
+            splash.Show();
+        }
+        catch
+        {
+            splash = null;
+        }
+
         Directory.CreateDirectory(AppSettings.DefaultBaseDirectory);
         Directory.CreateDirectory(AppSettings.DefaultThumbnailDirectory);
 
@@ -206,6 +232,21 @@ public partial class App : Application
 
         var mainWindow = Host.Services.GetRequiredService<MainWindow>();
         MainWindow = mainWindow;
+
+        if (splash is not null)
+        {
+            // Hand off from splash to main window: dismiss the splash with a
+            // ~400ms fade once MainWindow.Loaded fires. Done as a single-shot
+            // subscription so the splash doesn't linger or get re-dismissed
+            // on later layout passes.
+            void OnLoaded(object? sender, RoutedEventArgs args)
+            {
+                mainWindow.Loaded -= OnLoaded;
+                splash.FadeOutAndClose();
+            }
+            mainWindow.Loaded += OnLoaded;
+        }
+
         mainWindow.Show();
     }
 

@@ -8,7 +8,19 @@
             <ResourceDictionary.MergedDictionaries>
                 <ui:ThemeResources RequestedTheme="Dark" />
                 <ui:XamlControlsResources />
+                <!-- Theme tokens. MUST be merged AFTER XamlControlsResources so
+                     our overrides on SystemControl* / SystemAccentColor* keys
+                     win over ModernWpfUI's defaults. -->
+                <ResourceDictionary Source="Resources/Theme/Colors.xaml" />
+                <ResourceDictionary Source="Resources/Theme/Typography.xaml" />
+                <ResourceDictionary Source="Resources/Theme/Spacing.xaml" />
+                <ResourceDictionary Source="Resources/Theme/Icons.xaml" />
                 <ResourceDictionary Source="Resources/Converters.xaml" />
+                <ResourceDictionary Source="Resources/Components/Buttons.xaml" />
+                <ResourceDictionary Source="Resources/Components/TagChip.xaml" />
+                <ResourceDictionary Source="Resources/Components/Cards.xaml" />
+                <ResourceDictionary Source="Resources/Components/Sliders.xaml" />
+                <ResourceDictionary Source="Resources/Components/EmptyState.xaml" />
                 <ResourceDictionary Source="Resources/Styles.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>

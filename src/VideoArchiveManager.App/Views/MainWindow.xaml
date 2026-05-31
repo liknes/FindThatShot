@@ -4,6 +4,7 @@
         xmlns:ui="http://schemas.modernwpf.com/2019"
         xmlns:vm="clr-namespace:VideoArchiveManager.App.ViewModels"
         xmlns:controls="clr-namespace:VideoArchiveManager.App.Helpers.Controls"
+        xmlns:helpers="clr-namespace:VideoArchiveManager.App.Helpers.Controls"
         xmlns:enums="clr-namespace:VideoArchiveManager.Core.Models.Enums;assembly=VideoArchiveManager.Core"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         xmlns:ffme="clr-namespace:Unosquare.FFME;assembly=ffme.win"
@@ -11,8 +12,14 @@
         Width="1400" Height="880"
         MinWidth="1024" MinHeight="640"
         WindowStartupLocation="CenterScreen"
-        ui:WindowHelper.UseModernWindowStyle="True"
         Icon="pack://application:,,,/Assets/AppIcon.png"
+        Background="{DynamicResource App.Background.Base}"
+        ui:WindowHelper.UseModernWindowStyle="True"
+        ui:TitleBar.Background="{DynamicResource App.Background.Base}"
+        ui:TitleBar.InactiveBackground="{DynamicResource App.Background.Base}"
+        ui:TitleBar.Foreground="{DynamicResource App.Foreground.Primary}"
+        ui:TitleBar.InactiveForeground="{DynamicResource App.Foreground.Tertiary}"
+        ui:TitleBar.IsIconVisible="True"
         PreviewKeyDown="Window_PreviewKeyDown">
     <Window.Resources>
         <ObjectDataProvider x:Key="StatusValues" MethodName="GetValues"
@@ -38,7 +45,9 @@
         <CommandBinding Command="ApplicationCommands.Find" Executed="FocusSearch_Executed" />
     </Window.CommandBindings>
 
-    <Grid>
+    <Grid Background="{DynamicResource App.Background.Base}"
+          TextElement.Foreground="{DynamicResource App.Foreground.Primary}"
+          TextElement.FontFamily="{DynamicResource App.FontFamily}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -64,6 +73,30 @@
                 </Style>
             </Border.Style>
             <DockPanel LastChildFill="True">
+                <!-- Brand mark: a 4px-tall accent strip + the app name. Gives
+                     the menu row a subtle identity anchor that the default
+                     ModernWpfUI title bar (above this row) doesn't carry on
+                     its own. The accent color cues the user that this is
+                     "the app's" surface, not generic Windows chrome. -->
+                <StackPanel DockPanel.Dock="Left"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Margin="12,0,8,0">
+                    <Border Width="3" Height="20"
+                            Background="{DynamicResource App.Accent}"
+                            CornerRadius="2"
+                            VerticalAlignment="Center"
+                            Margin="0,0,10,0" />
+                    <TextBlock Text="VIDEO ARCHIVE"
+                               FontSize="11"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource App.Foreground.Primary}"
+                               VerticalAlignment="Center" />
+                    <Border Width="1" Height="16"
+                            Background="{DynamicResource App.Border.Subtle}"
+                            VerticalAlignment="Center"
+                            Margin="12,0,8,0" />
+                </StackPanel>
                 <Menu DockPanel.Dock="Left"
                       Background="Transparent"
                       VerticalAlignment="Center"
@@ -161,17 +194,21 @@
                     <Button Content="Search"
                             Margin="6,2,0,2"
                             Command="{Binding SearchCommand}"
-                            Style="{StaticResource AccentButtonStyle}" />
+                            Style="{StaticResource App.Button.Primary}"
+                            helpers:Theme.Icon="{StaticResource Icon.Search}" />
                     <Separator Margin="10,4" />
                     <Button Content="Scan"
                             Margin="0,2,0,2"
                             Command="{Binding ScanCommand}"
                             IsEnabled="{Binding IsScanning, Converter={StaticResource InverseBool}}"
-                            Style="{StaticResource AccentButtonStyle}"
+                            Style="{StaticResource App.Button.Secondary}"
+                            helpers:Theme.Icon="{StaticResource Icon.Sync}"
                             ToolTip="Scan all root folders for new or changed videos (F5)" />
                     <Button Content="Cancel scan"
                             Margin="6,2,0,2"
                             Command="{Binding CancelScanCommand}"
+                            Style="{StaticResource App.Button.Ghost}"
+                            helpers:Theme.Icon="{StaticResource Icon.Cancel}"
                             Visibility="{Binding IsScanning, Converter={StaticResource BoolToVisibility}}" />
                     <Separator Margin="10,4" />
                     <!--
@@ -215,11 +252,14 @@
                     <Button Margin="10,2,0,2"
                             Content="Start review session"
                             Command="{Binding StartReviewSessionCommand}"
-                            Style="{StaticResource AccentButtonStyle}"
+                            Style="{StaticResource App.Button.Primary}"
+                            helpers:Theme.Icon="{StaticResource Icon.Eye}"
                             ToolTip="Clear all filters and show only unreviewed clips (no status set or no tags). Selects the first clip so you can start reviewing right away. (Ctrl+Shift+R)" />
                     <Button Margin="6,2,0,2"
                             Content="Clear filters"
                             Command="{Binding ClearFiltersCommand}"
+                            Style="{StaticResource App.Button.Ghost}"
+                            helpers:Theme.Icon="{StaticResource Icon.Filter}"
                             ToolTip="Reset search box, all filters, and date range (Ctrl+Shift+L)" />
                 </WrapPanel>
             </DockPanel>
@@ -246,21 +286,46 @@
                     BorderThickness="0,0,1,0">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
-                        <TextBlock Text="Root folders" Style="{StaticResource SectionHeader}" />
+                        <TextBlock Text="ROOT FOLDERS" Style="{StaticResource App.Type.Section}" />
+
+                        <!-- First-run empty state: shown when no root folders are
+                             configured. Headline + subtext + a primary CTA that
+                             triggers the same Add folder picker as Ctrl+O / the
+                             File menu. Replaces the ListBox + Remove button while
+                             empty. -->
+                        <Border Padding="0,8,0,12"
+                                Visibility="{Binding RootFolders.Count, Converter={StaticResource EmptyToVisibility}}">
+                            <helpers:EmptyState Glyph="{StaticResource Icon.Folder}"
+                                                Headline="No folders yet"
+                                                Subtext="Add a folder to start cataloguing your video archive."
+                                                CtaText="Add folder"
+                                                CtaIcon="{StaticResource Icon.Add}"
+                                                CtaCommand="{Binding AddRootFolderCommand}"
+                                                Padding="0" />
+                        </Border>
+
                         <ListBox ItemsSource="{Binding RootFolders}"
                                  SelectedItem="{Binding SelectedRootFolder}"
-                                 Height="180">
+                                 Height="180"
+                                 Visibility="{Binding RootFolders.Count, Converter={StaticResource NotEmptyToVisibility}}">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <StackPanel>
-                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
-                                        <TextBlock Text="{Binding Path}" Opacity="0.7" TextWrapping="Wrap" />
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource App.Foreground.Primary}" />
+                                        <TextBlock Text="{Binding Path}" TextWrapping="Wrap"
+                                                   Foreground="{DynamicResource App.Foreground.Tertiary}"
+                                                   FontSize="11" />
                                     </StackPanel>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
                         </ListBox>
-                        <Button Content="Remove selected…"
-                                Margin="0,4,0,0"
+                        <Button Content="Remove selected"
+                                Margin="0,8,0,0"
+                                Style="{StaticResource App.Button.Destructive}"
+                                helpers:Theme.Icon="{StaticResource Icon.Trash}"
+                                HorizontalAlignment="Stretch"
+                                Visibility="{Binding RootFolders.Count, Converter={StaticResource NotEmptyToVisibility}}"
                                 ToolTip="Remove the selected root folder and any catalog entries imported from it. Source video files will NOT be touched."
                                 Command="{Binding RemoveRootFolderCommand}"
                                 CommandParameter="{Binding SelectedRootFolder}" />
@@ -271,14 +336,14 @@
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0"
-                                       Text="Tags"
-                                       Style="{StaticResource SectionHeader}" />
+                                       Text="TAGS"
+                                       Style="{StaticResource App.Type.Section}" />
                             <Button Grid.Column="1"
                                     Content="Clear"
-                                    Padding="6,0"
+                                    Style="{StaticResource App.Button.Ghost}"
+                                    Height="24"
                                     FontSize="11"
-                                    Background="Transparent"
-                                    BorderThickness="0"
+                                    Padding="8,0"
                                     VerticalAlignment="Center"
                                     ToolTip="Remove all selected tag filters."
                                     Command="{Binding ClearTagFiltersCommand}" />
@@ -293,16 +358,13 @@
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Style="{StaticResource TagChipBorder}">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="{Binding Name}" Foreground="Black" />
-                                            <Button Content="x"
-                                                    Margin="6,0,0,0"
-                                                    Padding="2,0"
-                                                    FontSize="10"
-                                                    Foreground="Black"
-                                                    Background="Transparent"
-                                                    BorderThickness="0"
+                                    <Border Style="{StaticResource App.TagChip}">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Name}"
+                                                       Style="{StaticResource App.TagChip.Text}" />
+                                            <Button Style="{StaticResource App.Button.ChipClose}"
+                                                    helpers:Theme.Icon="&#x00D7;"
+                                                    Margin="6,0,-2,0"
                                                     ToolTip="Remove this tag filter."
                                                     Command="{Binding DataContext.RemoveTagFilterCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                     CommandParameter="{Binding}" />
@@ -325,7 +387,7 @@
                                  VirtualizingPanel.VirtualizationMode="Recycling"
                                  ToolTip="Click a tag to add it as a filter. Multiple tags are combined with AND (videos must have every selected tag)." />
 
-                        <TextBlock Text="Cameras" Style="{StaticResource SectionHeader}" />
+                        <TextBlock Text="CAMERAS" Style="{StaticResource App.Type.Section}" />
                         <ListBox ItemsSource="{Binding Cameras}"
                                  SelectedItem="{Binding CameraFilter}"
                                  Height="120" />
@@ -342,11 +404,27 @@
                 </ScrollViewer>
             </Border>
 
+            <!-- Zero-results overlay: shows when Videos is empty (initial scan
+                 not run yet, or filters returning nothing). Sits in the same
+                 grid cell as the catalog so it overlays the empty area
+                 without affecting the layout. -->
+            <helpers:EmptyState Grid.Column="1"
+                                Glyph="{StaticResource Icon.Search}"
+                                Headline="No clips match"
+                                Subtext="Try adjusting filters, clearing your search, or scanning a folder to bring videos into the catalog."
+                                CtaText="Clear filters"
+                                CtaIcon="{StaticResource Icon.Filter}"
+                                CtaCommand="{Binding ClearFiltersCommand}"
+                                Visibility="{Binding Videos.Count, Converter={StaticResource EmptyToVisibility}}" />
+
             <ListBox Grid.Column="1"
                      x:Name="VideoListBox"
                      ItemsSource="{Binding Videos}"
                      SelectedItem="{Binding SelectedVideo}"
                      SelectionMode="Extended"
+                     Background="Transparent"
+                     BorderThickness="0"
+                     Padding="6"
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                      ScrollViewer.VerticalScrollBarVisibility="Auto"
                      ScrollViewer.IsDeferredScrollingEnabled="True"
@@ -354,7 +432,8 @@
                      VirtualizingPanel.VirtualizationMode="Recycling"
                      VirtualizingPanel.ScrollUnit="Pixel"
                      SelectionChanged="VideoList_OnSelectionChanged"
-                     HorizontalContentAlignment="Stretch">
+                     HorizontalContentAlignment="Stretch"
+                     ItemContainerStyle="{StaticResource App.VideoCard.ItemStyle}">
                 <ListBox.InputBindings>
                     <KeyBinding Key="Delete"
                                 Command="{Binding RemoveSelectedVideosCommand}" />
@@ -383,68 +462,85 @@
                         <controls:AdaptiveWrapPanel MinItemWidth="240" />
                     </ItemsPanelTemplate>
                 </ListBox.ItemsPanel>
-                <ListBox.ItemContainerStyle>
-                    <Style TargetType="ListBoxItem">
-                        <Setter Property="Padding" Value="0" />
-                        <Setter Property="Margin" Value="0" />
-                        <Setter Property="BorderThickness" Value="0" />
-                        <Setter Property="Background" Value="Transparent" />
-                    </Style>
-                </ListBox.ItemContainerStyle>
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <!-- Width is no longer fixed: AdaptiveWrapPanel sizes each
                              card to availableWidth / columnCount. The thumbnail
                              box keeps a true 16:9 shape by binding its Height to
                              its own ActualWidth via WidthTo16x9Height. -->
-                        <Border Style="{StaticResource VideoCardBorder}">
-                            <StackPanel>
-                                <Grid Background="Black"
-                                      Height="{Binding ActualWidth, RelativeSource={RelativeSource Self}, Converter={StaticResource WidthTo16x9Height}}">
+                        <StackPanel>
+                            <Border Style="{StaticResource App.VideoCard.Thumbnail}">
+                                <Grid Height="{Binding ActualWidth, RelativeSource={RelativeSource Self}, Converter={StaticResource WidthTo16x9Height}}">
                                     <Image Source="{Binding Thumbnail}"
                                            Stretch="UniformToFill"
                                            HorizontalAlignment="Stretch"
                                            VerticalAlignment="Stretch" />
+                                    <!-- Subtle gradient at the bottom keeps the duration
+                                         badge legible over light frames without a
+                                         hard solid black bar. -->
+                                    <Border VerticalAlignment="Bottom"
+                                            Height="40"
+                                            IsHitTestVisible="False">
+                                        <Border.Background>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                <GradientStop Color="#00000000" Offset="0" />
+                                                <GradientStop Color="#A0000000" Offset="1" />
+                                            </LinearGradientBrush>
+                                        </Border.Background>
+                                    </Border>
                                     <Border VerticalAlignment="Bottom"
                                             HorizontalAlignment="Right"
                                             Background="#A0000000"
-                                            Padding="4,2"
+                                            Padding="6,2"
                                             CornerRadius="3"
-                                            Margin="4">
+                                            Margin="6">
                                         <TextBlock Text="{Binding DurationText}"
-                                                   Foreground="White" FontSize="11" />
+                                                   Foreground="White"
+                                                   FontFamily="{StaticResource App.FontFamily.Mono}"
+                                                   FontSize="11" />
                                     </Border>
                                     <Border Background="#C0000000"
-                                            Padding="6,3"
-                                            CornerRadius="3"
+                                            Padding="8,4"
+                                            CornerRadius="4"
                                             HorizontalAlignment="Center"
                                             VerticalAlignment="Center"
                                             Visibility="{Binding FileExists, Converter={StaticResource BoolToVisibilityInverted}}">
-                                        <TextBlock Text="Offline"
-                                                   Foreground="White"
-                                                   FontWeight="SemiBold" />
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock FontFamily="{StaticResource App.Icon.FontFamily}"
+                                                       FontSize="12"
+                                                       Foreground="{DynamicResource App.Warning}"
+                                                       Text="&#xE783;"
+                                                       VerticalAlignment="Center"
+                                                       Margin="0,0,6,0" />
+                                            <TextBlock Text="Offline"
+                                                       Foreground="White"
+                                                       FontWeight="SemiBold"
+                                                       FontSize="11"
+                                                       VerticalAlignment="Center" />
+                                        </StackPanel>
                                     </Border>
                                 </Grid>
-                                <!-- Compact card metadata. Filename, status and rating
-                                     are intentionally omitted: filename is long and
-                                     decorative on a visual grid, while status and
-                                     rating live in the editor pane / are managed
-                                     externally (DaVinci, Lightroom, Bridge). -->
-                                <TextBlock Text="{Binding Resolution}"
-                                           Opacity="0.7"
-                                           FontSize="11"
-                                           Margin="0,6,0,0" />
-                                <TextBlock Text="{Binding Camera}"
-                                           Opacity="0.7"
-                                           FontSize="11"
-                                           TextTrimming="CharacterEllipsis" />
-                                <TextBlock Text="{Binding TagSummary}"
-                                           Opacity="0.6"
-                                           FontSize="11"
-                                           TextTrimming="CharacterEllipsis"
-                                           Margin="0,4,0,0" />
-                            </StackPanel>
-                        </Border>
+                            </Border>
+                            <!-- Compact card metadata. Filename, status and rating
+                                 are intentionally omitted: filename is long and
+                                 decorative on a visual grid, while status and
+                                 rating live in the editor pane / are managed
+                                 externally (DaVinci, Lightroom, Bridge). -->
+                            <TextBlock Text="{Binding Resolution}"
+                                       Style="{StaticResource App.Type.BodySmall}"
+                                       Foreground="{DynamicResource App.Foreground.Primary}"
+                                       FontWeight="Medium"
+                                       Margin="2,8,2,0" />
+                            <TextBlock Text="{Binding Camera}"
+                                       Style="{StaticResource App.Type.BodySmall}"
+                                       Foreground="{DynamicResource App.Foreground.Secondary}"
+                                       TextTrimming="CharacterEllipsis"
+                                       Margin="2,2,2,0" />
+                            <TextBlock Text="{Binding TagSummary}"
+                                       Style="{StaticResource App.Type.Caption}"
+                                       TextTrimming="CharacterEllipsis"
+                                       Margin="2,4,2,2" />
+                        </StackPanel>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
@@ -455,10 +551,46 @@
                  to a WriteableBitmap) so it has no HwndHost / class-brush /
                  DXGI-leak issues that the previous LibVLCSharp VideoView did.
                  Stretch="Uniform" + Background="Black" handles the letterbox
-                 strip natively in WPF — no AspectRatioPanel needed. -->
+                 strip natively in WPF — no AspectRatioPanel needed.
+                 Opacity is animated 0→1 over 240ms when IsPlayerVisible
+                 flips to true (see Style.Triggers below) so the column
+                 reveal feels cinematic rather than abrupt. The column
+                 width swap itself is still instantaneous (animating
+                 GridLength would require a custom AnimationTimeline; the
+                 cross-fade gives 90% of the perceived smoothness without
+                 that cost). -->
             <Border Grid.Column="2"
                     Background="Black"
-                    DataContext="{Binding Detail}">
+                    DataContext="{Binding Detail}"
+                    Opacity="0">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsPlayerVisible}" Value="True">
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                             To="1" Duration="0:0:0.24">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut" />
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                                <DataTrigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                             To="0" Duration="0:0:0.12" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.ExitActions>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*" />
@@ -504,11 +636,12 @@
                                            VerticalAlignment="Center" Width="60"
                                            TextAlignment="Right" />
                                 <Slider x:Name="PlayerSeekSlider" Grid.Column="1"
-                                        Margin="10,0,10,0"
+                                        Margin="12,0,12,0"
                                         Minimum="0" Maximum="1000"
                                         SmallChange="5" LargeChange="50"
                                         IsMoveToPointEnabled="True"
                                         VerticalAlignment="Center"
+                                        Style="{StaticResource App.SeekSlider}"
                                         Thumb.DragStarted="PlayerSeekSlider_DragStarted"
                                         Thumb.DragCompleted="PlayerSeekSlider_DragCompleted"
                                         PreviewMouseLeftButtonUp="PlayerSeekSlider_PreviewMouseLeftButtonUp" />
@@ -520,25 +653,34 @@
                             </Grid>
 
                             <!-- Buttons row -->
-                            <WrapPanel Grid.Row="1" HorizontalAlignment="Center" ItemHeight="36">
+                            <WrapPanel Grid.Row="1" HorizontalAlignment="Center" ItemHeight="40">
                                 <Button x:Name="PlayPauseButton"
                                         Content="Pause"
-                                        Width="100"
-                                        Margin="0,2,0,2"
+                                        MinWidth="110"
+                                        Margin="0,4,0,4"
                                         Click="PlayerPlayPause_Click"
-                                        Style="{StaticResource AccentButtonStyle}"
+                                        Style="{StaticResource App.Button.Primary}"
+                                        helpers:Theme.Icon="{StaticResource Icon.Pause}"
                                         ToolTip="Toggle play / pause (Space)" />
-                                <Button Content="Stop" Width="80" Margin="6,2,0,2"
-                                        Click="PlayerStop_Click"
-                                        ToolTip="Stop playback (resets position)" />
-                                <Button Content="-5s" Width="60" Margin="6,2,0,2"
+                                <Button Margin="6,4,0,4"
                                         Click="PlayerSkipBack_Click"
+                                        Style="{StaticResource App.Button.IconOnly}"
+                                        helpers:Theme.Icon="{StaticResource Icon.SkipBack}"
                                         ToolTip="Skip back 5 seconds" />
-                                <Button Content="+5s" Width="60" Margin="6,2,0,2"
+                                <Button Margin="6,4,0,4"
                                         Click="PlayerSkipForward_Click"
+                                        Style="{StaticResource App.Button.IconOnly}"
+                                        helpers:Theme.Icon="{StaticResource Icon.SkipForward}"
                                         ToolTip="Skip forward 5 seconds" />
-                                <Button Content="Close player" Width="120" Margin="12,2,0,2"
+                                <Button Content="Stop" MinWidth="80" Margin="6,4,0,4"
+                                        Click="PlayerStop_Click"
+                                        Style="{StaticResource App.Button.Secondary}"
+                                        helpers:Theme.Icon="{StaticResource Icon.Stop}"
+                                        ToolTip="Stop playback (resets position)" />
+                                <Button Content="Close" MinWidth="100" Margin="16,4,0,4"
                                         Command="{Binding ClosePlayerCommand}"
+                                        Style="{StaticResource App.Button.Ghost}"
+                                        helpers:Theme.Icon="{StaticResource Icon.Close}"
                                         ToolTip="Close the player and return to the catalog" />
                             </WrapPanel>
                         </Grid>
@@ -563,47 +705,51 @@
                     </Style>
                 </Border.Style>
                 <Grid>
-                    <TextBlock Text="Select a video to view details"
-                               HorizontalAlignment="Center"
-                               VerticalAlignment="Center"
-                               Opacity="0.6"
-                               Visibility="{Binding Detail.Current, Converter={StaticResource NullToVisibilityInverted}}" />
+                    <helpers:EmptyState Glyph="{StaticResource Icon.Movie}"
+                                        Headline="No clip selected"
+                                        Subtext="Pick a clip from the catalog to view its metadata, tag it, set a status or rating, and add notes."
+                                        Visibility="{Binding Detail.Current, Converter={StaticResource NullToVisibilityInverted}}" />
 
                     <ScrollViewer VerticalScrollBarVisibility="Auto"
                                   Visibility="{Binding Detail.Current, Converter={StaticResource NullToVisibility}}">
-                        <StackPanel Margin="12" DataContext="{Binding Detail}">
+                        <StackPanel Margin="16" DataContext="{Binding Detail}">
                             <!-- Thumbnail only in normal mode; in review mode the video
                                  is showing in its own column so we hide this. -->
                             <Image Source="{Binding LargeThumbnail}" MaxHeight="220"
-                                   Stretch="Uniform" Margin="0,0,0,8"
+                                   Stretch="Uniform" Margin="0,0,0,12"
                                    Visibility="{Binding IsPlayerVisible, Converter={StaticResource BoolToVisibilityInverted}}" />
 
-                            <TextBlock Text="{Binding Current.FileName}" FontWeight="SemiBold"
-                                       TextWrapping="Wrap" FontSize="14" />
-                            <TextBlock Text="{Binding Current.FilePath}" Opacity="0.7"
-                                       TextWrapping="Wrap" FontSize="11" Margin="0,2,0,8" />
+                            <TextBlock Text="{Binding Current.FileName}"
+                                       Style="{StaticResource App.Type.H2}"
+                                       TextWrapping="Wrap" />
+                            <TextBlock Text="{Binding Current.FilePath}"
+                                       Style="{StaticResource App.Type.Caption}"
+                                       TextWrapping="Wrap" Margin="0,2,0,12" />
 
-                            <WrapPanel ItemHeight="36">
-                                <Button Content="Open location" Margin="0,2,0,2"
-                                        Command="{Binding OpenFileLocationCommand}" />
-                                <Button Content="Copy path" Margin="6,2,0,2"
-                                        Command="{Binding CopyFilePathCommand}" />
-                                <Button Content="Play in app" Margin="6,2,0,2"
+                            <WrapPanel ItemHeight="40">
+                                <Button Content="Play in app" Margin="0,4,0,4"
                                         Command="{Binding PlayInAppCommand}"
                                         IsEnabled="{Binding CanPlayInApp}"
-                                        Style="{StaticResource AccentButtonStyle}"
+                                        Style="{StaticResource App.Button.Primary}"
+                                        helpers:Theme.Icon="{StaticResource Icon.Play}"
                                         Visibility="{Binding IsPlayerVisible, Converter={StaticResource BoolToVisibilityInverted}}" />
-                                <Button Content="Play externally" Margin="6,2,0,2"
-                                        Command="{Binding PlayCommand}" />
+                                <Button Content="Play externally" Margin="6,4,0,4"
+                                        Command="{Binding PlayCommand}"
+                                        Style="{StaticResource App.Button.Secondary}"
+                                        helpers:Theme.Icon="{StaticResource Icon.External}" />
+                                <Button Content="Open location" Margin="6,4,0,4"
+                                        Command="{Binding OpenFileLocationCommand}"
+                                        Style="{StaticResource App.Button.Secondary}"
+                                        helpers:Theme.Icon="{StaticResource Icon.FolderOpen}" />
                             </WrapPanel>
                             <TextBlock Text="{Binding PlayerUnavailableMessage}"
-                                       Foreground="Orange"
+                                       Foreground="{DynamicResource App.Warning}"
                                        TextWrapping="Wrap"
                                        FontSize="11"
                                        Margin="0,4,0,0"
                                        Visibility="{Binding CanPlayInApp, Converter={StaticResource BoolToVisibilityInverted}}" />
 
-                            <TextBlock Text="Metadata" Style="{StaticResource SectionHeader}" />
+                            <TextBlock Text="METADATA" Style="{StaticResource App.Type.Section}" />
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
@@ -614,42 +760,70 @@
                                     <RowDefinition /><RowDefinition /><RowDefinition />
                                     <RowDefinition /><RowDefinition />
                                 </Grid.RowDefinitions>
-                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Duration" Opacity="0.7" Margin="0,2,8,2" />
-                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Current.DurationText}" />
-                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Resolution" Opacity="0.7" Margin="0,2,8,2" />
-                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Current.Resolution}" />
-                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Camera" Opacity="0.7" Margin="0,2,8,2" />
-                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Current.Camera}" />
-                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Codec" Opacity="0.7" Margin="0,2,8,2" />
-                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Current.Codec}" />
-                                <TextBlock Grid.Row="4" Grid.Column="0" Text="Size" Opacity="0.7" Margin="0,2,8,2" />
-                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Current.FileSizeText}" />
-                                <TextBlock Grid.Row="5" Grid.Column="0" Text="Folder" Opacity="0.7" Margin="0,2,8,2" />
-                                <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Current.FolderPath}" TextWrapping="Wrap" />
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Duration"
+                                           Foreground="{DynamicResource App.Foreground.Tertiary}"
+                                           FontSize="11" Margin="0,3,12,3" />
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Current.DurationText}"
+                                           FontSize="13" Margin="0,2,0,2" />
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Resolution"
+                                           Foreground="{DynamicResource App.Foreground.Tertiary}"
+                                           FontSize="11" Margin="0,3,12,3" />
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Current.Resolution}"
+                                           FontSize="13" Margin="0,2,0,2" />
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Camera"
+                                           Foreground="{DynamicResource App.Foreground.Tertiary}"
+                                           FontSize="11" Margin="0,3,12,3" />
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Current.Camera}"
+                                           FontSize="13" Margin="0,2,0,2" />
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Codec"
+                                           Foreground="{DynamicResource App.Foreground.Tertiary}"
+                                           FontSize="11" Margin="0,3,12,3" />
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Current.Codec}"
+                                           FontSize="13" Margin="0,2,0,2" />
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="Size"
+                                           Foreground="{DynamicResource App.Foreground.Tertiary}"
+                                           FontSize="11" Margin="0,3,12,3" />
+                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Current.FileSizeText}"
+                                           FontSize="13" Margin="0,2,0,2" />
+                                <TextBlock Grid.Row="5" Grid.Column="0" Text="Folder"
+                                           Foreground="{DynamicResource App.Foreground.Tertiary}"
+                                           FontSize="11" Margin="0,3,12,3" />
+                                <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Current.FolderPath}"
+                                           FontSize="13" Margin="0,2,0,2"
+                                           TextWrapping="Wrap"
+                                           Foreground="{DynamicResource App.Foreground.Secondary}" />
 
                                 <!-- Location row: only shown if LocationText is set (from folder parsing
                                      today, or from reverse-geocoded GPS once that's wired up). -->
-                                <TextBlock Grid.Row="6" Grid.Column="0" Text="Location" Opacity="0.7" Margin="0,2,8,2"
+                                <TextBlock Grid.Row="6" Grid.Column="0" Text="Location"
+                                           Foreground="{DynamicResource App.Foreground.Tertiary}"
+                                           FontSize="11" Margin="0,3,12,3"
                                            Visibility="{Binding Current.HasLocation, Converter={StaticResource BoolToVisibility}}" />
-                                <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding Current.LocationText}" TextWrapping="Wrap"
+                                <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding Current.LocationText}"
+                                           FontSize="13" Margin="0,2,0,2"
+                                           TextWrapping="Wrap"
                                            Visibility="{Binding Current.HasLocation, Converter={StaticResource BoolToVisibility}}" />
 
                                 <!-- GPS row: only shown if coords were extracted from the file. -->
-                                <TextBlock Grid.Row="7" Grid.Column="0" Text="GPS" Opacity="0.7" Margin="0,2,8,2"
+                                <TextBlock Grid.Row="7" Grid.Column="0" Text="GPS"
+                                           Foreground="{DynamicResource App.Foreground.Tertiary}"
+                                           FontSize="11" Margin="0,3,12,3"
                                            Visibility="{Binding Current.HasGps, Converter={StaticResource BoolToVisibility}}" />
                                 <StackPanel Grid.Row="7" Grid.Column="1" Orientation="Horizontal"
+                                            Margin="0,2,0,2"
                                             Visibility="{Binding Current.HasGps, Converter={StaticResource BoolToVisibility}}">
-                                    <TextBlock Text="{Binding Current.GpsText}" />
-                                    <TextBlock Margin="8,0,0,0">
+                                    <TextBlock Text="{Binding Current.GpsText}" FontSize="13" />
+                                    <TextBlock Margin="8,0,0,0" FontSize="13">
                                         <Hyperlink NavigateUri="{Binding Current.GpsMapUrl}"
-                                                   RequestNavigate="Hyperlink_RequestNavigate">
+                                                   RequestNavigate="Hyperlink_RequestNavigate"
+                                                   Foreground="{DynamicResource App.Accent}">
                                             Open in map
                                         </Hyperlink>
                                     </TextBlock>
                                 </StackPanel>
                             </Grid>
 
-                            <TextBlock Text="Tags" Style="{StaticResource SectionHeader}" />
+                            <TextBlock Text="TAGS" Style="{StaticResource App.Type.Section}" />
                             <ItemsControl ItemsSource="{Binding Tags}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
@@ -658,16 +832,14 @@
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border Style="{StaticResource TagChipBorder}">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="{Binding Name}" Foreground="Black" />
-                                                <Button Content="x"
-                                                        Margin="6,0,0,0"
-                                                        Padding="2,0"
-                                                        FontSize="10"
-                                                        Foreground="Black"
-                                                        Background="Transparent"
-                                                        BorderThickness="0"
+                                        <Border Style="{StaticResource App.TagChip}">
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Name}"
+                                                           Style="{StaticResource App.TagChip.Text}" />
+                                                <Button Style="{StaticResource App.Button.ChipClose}"
+                                                        helpers:Theme.Icon="&#x00D7;"
+                                                        Margin="6,0,-2,0"
+                                                        ToolTip="Remove this tag from the clip."
                                                         Command="{Binding DataContext.RemoveTagCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                         CommandParameter="{Binding}" />
                                             </StackPanel>
@@ -675,7 +847,7 @@
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
-                            <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
                                 <TextBox Width="140"
                                          Text="{Binding NewTagName, UpdateSourceTrigger=PropertyChanged}"
                                          ui:ControlHelper.PlaceholderText="New tag">
@@ -687,27 +859,30 @@
                                           ItemsSource="{Binding AvailableTagTypes}"
                                           SelectedItem="{Binding NewTagType}" />
                                 <Button Content="Add" Margin="6,0,0,0"
-                                        Command="{Binding AddTagCommand}" />
+                                        Command="{Binding AddTagCommand}"
+                                        Style="{StaticResource App.Button.Secondary}"
+                                        helpers:Theme.Icon="{StaticResource Icon.Add}" />
                             </StackPanel>
 
-                            <TextBlock Text="Status" Style="{StaticResource SectionHeader}" />
+                            <TextBlock Text="STATUS" Style="{StaticResource App.Type.Section}" />
                             <ComboBox ItemsSource="{Binding AvailableStatuses}"
                                       SelectedItem="{Binding Status}" />
 
-                            <TextBlock Text="Rating" Style="{StaticResource SectionHeader}" />
+                            <TextBlock Text="RATING" Style="{StaticResource App.Type.Section}" />
                             <ComboBox ItemsSource="{Binding RatingValues}"
                                       SelectedItem="{Binding Rating}" />
 
-                            <TextBlock Text="Notes" Style="{StaticResource SectionHeader}" />
+                            <TextBlock Text="NOTES" Style="{StaticResource App.Type.Section}" />
                             <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
                                      AcceptsReturn="True" TextWrapping="Wrap"
                                      MinHeight="80" />
 
-                            <Button Content="Save"
+                            <Button Content="Save changes"
                                     Command="{Binding SaveCommand}"
                                     HorizontalAlignment="Right"
-                                    Margin="0,10,0,0"
-                                    Style="{StaticResource AccentButtonStyle}" />
+                                    Margin="0,16,0,0"
+                                    Style="{StaticResource App.Button.Primary}"
+                                    helpers:Theme.Icon="{StaticResource Icon.Save}" />
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>
@@ -715,45 +890,142 @@
         </Grid>
 
         <Border Grid.Row="2"
-                Padding="10,6"
-                Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
-                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                Padding="12,6"
+                Background="{DynamicResource App.Background.Elevated}"
+                BorderBrush="{DynamicResource App.Border.Subtle}"
                 BorderThickness="0,1,0,0">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="{Binding StatusMessage}"
+
+                <!-- Status message (left). One line, ellipsised, secondary tier. -->
+                <TextBlock Grid.Column="0"
+                           Text="{Binding StatusMessage}"
                            VerticalAlignment="Center"
-                           TextTrimming="CharacterEllipsis" />
-                <TextBlock Grid.Column="1" Text="{Binding ScanElapsedText}"
-                           Margin="8,0"
-                           VerticalAlignment="Center"
-                           Opacity="0.75"
-                           Visibility="{Binding IsScanning, Converter={StaticResource BoolToVisibility}}" />
-                <ProgressBar Grid.Column="2" Width="80" Height="14" Margin="0,0,8,0"
-                             IsIndeterminate="True"
-                             Visibility="{Binding IsScanning, Converter={StaticResource BoolToVisibility}}" />
-                <ProgressBar Grid.Column="3" Width="240" Height="14"
-                             Maximum="{Binding ProgressMaximum}"
-                             Value="{Binding ProgressValue}"
-                             Visibility="{Binding IsScanning, Converter={StaticResource BoolToVisibility}}" />
-                <Border Grid.Column="4"
+                           TextTrimming="CharacterEllipsis"
+                           FontSize="12"
+                           Foreground="{DynamicResource App.Foreground.Secondary}" />
+
+                <!-- Scan pill (middle). Visible only while scanning; collapses
+                     into a 24h pill with: rotating sync glyph, "Scanning"
+                     label, X / Y count, mid-dot, mono-spaced elapsed time.
+                     The thin 2px strip across the very top of the window
+                     (rendered below this Grid) carries the determinate
+                     progress fill. -->
+                <Border Grid.Column="1"
                         Margin="12,0,0,0"
-                        Padding="6,2"
-                        CornerRadius="3"
-                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                        Padding="10,3"
+                        CornerRadius="12"
+                        Height="24"
+                        Background="{DynamicResource App.Accent.Subtle}"
+                        BorderBrush="{DynamicResource App.Accent}"
+                        BorderThickness="1"
+                        Visibility="{Binding IsScanning, Converter={StaticResource BoolToVisibility}}">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock FontFamily="{StaticResource App.Icon.FontFamily}"
+                                   FontSize="11"
+                                   Text="{StaticResource Icon.Sync}"
+                                   Foreground="{DynamicResource App.Accent}"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,6,0">
+                            <TextBlock.RenderTransform>
+                                <RotateTransform CenterX="5.5" CenterY="5.5" />
+                            </TextBlock.RenderTransform>
+                            <TextBlock.Triggers>
+                                <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                                    <BeginStoryboard>
+                                        <Storyboard RepeatBehavior="Forever">
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                                             From="0" To="360"
+                                                             Duration="0:0:1.6" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </EventTrigger>
+                            </TextBlock.Triggers>
+                        </TextBlock>
+                        <TextBlock Text="Scanning"
+                                   FontSize="11"
+                                   FontWeight="Medium"
+                                   Foreground="{DynamicResource App.Accent}"
+                                   VerticalAlignment="Center" />
+                        <TextBlock Text=" · "
+                                   FontSize="11"
+                                   Foreground="{DynamicResource App.Accent}"
+                                   VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding ScanElapsedText}"
+                                   FontSize="11"
+                                   FontFamily="{StaticResource App.FontFamily.Mono}"
+                                   Foreground="{DynamicResource App.Accent}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Sidecars pill (right). Always visible. Green dot when on,
+                     tertiary dot when off. Two clean lines of state in 24h. -->
+                <Border Grid.Column="2"
+                        Margin="8,0,0,0"
+                        Padding="10,3"
+                        CornerRadius="12"
+                        Height="24"
+                        Background="{DynamicResource App.Background.Highest}"
+                        BorderBrush="{DynamicResource App.Border.Subtle}"
+                        BorderThickness="1"
                         ToolTip="Shows whether sidecar JSON files are being written next to videos. Toggle in Settings → Sidecar files.">
-                    <TextBlock Text="{Binding SidecarStatusText}"
-                               VerticalAlignment="Center"
-                               FontSize="11"
-                               Opacity="0.8" />
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Ellipse Width="6" Height="6"
+                                 VerticalAlignment="Center"
+                                 Margin="0,0,8,0">
+                            <Ellipse.Style>
+                                <Style TargetType="Ellipse">
+                                    <Setter Property="Fill" Value="{DynamicResource App.Foreground.Tertiary}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SidecarStatusText}" Value="Sidecars: ON">
+                                            <Setter Property="Fill" Value="{DynamicResource App.Success}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Ellipse.Style>
+                        </Ellipse>
+                        <TextBlock Text="{Binding SidecarStatusText}"
+                                   VerticalAlignment="Center"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource App.Foreground.Secondary}" />
+                    </StackPanel>
                 </Border>
             </Grid>
         </Border>
+
+        <!-- 2px top progress strip. Sits across the full window width at the
+             very top, ABOVE the chrome row. Spans all 3 grid rows but is
+             pinned to VerticalAlignment="Top" with Height="2" so it stays
+             out of the way of layout. Indeterminate while ProgressMaximum
+             is unknown (enumeration phase) and determinate once the
+             scanner switches to processing. Hidden when !IsScanning. -->
+        <ProgressBar Grid.Row="0"
+                     Grid.RowSpan="3"
+                     VerticalAlignment="Top"
+                     Height="2"
+                     Background="Transparent"
+                     BorderThickness="0"
+                     Foreground="{DynamicResource App.Accent}"
+                     Maximum="{Binding ProgressMaximum}"
+                     Value="{Binding ProgressValue}"
+                     Panel.ZIndex="100"
+                     Visibility="{Binding IsScanning, Converter={StaticResource BoolToVisibility}}">
+            <ProgressBar.Style>
+                <Style TargetType="ProgressBar">
+                    <Style.Triggers>
+                        <!-- Switch to indeterminate during the file-enumeration
+                             phase (ProgressMaximum=0, count not yet known). -->
+                        <DataTrigger Binding="{Binding ProgressMaximum}" Value="0">
+                            <Setter Property="IsIndeterminate" Value="True" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </ProgressBar.Style>
+        </ProgressBar>
     </Grid>
 </Window>

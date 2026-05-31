@@ -1,28 +1,34 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:ui="http://schemas.modernwpf.com/2019">
-    <Thickness x:Key="CardMargin">6</Thickness>
 
-    <Style x:Key="SectionHeader" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="13" />
-        <Setter Property="FontWeight" Value="SemiBold" />
-        <Setter Property="Opacity" Value="0.8" />
-        <Setter Property="Margin" Value="0,10,0,4" />
-    </Style>
+    <!--
+        Legacy / shared style keys.
+        SectionHeader has moved to Resources/Theme/Typography.xaml as
+        App.Type.Section (and is re-aliased there as SectionHeader for
+        back-compat). VideoCardBorder and TagChipBorder are kept here as
+        thin shims that point at the new App.* tokens; component templates
+        in Resources/Components/ will replace these entirely once we
+        introduce a TagChip user control and a Card style with hover/select
+        states.
+    -->
 
     <Style x:Key="VideoCardBorder" TargetType="Border">
-        <Setter Property="CornerRadius" Value="6" />
-        <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}" />
+        <Setter Property="CornerRadius" Value="{StaticResource App.Radius.Card}" />
+        <Setter Property="Background" Value="{DynamicResource App.Background.Elevated}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource App.Border.Subtle}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Margin" Value="{StaticResource CardMargin}" />
-        <Setter Property="Padding" Value="6" />
+        <Setter Property="Padding" Value="{StaticResource App.Pad.Card}" />
     </Style>
 
     <Style x:Key="TagChipBorder" TargetType="Border">
-        <Setter Property="CornerRadius" Value="10" />
-        <Setter Property="Background" Value="{DynamicResource SystemAccentColorLight2Brush}" />
-        <Setter Property="Padding" Value="6,2" />
+        <Setter Property="CornerRadius" Value="{StaticResource App.Radius.Chip}" />
+        <Setter Property="Background" Value="{DynamicResource App.Background.Highest}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource App.Border.Subtle}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="10,3" />
         <Setter Property="Margin" Value="2" />
     </Style>
+
 </ResourceDictionary>

@@ -2,74 +2,102 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.modernwpf.com/2019"
+        xmlns:helpers="clr-namespace:VideoArchiveManager.App.Helpers.Controls"
         Title="Settings"
-        Width="680" Height="780"
-        MinWidth="560" MinHeight="520"
+        Width="720" Height="800"
+        MinWidth="600" MinHeight="560"
         WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource App.Background.Base}"
         ui:WindowHelper.UseModernWindowStyle="True"
+        ui:TitleBar.Background="{DynamicResource App.Background.Base}"
+        ui:TitleBar.InactiveBackground="{DynamicResource App.Background.Base}"
+        ui:TitleBar.Foreground="{DynamicResource App.Foreground.Primary}"
+        ui:TitleBar.InactiveForeground="{DynamicResource App.Foreground.Tertiary}"
         Icon="pack://application:,,,/Assets/AppIcon.png">
-    <Grid Margin="16">
+    <Grid Margin="24"
+          TextElement.FontFamily="{StaticResource App.FontFamily}"
+          TextElement.Foreground="{DynamicResource App.Foreground.Primary}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="Application settings" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,12" />
+        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+            <TextBlock Text="Settings" Style="{StaticResource App.Type.H1}" />
+            <TextBlock Text="Configure scanning, storage, sidecar files, and catalog backups."
+                       Style="{StaticResource App.Type.BodyMuted}"
+                       Margin="0,4,0,0" />
+        </StackPanel>
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <StackPanel Margin="0,0,12,0">
-                <TextBlock Text="FFmpeg" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,4" />
 
-                <TextBlock Text="ffmpeg.exe path (leave blank to use PATH)" Opacity="0.7" />
-                <Grid Margin="0,2,0,12">
+                <TextBlock Text="FFMPEG" Style="{StaticResource App.Type.Section}" />
+
+                <TextBlock Text="ffmpeg.exe path (leave blank to use PATH)"
+                           Style="{StaticResource App.Type.Caption}" />
+                <Grid Margin="0,4,0,12">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <TextBox Grid.Column="0" Text="{Binding FfmpegPath, UpdateSourceTrigger=PropertyChanged}" />
-                    <Button Grid.Column="1" Margin="6,0,0,0" Content="Browse..." Command="{Binding BrowseFfmpegCommand}" />
+                    <Button Grid.Column="1" Margin="8,0,0,0"
+                            Content="Browse"
+                            Style="{StaticResource App.Button.Secondary}"
+                            helpers:Theme.Icon="{StaticResource Icon.Folder}"
+                            Command="{Binding BrowseFfmpegCommand}" />
                 </Grid>
 
-                <TextBlock Text="ffprobe.exe path (leave blank to use PATH)" Opacity="0.7" />
-                <Grid Margin="0,2,0,16">
+                <TextBlock Text="ffprobe.exe path (leave blank to use PATH)"
+                           Style="{StaticResource App.Type.Caption}" />
+                <Grid Margin="0,4,0,16">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <TextBox Grid.Column="0" Text="{Binding FfprobePath, UpdateSourceTrigger=PropertyChanged}" />
-                    <Button Grid.Column="1" Margin="6,0,0,0" Content="Browse..." Command="{Binding BrowseFfprobeCommand}" />
+                    <Button Grid.Column="1" Margin="8,0,0,0"
+                            Content="Browse"
+                            Style="{StaticResource App.Button.Secondary}"
+                            helpers:Theme.Icon="{StaticResource Icon.Folder}"
+                            Command="{Binding BrowseFfprobeCommand}" />
                 </Grid>
 
-                <TextBlock Text="Storage" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,4" />
+                <TextBlock Text="STORAGE" Style="{StaticResource App.Type.Section}" />
 
-                <TextBlock Text="Thumbnail directory" Opacity="0.7" />
+                <TextBlock Text="Thumbnail directory" Style="{StaticResource App.Type.Caption}" />
                 <TextBox Text="{Binding ThumbnailDirectory, UpdateSourceTrigger=PropertyChanged}"
-                         Margin="0,2,0,12" />
+                         Margin="0,4,0,12" />
 
-                <TextBlock Text="Database file" Opacity="0.7" />
+                <TextBlock Text="Database file" Style="{StaticResource App.Type.Caption}" />
                 <TextBox Text="{Binding DatabasePath, UpdateSourceTrigger=PropertyChanged}"
-                         Margin="0,2,0,16" />
+                         Margin="0,4,0,16" />
 
-                <TextBlock Text="Catalog backup" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,4" />
-                <TextBlock TextWrapping="Wrap" Opacity="0.7" Margin="0,0,0,8"
+                <TextBlock Text="CATALOG BACKUP" Style="{StaticResource App.Type.Section}" />
+                <TextBlock TextWrapping="Wrap" Style="{StaticResource App.Type.BodyMuted}" Margin="0,0,0,12"
                            Text="The app can back up the catalog database (your tags, ratings, notes, status) to a folder you choose. Source video files are never touched." />
 
-                <TextBlock Text="Backup directory" Opacity="0.7" />
-                <Grid Margin="0,2,0,8">
+                <TextBlock Text="Backup directory" Style="{StaticResource App.Type.Caption}" />
+                <Grid Margin="0,4,0,8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <TextBox Grid.Column="0" Text="{Binding BackupDirectory, UpdateSourceTrigger=PropertyChanged}" />
-                    <Button Grid.Column="1" Margin="6,0,0,0" Content="Browse..." Command="{Binding BrowseBackupDirectoryCommand}" />
+                    <Button Grid.Column="1" Margin="8,0,0,0"
+                            Content="Browse"
+                            Style="{StaticResource App.Button.Secondary}"
+                            helpers:Theme.Icon="{StaticResource Icon.Folder}"
+                            Command="{Binding BrowseBackupDirectoryCommand}" />
                 </Grid>
 
                 <CheckBox IsChecked="{Binding AutoBackupOnStartup}"
                           Content="Back up automatically on app startup"
                           Margin="0,0,0,8" />
 
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,8" VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,12" VerticalAlignment="Center">
                     <TextBlock Text="Keep last" VerticalAlignment="Center" Margin="0,0,8,0" />
                     <ui:NumberBox Width="100"
                                   Minimum="1" Maximum="365"
@@ -77,24 +105,29 @@
                     <TextBlock Text="backup(s); older backups are deleted." VerticalAlignment="Center" Margin="8,0,0,0" />
                 </StackPanel>
 
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                     <Button Content="Back up now"
+                            Style="{StaticResource App.Button.Secondary}"
+                            helpers:Theme.Icon="{StaticResource Icon.Cloud}"
                             Command="{Binding BackupNowCommand}"
                             IsEnabled="{Binding IsBackingUp, Converter={StaticResource InverseBool}}" />
-                    <Button Content="Refresh list" Margin="6,0,0,0"
+                    <Button Content="Refresh list"
+                            Margin="8,0,0,0"
+                            Style="{StaticResource App.Button.Ghost}"
+                            helpers:Theme.Icon="{StaticResource Icon.Refresh}"
                             Command="{Binding RefreshBackupsCommand}" />
                 </StackPanel>
                 <TextBlock Text="{Binding BackupStatusMessage}"
                            TextWrapping="Wrap"
-                           Opacity="0.75"
-                           FontSize="12"
-                           Margin="0,4,0,8" />
+                           Style="{StaticResource App.Type.Caption}"
+                           Margin="0,4,0,12" />
 
-                <TextBlock Text="Available backups (select one to restore)" Opacity="0.7" />
+                <TextBlock Text="Available backups (select one to restore)"
+                           Style="{StaticResource App.Type.Caption}" />
                 <ListBox ItemsSource="{Binding Backups}"
                          SelectedItem="{Binding SelectedBackup}"
-                         Height="140"
-                         Margin="0,2,0,6">
+                         Height="160"
+                         Margin="0,4,0,8">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <Grid>
@@ -103,10 +136,17 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0">
-                                    <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" />
-                                    <TextBlock Text="{Binding Path}" Opacity="0.6" FontSize="11" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="{Binding FileName}" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource App.Foreground.Primary}" />
+                                    <TextBlock Text="{Binding Path}"
+                                               Foreground="{DynamicResource App.Foreground.Tertiary}"
+                                               FontSize="11" TextTrimming="CharacterEllipsis" />
                                 </StackPanel>
-                                <TextBlock Grid.Column="1" VerticalAlignment="Center" Opacity="0.7" Margin="12,0,0,0">
+                                <TextBlock Grid.Column="1" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource App.Foreground.Secondary}"
+                                           FontFamily="{StaticResource App.FontFamily.Mono}"
+                                           FontSize="11"
+                                           Margin="12,0,0,0">
                                     <Run Text="{Binding CreatedAtUtc, Mode=OneWay, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" />
                                 </TextBlock>
                             </Grid>
@@ -114,47 +154,55 @@
                     </ListBox.ItemTemplate>
                 </ListBox>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                    <Button Content="Restore selected..."
+                    <Button Content="Restore selected"
+                            Style="{StaticResource App.Button.Secondary}"
+                            helpers:Theme.Icon="{StaticResource Icon.Refresh}"
                             Command="{Binding RestoreCommand}"
                             ToolTip="Stage a restore from the selected backup. The app will restart to safely swap the database file." />
                 </StackPanel>
 
-                <TextBlock Text="Sidecar files" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,4" />
-                <TextBlock TextWrapping="Wrap" Opacity="0.7" Margin="0,0,0,8"
+                <TextBlock Text="SIDECAR FILES" Style="{StaticResource App.Type.Section}" />
+                <TextBlock TextWrapping="Wrap" Style="{StaticResource App.Type.BodyMuted}" Margin="0,0,0,12"
                            Text="When enabled, a small &quot;&lt;filename&gt;.findthatshot.json&quot; file is written next to each video on save, containing its tags, rating, status and notes. Other tools (DaVinci Resolve, Premiere, Lightroom, FCP, etc.) ignore these files. Source video files are never modified. Failures on read-only / offline drives are skipped silently." />
                 <CheckBox IsChecked="{Binding WriteSidecarFiles}"
                           Content="Write sidecar JSON files next to videos"
                           Margin="0,0,0,16" />
 
-                <TextBlock Text="Scanning" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,4" />
+                <TextBlock Text="SCANNING" Style="{StaticResource App.Type.Section}" />
 
-                <TextBlock Text="Max scan parallelism" Opacity="0.7" />
-                <ui:NumberBox Value="{Binding MaxScanParallelism}" Minimum="1" Maximum="16" Margin="0,2,0,12" />
+                <TextBlock Text="Max scan parallelism" Style="{StaticResource App.Type.Caption}" />
+                <ui:NumberBox Value="{Binding MaxScanParallelism}" Minimum="1" Maximum="16" Margin="0,4,0,12" />
 
-                <TextBlock Text="Excluded folder names (comma-separated, matched on any path segment, case-insensitive)" Opacity="0.7" TextWrapping="Wrap" />
+                <TextBlock Text="Excluded folder names (comma-separated, matched on any path segment, case-insensitive)"
+                           Style="{StaticResource App.Type.Caption}" TextWrapping="Wrap" />
                 <TextBox Text="{Binding ExcludedFolderNames, UpdateSourceTrigger=PropertyChanged}"
                          AcceptsReturn="True"
                          TextWrapping="Wrap"
                          MinHeight="60"
-                         Margin="0,2,0,12" />
+                         Margin="0,4,0,12" />
 
-                <TextBlock Text="Excluded file name patterns (comma-separated globs, e.g. *_proxy.mp4, *.LRV)" Opacity="0.7" TextWrapping="Wrap" />
+                <TextBlock Text="Excluded file name patterns (comma-separated globs, e.g. *_proxy.mp4, *.LRV)"
+                           Style="{StaticResource App.Type.Caption}" TextWrapping="Wrap" />
                 <TextBox Text="{Binding ExcludedFileNamePatterns, UpdateSourceTrigger=PropertyChanged}"
                          AcceptsReturn="True"
                          TextWrapping="Wrap"
                          MinHeight="40"
-                         Margin="0,2,0,12" />
+                         Margin="0,4,0,12" />
 
                 <TextBlock TextWrapping="Wrap"
-                           Opacity="0.6"
+                           Style="{StaticResource App.Type.Caption}"
                            Text="Settings are saved to %APPDATA%\VideoArchiveManager\settings.json. Changes to the database path require an app restart." />
             </StackPanel>
         </ScrollViewer>
 
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
-            <Button Content="Cancel" Command="{Binding CancelCommand}" />
-            <Button Content="Save" Margin="6,0,0,0"
-                    Style="{StaticResource AccentButtonStyle}"
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+            <Button Content="Cancel"
+                    Style="{StaticResource App.Button.Ghost}"
+                    Command="{Binding CancelCommand}" />
+            <Button Content="Save"
+                    Margin="8,0,0,0"
+                    Style="{StaticResource App.Button.Primary}"
+                    helpers:Theme.Icon="{StaticResource Icon.Save}"
                     Command="{Binding SaveCommand}" />
         </StackPanel>
     </Grid>

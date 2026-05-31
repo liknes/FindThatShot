@@ -116,6 +116,10 @@ public partial class MainWindow : Window
                 PlayerDurationText.Text = "00:00";
                 PlayerSeekSlider.Value = 0;
                 PlayPauseButton.Content = "Play";
+                if (TryFindResource("Icon.Play") is string playGlyph)
+                {
+                    Helpers.Controls.Theme.SetIcon(PlayPauseButton, playGlyph);
+                }
             }
         }
         catch (Exception ex)
@@ -501,6 +505,16 @@ public partial class MainWindow : Window
     private void UpdatePlayPauseLabel()
     {
         if (!App.IsPlayerAvailable) return;
-        PlayPauseButton.Content = VideoPlayer.IsPlaying ? "Pause" : "Play";
+        var playing = VideoPlayer.IsPlaying;
+        PlayPauseButton.Content = playing ? "Pause" : "Play";
+        // Swap the Segoe Fluent glyph carried via the Theme.Icon attached
+        // property so the button shows the *next* action visually instead
+        // of the current state. Resource keys are defined in
+        // Resources/Theme/Icons.xaml.
+        var glyphKey = playing ? "Icon.Pause" : "Icon.Play";
+        if (TryFindResource(glyphKey) is string glyph)
+        {
+            Helpers.Controls.Theme.SetIcon(PlayPauseButton, glyph);
+        }
     }
 }
