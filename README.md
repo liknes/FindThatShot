@@ -55,7 +55,7 @@ If FFmpeg / FFprobe is not on `PATH`, open **Settings** and point the app at `ff
 3. Use the search box and sidebar filters to find shots:
    - Tokens are AND-matched across filename, folder path, location, context, notes, camera, codec, and tag names.
    - Filter by status, camera, tag, minimum rating, date range, root folder, and online/offline availability.
-4. Select a card to view full metadata in the right panel. Edit notes, rating, status, and tags there. Click **Save** to persist.
+4. Select a card to bring the clip into the right-hand editor — review state, tags, notes, and the play / open-location actions. Click **Save** to persist edits. For a comprehensive read-only dump of every captured field (file, video, camera, location, catalog, internal), press **Alt+Enter** or right-click the editor thumbnail or the card and choose *Show clip info…* — opens a non-modal *Clip info* window with copy-to-clipboard on every row.
 5. To preview a clip without leaving the app, click **Play in app** in the detail panel. This opens **Review mode**: the root folder list and the video grid collapse, the embedded FFME player takes the main area, and the tag / notes / rating / status editor docks on the right at full height so you can tag while watching. The embedded player handles `.mp4 / .mov / .mxf / .mkv / .avi` and modern codecs (H.264/H.265/ProRes/DNxHD/etc.) out of the box via FFmpeg.
 
    Review-mode controls:
