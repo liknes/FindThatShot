@@ -11,8 +11,8 @@ A Windows desktop application for organizing a large local video archive across 
 - WPF (`net8.0-windows`) with ModernWpfUI
 - MVVM via `CommunityToolkit.Mvvm`
 - SQLite via `Microsoft.EntityFrameworkCore.Sqlite`
-- FFmpeg / FFprobe (external) for metadata extraction and thumbnail generation
-- LibVLCSharp + bundled VLC native libraries for in-app video playback
+- FFmpeg / FFprobe for metadata extraction, thumbnail generation, and in-app video playback (a single bundled FFmpeg used for both the CLI tools and the player's shared-library DLLs)
+- FFME (Sinaxxr fork tracking FFmpeg 8) as the WPF-native in-app video player
 
 ## Solution layout
 
@@ -28,8 +28,9 @@ src/
 
 - Windows 10/11
 - .NET 8 SDK (`dotnet --version` should be `8.0.x`)
-- FFmpeg + FFprobe (https://ffmpeg.org) for **scanning + thumbnails**. Easiest: `winget install Gyan.FFmpeg` so `ffmpeg.exe` and `ffprobe.exe` are on `PATH`. Or configure the exact `.exe` paths inside the app via **Settings**. Any modern FFmpeg version works.
-- **In-app video playback** uses LibVLC, which is bundled via the `VideoLAN.LibVLC.Windows` NuGet package. No additional install or configuration is required.
+- FFmpeg + FFprobe (https://ffmpeg.org). Used for two things:
+  - **Scanning + thumbnails:** `ffmpeg.exe` and `ffprobe.exe` are invoked as separate processes. Easiest: `winget install Gyan.FFmpeg` so they end up on `PATH`. Or configure the exact `.exe` paths inside the app via **Settings**. Any modern FFmpeg version works.
+  - **In-app video playback:** the player (FFME) loads FFmpeg's **shared-library DLLs** (`avcodec-*.dll`, `avformat-*.dll`, etc.) at runtime from `tools/ffmpeg/` next to the executable. Use a **shared** FFmpeg build (e.g. `ffmpeg-release-full-shared` from gyan.dev or a `gpl-shared` build from BtbN), not a static-only build. The FFmpeg version must match what FFME is built against — currently **FFmpeg 8.x** (avcodec-62.dll). For more on the engine and the migration path back to upstream FFME 7 if needed, see [`docs/in-app-player.md`](./docs/in-app-player.md).
 
 ## First run
 
@@ -55,7 +56,7 @@ If FFmpeg / FFprobe is not on `PATH`, open **Settings** and point the app at `ff
    - Tokens are AND-matched across filename, folder path, location, context, notes, camera, codec, and tag names.
    - Filter by status, camera, tag, minimum rating, date range, root folder, and online/offline availability.
 4. Select a card to view full metadata in the right panel. Edit notes, rating, status, and tags there. Click **Save** to persist.
-5. To preview a clip without leaving the app, click **Play in app** in the detail panel. This opens **Review mode**: the root folder list and the video grid collapse, the embedded VLC player takes the main area, and the tag / notes / rating / status editor docks on the right at full height so you can tag while watching. The embedded player handles `.mp4 / .mov / .mxf / .mkv / .avi` and modern codecs (H.264/H.265/ProRes/DNxHD/etc.) out of the box.
+5. To preview a clip without leaving the app, click **Play in app** in the detail panel. This opens **Review mode**: the root folder list and the video grid collapse, the embedded FFME player takes the main area, and the tag / notes / rating / status editor docks on the right at full height so you can tag while watching. The embedded player handles `.mp4 / .mov / .mxf / .mkv / .avi` and modern codecs (H.264/H.265/ProRes/DNxHD/etc.) out of the box via FFmpeg.
 
    Review-mode controls:
    - **Play / Pause** toggle button (or press **Space** when keyboard focus is not in a text box).
@@ -178,6 +179,8 @@ tools/
 
 The next `./scripts/publish.ps1` run will bundle these into the installer. The app's default settings already point at `tools\ffmpeg\ffmpeg.exe` and `tools\ffmpeg\ffprobe.exe` (relative to the install directory) so it works automatically; users can still override the paths in **Settings**.
 
+The same `tools\ffmpeg\` shared-library DLLs (`avcodec-*.dll`, `avformat-*.dll`, etc.) are also what the **in-app player** loads at runtime — see [`docs/in-app-player.md`](./docs/in-app-player.md) for the engine choice, the community-fork situation, the error-surfacing model, and a step-by-step plan for switching back to upstream FFME if that ever becomes necessary.
+
 ### Releasing a new version
 
 The release pipeline targets a **GitHub Release** as the update host. Required tools on the dev machine: `dotnet`, `pwsh`, and the [GitHub CLI](https://cli.github.com/) (`gh`) authenticated against your account.
@@ -222,9 +225,9 @@ The installer and binaries are currently unsigned. End users will see a SmartScr
 
 Video Archive Manager itself is licensed under the **GNU General Public License v3** (see `LICENSE`). The installed application bundles several third-party components with their own licenses:
 
-- **FFmpeg** (Gyan.dev "full" build, version 8.1.1) — GPLv3, https://ffmpeg.org/. Invoked as separate `ffmpeg.exe` / `ffprobe.exe` processes.
-- **VLC / LibVLC** — LGPLv2.1+ (some bundled plugins are GPLv2+), https://www.videolan.org/vlc/.
-- **LibVLCSharp** — LGPLv2.1+, https://code.videolan.org/videolan/LibVLCSharp.
+- **FFmpeg** (Gyan.dev "full" build, version 8.1.1) — GPLv3, https://ffmpeg.org/. Used in two ways: (a) invoked as separate `ffmpeg.exe` / `ffprobe.exe` processes for scanning and thumbnails, and (b) the same FFmpeg shared-library DLLs are loaded in-process by the in-app player (FFME).
+- **FFME — Sinaxxr fork** — Ms-PL, https://github.com/sinaxxr/ffmediaelement (fork of https://github.com/unosquare/ffmediaelement). WPF-native video player control used for in-app playback.
+- **FFmpeg.AutoGen** — LGPLv3, https://github.com/Ruslan-B/FFmpeg.AutoGen. C# bindings FFME uses to call into the bundled FFmpeg shared libraries.
 - **Velopack** — MIT, https://github.com/velopack/velopack.
 - **OpenStreetMap / Nominatim** — map data © OpenStreetMap contributors, ODbL.
 - Plus a number of MIT-licensed .NET libraries (CommunityToolkit.Mvvm, ModernWpfUI, Entity Framework Core, Microsoft.Data.Sqlite, Microsoft.Extensions.\*).

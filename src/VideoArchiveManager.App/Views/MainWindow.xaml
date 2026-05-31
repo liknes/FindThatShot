@@ -6,7 +6,7 @@
         xmlns:controls="clr-namespace:VideoArchiveManager.App.Helpers.Controls"
         xmlns:enums="clr-namespace:VideoArchiveManager.Core.Models.Enums;assembly=VideoArchiveManager.Core"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
-        xmlns:vlc="clr-namespace:LibVLCSharp.WPF;assembly=LibVLCSharp.WPF"
+        xmlns:ffme="clr-namespace:Unosquare.FFME;assembly=ffme.win"
         Title="Video Archive Manager"
         Width="1400" Height="880"
         MinWidth="1024" MinHeight="640"
@@ -450,17 +450,12 @@
             </ListBox>
 
             <!-- Player column (review mode). Width=0 normally; expanded by code-behind
-                 to fill space when Detail.IsPlayerVisible flips to true. The vlc:VideoView
-                 stays parented here at all times so the LibVLC HwndHost is never
-                 destroyed and re-created.
-                 The AspectRatioPanel sizes the VideoView to exactly the current
-                 video's native aspect ratio so VLC fills 100% of its render
-                 surface — no letterbox bars to render, so the "DXGI swap chain
-                 isn't cleared between frames so the host's white class brush
-                 leaks through" failure mode can't occur in the first place.
-                 The Border's black background paints whatever strip is left
-                 around the picture. Falls back to 16:9 when Width/Height are
-                 missing from the metadata. -->
+                 to fill space when Detail.IsPlayerVisible flips to true.
+                 ffme:MediaElement is a real WPF visual (renders decoded frames
+                 to a WriteableBitmap) so it has no HwndHost / class-brush /
+                 DXGI-leak issues that the previous LibVLCSharp VideoView did.
+                 Stretch="Uniform" + Background="Black" handles the letterbox
+                 strip natively in WPF — no AspectRatioPanel needed. -->
             <Border Grid.Column="2"
                     Background="Black"
                     DataContext="{Binding Detail}">
@@ -470,10 +465,14 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
-                    <controls:AspectRatioPanel Grid.Row="0"
-                                               Ratio="{Binding Current.AspectRatio, FallbackValue=1.7777778, TargetNullValue=1.7777778}">
-                        <vlc:VideoView x:Name="VideoPlayer" />
-                    </controls:AspectRatioPanel>
+                    <ffme:MediaElement x:Name="VideoPlayer"
+                                       Grid.Row="0"
+                                       Stretch="Uniform"
+                                       Background="Black"
+                                       LoadedBehavior="Manual"
+                                       UnloadedBehavior="Manual"
+                                       ScrubbingEnabled="True"
+                                       VerticalSyncEnabled="True" />
 
                     <!-- Player toolbar. Visible only in review mode (IsPlayerVisible),
                          but we also hide it via column width=0 in normal mode so this
