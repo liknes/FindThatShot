@@ -57,9 +57,12 @@
                     <Hyperlink NavigateUri="https://ffmpeg.org/"
                                RequestNavigate="Hyperlink_RequestNavigate">FFmpeg</Hyperlink>
                     (GPLv3),
-                    <Hyperlink NavigateUri="https://www.videolan.org/vlc/"
-                               RequestNavigate="Hyperlink_RequestNavigate">VLC / LibVLC</Hyperlink>
-                    (LGPLv2.1+), and other open-source software.
+                    <Hyperlink NavigateUri="https://github.com/sinaxxr/ffmediaelement"
+                               RequestNavigate="Hyperlink_RequestNavigate">FFME (Sinaxxr fork)</Hyperlink>
+                    (Ms-PL),
+                    <Hyperlink NavigateUri="https://github.com/Ruslan-B/FFmpeg.AutoGen"
+                               RequestNavigate="Hyperlink_RequestNavigate">FFmpeg.AutoGen</Hyperlink>
+                    (LGPLv3), and other open-source software.
                 </TextBlock>
                 <TextBlock TextWrapping="Wrap" Margin="0,4,0,0">
                     Map data

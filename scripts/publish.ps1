@@ -91,7 +91,8 @@ if (-not $SkipBundleFfmpeg -and (Test-Path $ToolsDir)) {
 
 # 5b. Ensure attribution files ship next to the executable, even if MSBuild Content copy
 #     misses them. These are required to satisfy the GPL/LGPL distribution obligations
-#     of bundled dependencies (FFmpeg, LibVLC) as well as this app's own GPLv3 license.
+#     of bundled dependencies (FFmpeg, FFmpeg.AutoGen via FFME) as well as this app's own
+#     GPLv3 license.
 foreach ($name in @('LICENSE', 'THIRD-PARTY-NOTICES.md')) {
     $src = Join-Path $RepoRoot $name
     if (Test-Path $src) {

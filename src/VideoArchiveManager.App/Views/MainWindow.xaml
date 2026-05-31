@@ -231,8 +231,8 @@
                * Review mode (Detail.IsPlayerVisible): Col 0/1 collapse to Width=0, Col 2 grows
                  to fill the leftover space, Col 3 (editor) narrows slightly.
              The width swap is done in MainWindow.xaml.cs when IsPlayerVisible changes; the
-             VideoView control therefore lives in a stable place in the visual tree and is
-             never reparented (which keeps LibVLC's HwndHost happy). -->
+             ffme:MediaElement is a real WPF visual so column-width changes are cheap and don't
+             interact with any Win32 child window (unlike the previous LibVLCSharp VideoView). -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition x:Name="LeftSidebarColumn" Width="260" MinWidth="200" />
