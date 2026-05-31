@@ -6,7 +6,6 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Navigation;
-using LibVLCSharp.Shared;
 using VideoArchiveManager.App.ViewModels;
 using VideoArchiveManager.Core.Models;
 
@@ -15,11 +14,10 @@ namespace VideoArchiveManager.App.Views;
 public partial class MainWindow : Window
 {
     private readonly MainViewModel _viewModel;
-    private readonly LibVLC? _libVlc;
-    private MediaPlayer? _mediaPlayer;
 
     // Set while the user is dragging the seek slider so the periodic
-    // MediaPlayer.PositionChanged updates don't fight the user's input.
+    // MediaElement.PropertyChanged "Position" updates don't fight the
+    // user's input.
     private bool _isUserSeeking;
 
     // Cached so we can restore the original 3-column layout when leaving review mode.
@@ -42,24 +40,12 @@ public partial class MainWindow : Window
 
         if (App.IsPlayerAvailable)
         {
-            try
-            {
-                _libVlc = App.GetService<LibVLC>();
-                _mediaPlayer = new MediaPlayer(_libVlc);
-                _mediaPlayer.TimeChanged += MediaPlayer_TimeChanged;
-                _mediaPlayer.LengthChanged += MediaPlayer_LengthChanged;
-                _mediaPlayer.PositionChanged += MediaPlayer_PositionChanged;
-                _mediaPlayer.Playing += MediaPlayer_PlayStateChanged;
-                _mediaPlayer.Paused += MediaPlayer_PlayStateChanged;
-                _mediaPlayer.Stopped += MediaPlayer_PlayStateChanged;
-                _mediaPlayer.EndReached += MediaPlayer_EndReached;
-                _mediaPlayer.EncounteredError += MediaPlayer_EncounteredError;
-                VideoPlayer.MediaPlayer = _mediaPlayer;
-            }
-            catch
-            {
-                _mediaPlayer = null;
-            }
+            // FFME's MediaElement is its own player — no separate MediaPlayer
+            // object to wire up. Subscribe to MediaElement events directly.
+            VideoPlayer.MediaOpened += MediaElement_MediaOpened;
+            VideoPlayer.MediaEnded += MediaElement_MediaEnded;
+            VideoPlayer.PropertyChanged += MediaElement_PropertyChanged;
+            VideoPlayer.MessageLogged += MediaElement_MessageLogged;
         }
 
         Loaded += MainWindow_Loaded;
@@ -72,26 +58,21 @@ public partial class MainWindow : Window
         _viewModel.Detail.PropertyChanged += Detail_PropertyChanged;
     }
 
-    private void MainWindow_Closed(object? sender, EventArgs e)
+    private async void MainWindow_Closed(object? sender, EventArgs e)
     {
         try
         {
-            if (_mediaPlayer is not null)
+            if (App.IsPlayerAvailable)
             {
-                _mediaPlayer.TimeChanged -= MediaPlayer_TimeChanged;
-                _mediaPlayer.LengthChanged -= MediaPlayer_LengthChanged;
-                _mediaPlayer.PositionChanged -= MediaPlayer_PositionChanged;
-                _mediaPlayer.Playing -= MediaPlayer_PlayStateChanged;
-                _mediaPlayer.Paused -= MediaPlayer_PlayStateChanged;
-                _mediaPlayer.Stopped -= MediaPlayer_PlayStateChanged;
-                _mediaPlayer.EndReached -= MediaPlayer_EndReached;
-                _mediaPlayer.EncounteredError -= MediaPlayer_EncounteredError;
-                if (_mediaPlayer.IsPlaying) _mediaPlayer.Stop();
-                var oldMedia = _mediaPlayer.Media;
-                _mediaPlayer.Media = null;
-                oldMedia?.Dispose();
-                _mediaPlayer.Dispose();
-                _mediaPlayer = null;
+                VideoPlayer.MediaOpened -= MediaElement_MediaOpened;
+                VideoPlayer.MediaEnded -= MediaElement_MediaEnded;
+                VideoPlayer.PropertyChanged -= MediaElement_PropertyChanged;
+                VideoPlayer.MessageLogged -= MediaElement_MessageLogged;
+
+                // Close the current media before the visual tree is torn down.
+                // FFME's Close() is async and idempotent.
+                await VideoPlayer.Close();
+                VideoPlayer.Dispose();
             }
         }
         catch
@@ -100,7 +81,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void Detail_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    private async void Detail_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (sender is not VideoDetailViewModel detail) return;
 
@@ -109,7 +90,7 @@ public partial class MainWindow : Window
             ApplyReviewModeLayout(detail.IsPlayerVisible);
         }
 
-        if (_mediaPlayer is null) return;
+        if (!App.IsPlayerAvailable) return;
 
         if (e.PropertyName is not (nameof(VideoDetailViewModel.MediaSource) or nameof(VideoDetailViewModel.IsPlayerVisible)))
         {
@@ -118,20 +99,19 @@ public partial class MainWindow : Window
 
         try
         {
-            if (detail.IsPlayerVisible && detail.MediaSource is not null && _libVlc is not null)
+            if (detail.IsPlayerVisible && detail.MediaSource is not null)
             {
-                var oldMedia = _mediaPlayer.Media;
-                var newMedia = new Media(_libVlc, detail.MediaSource);
-                _mediaPlayer.Media = newMedia;
-                _mediaPlayer.Play();
-                oldMedia?.Dispose();
+                // Open() handles tear-down of any previously-loaded media
+                // internally, so we don't need a manual Close() between
+                // clips. After Open returns, FFME has decoded the first
+                // frame and NaturalDuration is final, so MediaOpened has
+                // already fired by the time await returns.
+                await VideoPlayer.Open(detail.MediaSource);
+                await VideoPlayer.Play();
             }
             else
             {
-                if (_mediaPlayer.IsPlaying) _mediaPlayer.Stop();
-                var oldMedia = _mediaPlayer.Media;
-                _mediaPlayer.Media = null;
-                oldMedia?.Dispose();
+                await VideoPlayer.Close();
                 PlayerCurrentTimeText.Text = "00:00";
                 PlayerDurationText.Text = "00:00";
                 PlayerSeekSlider.Value = 0;
@@ -233,67 +213,87 @@ public partial class MainWindow : Window
             System.Windows.Threading.DispatcherPriority.Background);
     }
 
-    private void PlayerPlayPause_Click(object sender, RoutedEventArgs e)
+    private async void PlayerPlayPause_Click(object sender, RoutedEventArgs e)
     {
-        if (_mediaPlayer is null) return;
-        if (_mediaPlayer.IsPlaying)
-        {
-            _mediaPlayer.Pause();
-        }
-        else
-        {
-            _mediaPlayer.Play();
-        }
-    }
-
-    // We deliberately do NOT call MediaPlayer.Stop() here. Stop() releases
-    // the VLC decoder, after which the underlying HwndHost surface is
-    // repainted by Windows using the window class's default WhiteBrush —
-    // a hard white flash against the cinematic black backdrop. Pausing and
-    // seeking to 0 gives the same "stopped at the beginning" user model
-    // while keeping the first frame on screen.
-    private void PlayerStop_Click(object sender, RoutedEventArgs e)
-    {
-        if (_mediaPlayer is null) return;
-
+        if (!App.IsPlayerAvailable) return;
         try
         {
-            if (_mediaPlayer.IsPlaying)
+            if (VideoPlayer.IsPlaying)
             {
-                _mediaPlayer.Pause();
+                await VideoPlayer.Pause();
             }
-            if (_mediaPlayer.IsSeekable)
+            else
             {
-                _mediaPlayer.Time = 0;
+                await VideoPlayer.Play();
             }
         }
         catch
         {
-            // VLC's state machine can be fussy mid-transition; never let
-            // this button throw into the dispatcher.
+            // FFME state machine can be in a transient state during media
+            // open/close; never let a play/pause click throw into the
+            // dispatcher.
+        }
+    }
+
+    // Pause + seek-to-0 instead of Stop() so the first frame stays on screen.
+    // FFME's Stop() closes the underlying decoder, which would tear down
+    // the WriteableBitmap and leave a momentary black gap until reopen —
+    // not strictly a regression vs the previous VLC behaviour, but the
+    // "freeze at first frame" UX is cleaner.
+    private async void PlayerStop_Click(object sender, RoutedEventArgs e)
+    {
+        if (!App.IsPlayerAvailable) return;
+
+        try
+        {
+            if (VideoPlayer.IsPlaying)
+            {
+                await VideoPlayer.Pause();
+            }
+            if (VideoPlayer.IsSeekable)
+            {
+                await VideoPlayer.Seek(TimeSpan.Zero);
+            }
+        }
+        catch
+        {
+            // see PlayerPlayPause_Click rationale.
         }
     }
 
     private void PlayerSkipBack_Click(object sender, RoutedEventArgs e)
     {
-        SeekRelative(TimeSpan.FromSeconds(-5));
+        _ = SeekRelativeAsync(TimeSpan.FromSeconds(-5));
     }
 
     private void PlayerSkipForward_Click(object sender, RoutedEventArgs e)
     {
-        SeekRelative(TimeSpan.FromSeconds(5));
+        _ = SeekRelativeAsync(TimeSpan.FromSeconds(5));
     }
 
-    private void SeekRelative(TimeSpan delta)
+    private async Task SeekRelativeAsync(TimeSpan delta)
     {
-        if (_mediaPlayer is null) return;
-        if (!_mediaPlayer.IsSeekable) return;
-        var target = Math.Max(0, _mediaPlayer.Time + (long)delta.TotalMilliseconds);
-        if (_mediaPlayer.Length > 0 && target >= _mediaPlayer.Length)
+        if (!App.IsPlayerAvailable) return;
+        if (!VideoPlayer.IsSeekable) return;
+        try
         {
-            target = Math.Max(0, _mediaPlayer.Length - 100);
+            var current = VideoPlayer.Position;
+            var duration = VideoPlayer.NaturalDuration ?? TimeSpan.Zero;
+            var target = current + delta;
+            if (target < TimeSpan.Zero) target = TimeSpan.Zero;
+            // Stop ~100ms shy of the duration so we don't accidentally hit
+            // EndOfStream and trigger MediaEnded for a deliberate +5s skip.
+            if (duration > TimeSpan.Zero && target >= duration)
+            {
+                target = duration - TimeSpan.FromMilliseconds(100);
+                if (target < TimeSpan.Zero) target = TimeSpan.Zero;
+            }
+            await VideoPlayer.Seek(target);
         }
-        _mediaPlayer.Time = target;
+        catch
+        {
+            // see PlayerPlayPause_Click rationale.
+        }
     }
 
     private void PlayerSeekSlider_DragStarted(object sender, DragStartedEventArgs e)
@@ -303,22 +303,31 @@ public partial class MainWindow : Window
 
     private void PlayerSeekSlider_DragCompleted(object sender, DragCompletedEventArgs e)
     {
-        ApplySliderPosition();
+        _ = ApplySliderPositionAsync();
         _isUserSeeking = false;
     }
 
     private void PlayerSeekSlider_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
         // Fires on a click directly on the track (no thumb drag). Apply once.
-        ApplySliderPosition();
+        _ = ApplySliderPositionAsync();
     }
 
-    private void ApplySliderPosition()
+    private async Task ApplySliderPositionAsync()
     {
-        if (_mediaPlayer is null) return;
-        if (!_mediaPlayer.IsSeekable) return;
-        var position = (float)Math.Clamp(PlayerSeekSlider.Value / PlayerSeekSlider.Maximum, 0.0, 1.0);
-        _mediaPlayer.Position = position;
+        if (!App.IsPlayerAvailable) return;
+        if (!VideoPlayer.IsSeekable) return;
+        var duration = VideoPlayer.NaturalDuration ?? TimeSpan.Zero;
+        if (duration <= TimeSpan.Zero) return;
+        var fraction = Math.Clamp(PlayerSeekSlider.Value / PlayerSeekSlider.Maximum, 0.0, 1.0);
+        try
+        {
+            await VideoPlayer.Seek(TimeSpan.FromTicks((long)(duration.Ticks * fraction)));
+        }
+        catch
+        {
+            // see PlayerPlayPause_Click rationale.
+        }
     }
 
     private void ExitMenu_Click(object sender, RoutedEventArgs e)
@@ -363,22 +372,29 @@ public partial class MainWindow : Window
 
     // Window-level shortcut: Space toggles play/pause when review mode is open
     // AND focus is not inside a text input (so typing tag names / notes still works).
-    private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+    private async void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
         if (!_viewModel.Detail.IsPlayerVisible) return;
-        if (_mediaPlayer is null) return;
+        if (!App.IsPlayerAvailable) return;
         if (e.Key != Key.Space) return;
 
         var focused = Keyboard.FocusedElement;
         if (focused is TextBoxBase or PasswordBox or ComboBox) return;
 
-        if (_mediaPlayer.IsPlaying)
+        try
         {
-            _mediaPlayer.Pause();
+            if (VideoPlayer.IsPlaying)
+            {
+                await VideoPlayer.Pause();
+            }
+            else
+            {
+                await VideoPlayer.Play();
+            }
         }
-        else
+        catch
         {
-            _mediaPlayer.Play();
+            // see PlayerPlayPause_Click rationale.
         }
         e.Handled = true;
     }
@@ -402,38 +418,49 @@ public partial class MainWindow : Window
         }
     }
 
-    private void MediaPlayer_TimeChanged(object? sender, MediaPlayerTimeChangedEventArgs e)
+    // FFME's MediaElement raises MediaOpened on the UI thread once the
+    // first frame is decoded and NaturalDuration is final; this is the
+    // FFME analogue of VLC's LengthChanged.
+    private void MediaElement_MediaOpened(object? sender, EventArgs e)
     {
-        Dispatcher.BeginInvoke(UpdatePlayerTime);
+        UpdatePlayerTime();
+        UpdatePlayPauseLabel();
     }
 
-    private void MediaPlayer_LengthChanged(object? sender, MediaPlayerLengthChangedEventArgs e)
+    private void MediaElement_MediaEnded(object? sender, EventArgs e)
     {
-        Dispatcher.BeginInvoke(UpdatePlayerTime);
+        UpdatePlayerTime();
+        UpdatePlayPauseLabel();
     }
 
-    private void MediaPlayer_PositionChanged(object? sender, MediaPlayerPositionChangedEventArgs e)
+    // FFME surfaces playback state and position changes via standard
+    // INotifyPropertyChanged on the MediaElement. We only act on the
+    // properties we actually render in the toolbar — Position drives the
+    // seek slider + current-time readout, MediaState drives the Play/Pause
+    // button label. Filtering by name keeps this off the hot path for the
+    // dozens of other properties FFME notifies on.
+    private void MediaElement_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        // VLC raises this several times a second; cheap UI update only.
-        Dispatcher.BeginInvoke(SyncSliderFromPlayer);
-    }
-
-    private void MediaPlayer_PlayStateChanged(object? sender, EventArgs e)
-    {
-        Dispatcher.BeginInvoke(UpdatePlayPauseLabel);
-    }
-
-    private void MediaPlayer_EndReached(object? sender, EventArgs e)
-    {
-        Dispatcher.BeginInvoke(() =>
+        switch (e.PropertyName)
         {
-            UpdatePlayerTime();
-            UpdatePlayPauseLabel();
-        });
+            case nameof(Unosquare.FFME.MediaElement.Position):
+                Dispatcher.BeginInvoke(UpdatePlayerTime);
+                break;
+            case nameof(Unosquare.FFME.MediaElement.MediaState):
+            case nameof(Unosquare.FFME.MediaElement.IsPlaying):
+            case nameof(Unosquare.FFME.MediaElement.IsPaused):
+                Dispatcher.BeginInvoke(UpdatePlayPauseLabel);
+                break;
+        }
     }
 
-    private void MediaPlayer_EncounteredError(object? sender, EventArgs e)
+    // FFME doesn't raise a MediaFailed event; failures surface as exceptions
+    // on Open()/Play() (handled in Detail_PropertyChanged) and as MessageLogged
+    // entries with elevated severity. Show a minimal inline error if anything
+    // FFME considers an error gets logged.
+    private void MediaElement_MessageLogged(object? sender, Unosquare.FFME.Common.MediaLogMessageEventArgs e)
     {
+        if (e.MessageType != Unosquare.FFME.Common.MediaLogMessageType.Error) return;
         Dispatcher.BeginInvoke(() =>
         {
             PlayerCurrentTimeText.Text = "error";
@@ -443,9 +470,10 @@ public partial class MainWindow : Window
 
     private void UpdatePlayerTime()
     {
-        if (_mediaPlayer is null) return;
-        var pos = TimeSpan.FromMilliseconds(Math.Max(0, _mediaPlayer.Time));
-        var dur = TimeSpan.FromMilliseconds(Math.Max(0, _mediaPlayer.Length));
+        if (!App.IsPlayerAvailable) return;
+        var pos = VideoPlayer.Position;
+        if (pos < TimeSpan.Zero) pos = TimeSpan.Zero;
+        var dur = VideoPlayer.NaturalDuration ?? TimeSpan.Zero;
         PlayerCurrentTimeText.Text = Format(pos);
         PlayerDurationText.Text = Format(dur);
         SyncSliderFromPlayer();
@@ -458,11 +486,12 @@ public partial class MainWindow : Window
 
     private void SyncSliderFromPlayer()
     {
-        if (_mediaPlayer is null) return;
+        if (!App.IsPlayerAvailable) return;
         if (_isUserSeeking) return;
-        var position = Math.Clamp(_mediaPlayer.Position, 0.0f, 1.0f);
-        var newValue = position * PlayerSeekSlider.Maximum;
-        // Avoid feedback loops with bound ValueChanged events.
+        var duration = VideoPlayer.NaturalDuration ?? TimeSpan.Zero;
+        if (duration <= TimeSpan.Zero) return;
+        var fraction = Math.Clamp(VideoPlayer.Position.TotalSeconds / duration.TotalSeconds, 0.0, 1.0);
+        var newValue = fraction * PlayerSeekSlider.Maximum;
         if (Math.Abs(PlayerSeekSlider.Value - newValue) > 0.5)
         {
             PlayerSeekSlider.Value = newValue;
@@ -471,7 +500,7 @@ public partial class MainWindow : Window
 
     private void UpdatePlayPauseLabel()
     {
-        if (_mediaPlayer is null) return;
-        PlayPauseButton.Content = _mediaPlayer.IsPlaying ? "Pause" : "Play";
+        if (!App.IsPlayerAvailable) return;
+        PlayPauseButton.Content = VideoPlayer.IsPlaying ? "Pause" : "Play";
     }
 }

@@ -1,7 +1,6 @@
 ﻿using System.IO;
 using System.Net.Http;
 using System.Windows;
-using LibVLCSharp.Shared;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -49,15 +48,34 @@ public partial class App : Application
         Directory.CreateDirectory(AppSettings.DefaultBaseDirectory);
         Directory.CreateDirectory(AppSettings.DefaultThumbnailDirectory);
 
+        // Point FFME at the bundled FFmpeg shared libraries. We co-locate the
+        // FFmpeg shared DLLs with FFprobe in tools/ffmpeg/ so the player and
+        // the FFprobe metadata pipeline use a single FFmpeg copy. The path
+        // is the same one publish.ps1 deploys into the installer; for local
+        // debug builds the csproj copies tools/ffmpeg/ into the output dir.
+        // FFME loads FFmpeg lazily on first MediaElement use, so we only
+        // verify the directory exists here and gate IsPlayerAvailable on it.
         try
         {
-            LibVLCSharp.Shared.Core.Initialize();
-            IsPlayerAvailable = true;
+            var ffmpegDir = Path.Combine(AppContext.BaseDirectory, "tools", "ffmpeg");
+            if (Directory.Exists(ffmpegDir) && File.Exists(Path.Combine(ffmpegDir, "avcodec-62.dll")))
+            {
+                Unosquare.FFME.Library.FFmpegDirectory = ffmpegDir;
+                IsPlayerAvailable = true;
+            }
+            else
+            {
+                IsPlayerAvailable = false;
+                PlayerInitError =
+                    $"FFmpeg shared libraries not found at {ffmpegDir}. " +
+                    "The in-app player needs the FFmpeg 8.x shared DLLs " +
+                    "(avcodec-62.dll etc.) co-located with ffprobe.exe.";
+            }
         }
         catch (Exception ex)
         {
             IsPlayerAvailable = false;
-            PlayerInitError = $"VLC initialization failed: {ex.Message}";
+            PlayerInitError = $"FFmpeg initialization failed: {ex.Message}";
         }
 
         Host = Microsoft.Extensions.Hosting.Host
@@ -112,23 +130,6 @@ public partial class App : Application
 
                     options.UseSqlite($"Data Source={dbPath}");
                 });
-
-                if (IsPlayerAvailable)
-                {
-                    services.AddSingleton(sp =>
-                    {
-                        try
-                        {
-                            return new LibVLC();
-                        }
-                        catch (Exception ex)
-                        {
-                            IsPlayerAvailable = false;
-                            PlayerInitError = $"Failed to create LibVLC instance: {ex.Message}";
-                            throw;
-                        }
-                    });
-                }
 
                 services.AddSingleton<IFileSystemService, FileSystemService>();
                 services.AddSingleton<IFfprobeService, FfprobeService>();

@@ -7,13 +7,16 @@
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
-    <PackageReference Include="LibVLCSharp.WPF" Version="3.9.7.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.1" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
     <PackageReference Include="ModernWpfUI" Version="0.9.6" />
+    <!-- Sinaxxr fork of FFME (Unosquare.FFME) tracking FFmpeg 8.x; upstream
+         FFME 7.0 is hard-pinned to FFmpeg 7. We use the existing FFmpeg 8
+         shared binaries already bundled in tools/ffmpeg/ for FFprobe so the
+         player and the FFprobe pipeline share one FFmpeg. -->
+    <PackageReference Include="Sinaxxr.FFME.Windows" Version="8.0.361-sinaxxr.2" />
     <PackageReference Include="Velopack" Version="1.0.1" />
-    <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.23.1" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -50,5 +53,27 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+
+  <!-- Mirror the bundled FFmpeg shared binaries into the build output for
+       LOCAL DEBUG runs. publish.ps1 already handles the production install
+       layout via its own copy step (controlled by -SkipBundleFfmpeg), so
+       we condition this target on a non-publish build to avoid double-work
+       and to leave the publish script's -SkipBundleFfmpeg switch authoritative
+       for release artifacts. The DLLs (avcodec-62.dll, avformat-62.dll, etc.)
+       are needed by both FFprobe (CLI) and FFME (in-app player) at runtime;
+       co-locating them under tools/ffmpeg/ matches what the install layout
+       looks like on a deployed machine, so the relative defaults in
+       appsettings.json work in both dev and prod. -->
+  <Target Name="CopyBundledFFmpeg"
+          AfterTargets="Build"
+          Condition="Exists('..\..\tools\ffmpeg') AND '$(IsPublishing)' != 'true'">
+    <ItemGroup>
+      <BundledFfmpegFiles Include="..\..\tools\ffmpeg\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(BundledFfmpegFiles)"
+          DestinationFolder="$(OutDir)tools\ffmpeg"
+          SkipUnchangedFiles="true"
+          UseHardlinksIfPossible="true" />
+  </Target>
 
 </Project>

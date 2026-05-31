@@ -12,21 +12,24 @@ The installed application bundles or links to several third-party components. Th
 - **License:** GNU General Public License v3 (because of `--enable-gpl --enable-version3` configuration; bundles libx264, libx265, libxavs2, libxvid, libvidstab, librubberband, and others under GPL terms)
 - **Project home:** https://ffmpeg.org/
 - **Source code:** https://ffmpeg.org/download.html#get-sources, plus the matching upstream tarball and configure options listed at https://www.gyan.dev/ffmpeg/builds/
-- **How it is used:** Video Archive Manager invokes `ffmpeg.exe` and `ffprobe.exe` as separate processes for metadata extraction and thumbnail generation. The binaries are shipped unmodified.
+- **How it is used:** Two ways, both against the same single bundled FFmpeg copy in `tools/ffmpeg/`:
+  - `ffmpeg.exe` and `ffprobe.exe` are invoked as separate processes for metadata extraction and thumbnail generation.
+  - The matching FFmpeg shared-library DLLs (`avcodec-*.dll`, `avformat-*.dll`, `avutil-*.dll`, `swscale-*.dll`, `swresample-*.dll`, etc.) are loaded in-process by FFME for in-app video playback, via the FFmpeg.AutoGen bindings.
+  All FFmpeg binaries are shipped unmodified.
 
-## VLC / LibVLC
+## FFME (Sinaxxr fork)
 
-- **Version:** 3.0.x (via the `VideoLAN.LibVLC.Windows` NuGet package)
-- **License:** GNU Lesser General Public License v2.1 or later for `libvlc.dll` and `libvlccore.dll`; some bundled plugins are licensed under the GNU General Public License v2 or later.
-- **Project home:** https://www.videolan.org/vlc/
-- **Source code:** https://www.videolan.org/vlc/download-sources.html
-- **How it is used:** Video Archive Manager loads `libvlc.dll` to render in-app video previews. The libraries are shipped unmodified.
+- **Version:** 8.0.361-sinaxxr.2 (via the `Sinaxxr.FFME.Windows` NuGet package)
+- **License:** Microsoft Public License (Ms-PL)
+- **Project home:** https://github.com/sinaxxr/ffmediaelement (fork of https://github.com/unosquare/ffmediaelement)
+- **How it is used:** WPF MediaElement-style control (`<ffme:MediaElement>`) used as the in-app video player. Loads the bundled FFmpeg shared libraries from `tools/ffmpeg/` at runtime to decode video and renders frames to a `WriteableBitmap`. Shipped unmodified as a NuGet binary dependency.
 
-## LibVLCSharp
+## FFmpeg.AutoGen
 
-- **License:** GNU Lesser General Public License v2.1 or later
-- **Project home:** https://code.videolan.org/videolan/LibVLCSharp
-- **How it is used:** Managed .NET bindings for LibVLC.
+- **Version:** 4.4.0 (transitive dependency of `Sinaxxr.FFME.Windows`)
+- **License:** GNU Lesser General Public License v3
+- **Project home:** https://github.com/Ruslan-B/FFmpeg.AutoGen
+- **How it is used:** Auto-generated C# bindings to FFmpeg's C API. FFME uses these bindings to load and call the bundled FFmpeg shared libraries (`avcodec-*.dll`, `avformat-*.dll`, etc.) for in-app video playback. Shipped unmodified as a NuGet binary dependency.
 
 ## Velopack
 
