@@ -8,12 +8,14 @@ using System.Windows.Input;
 using System.Windows.Navigation;
 using VideoArchiveManager.App.ViewModels;
 using VideoArchiveManager.Core.Models;
+using VideoArchiveManager.Core.Services;
 
 namespace VideoArchiveManager.App.Views;
 
 public partial class MainWindow : Window
 {
     private readonly MainViewModel _viewModel;
+    private readonly ISidecarService _sidecar;
 
     // Set while the user is dragging the seek slider so the periodic
     // MediaElement.PropertyChanged "Position" updates don't fight the
@@ -25,10 +27,17 @@ public partial class MainWindow : Window
     private GridLength _normalListWidth;
     private GridLength _normalEditorWidth;
 
-    public MainWindow(MainViewModel viewModel)
+    // Single non-modal "Get info" popup shared across right-clicks. We
+    // bring the existing instance to the front instead of opening a
+    // second window — duplicate properties popups for the same clip
+    // would just be visual clutter.
+    private VideoInfoWindow? _infoWindow;
+
+    public MainWindow(MainViewModel viewModel, ISidecarService sidecar)
     {
         InitializeComponent();
         _viewModel = viewModel;
+        _sidecar = sidecar;
         DataContext = viewModel;
         Title = BuildWindowTitle();
 
@@ -56,12 +65,22 @@ public partial class MainWindow : Window
     {
         await _viewModel.InitializeAsync();
         _viewModel.Detail.PropertyChanged += Detail_PropertyChanged;
+        _viewModel.Detail.ShowInfoRequested += Detail_ShowInfoRequested;
     }
 
     private async void MainWindow_Closed(object? sender, EventArgs e)
     {
         try
         {
+            _viewModel.Detail.ShowInfoRequested -= Detail_ShowInfoRequested;
+
+            if (_infoWindow is not null)
+            {
+                try { _infoWindow.Close(); }
+                catch { /* already closing */ }
+                _infoWindow = null;
+            }
+
             if (App.IsPlayerAvailable)
             {
                 VideoPlayer.MediaOpened -= MediaElement_MediaOpened;
@@ -346,6 +365,47 @@ public partial class MainWindow : Window
             Owner = this
         };
         dialog.ShowDialog();
+    }
+
+    // Opens the non-modal clip-info popup. Reuses an existing window if one
+    // is already open (refreshes its contents by recreating + replacing) so
+    // power users mashing Alt+Enter don't end up with a stack of dialogs.
+    // The popup is purely a viewer, so a recreate-on-reopen is cheap.
+    private void Detail_ShowInfoRequested(object? sender, VideoItemViewModel item)
+    {
+        var tags = _viewModel.Detail.Tags.ToArray();
+
+        // If a popup is already open for the same clip, just bring it to
+        // the front rather than respawning identical content.
+        if (_infoWindow is not null)
+        {
+            try
+            {
+                if (_infoWindow.IsLoaded
+                    && string.Equals(_infoWindow.FilePath, item.FilePath, StringComparison.OrdinalIgnoreCase))
+                {
+                    _infoWindow.Activate();
+                    return;
+                }
+                _infoWindow.Close();
+            }
+            catch
+            {
+                // existing window is in a bad state; fall through and respawn.
+            }
+            _infoWindow = null;
+        }
+
+        var dialog = new VideoInfoWindow(item, tags, _sidecar)
+        {
+            Owner = this
+        };
+        dialog.Closed += (_, _) =>
+        {
+            if (ReferenceEquals(_infoWindow, dialog)) _infoWindow = null;
+        };
+        _infoWindow = dialog;
+        dialog.Show();
     }
 
     private static string BuildWindowTitle()

@@ -21,6 +21,7 @@
                 <ResourceDictionary Source="Resources/Components/Cards.xaml" />
                 <ResourceDictionary Source="Resources/Components/Sliders.xaml" />
                 <ResourceDictionary Source="Resources/Components/EmptyState.xaml" />
+                <ResourceDictionary Source="Resources/Components/InfoRow.xaml" />
                 <ResourceDictionary Source="Resources/Styles.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>

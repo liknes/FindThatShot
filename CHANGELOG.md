@@ -8,6 +8,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ### Added
 
+- **Clip-info popup** (`Views/VideoInfoWindow.xaml/.cs`). Non-modal "Get info" / "Properties"-style window that surfaces every piece of metadata the catalog has captured for a clip — a lot more than the inline panel ever showed:
+  - **File**: name, full path, folder, extension, size (humanised + raw bytes), modified, created, on-disk / offline.
+  - **Video**: duration, resolution, aspect ratio (nominal label like *16:9* + reduced ratio in parens), frame rate, codec.
+  - **Camera**: make/model (section hidden when not present).
+  - **Location**: folder-derived location text, GPS coords + *Open in map* link, folder date (section hidden when none of these are set).
+  - **Catalog**: status, rating (rendered as `★★★☆☆` so 4/5 reads at a glance), tags as inline read-only chips, notes preview (240-char trimmed), sidecar status (*Written* / *Not written yet* / *Disabled* / *Unavailable*) with the resolved sidecar path on the second line, added-to-catalog timestamp, last-updated timestamp.
+  - **Internal**: catalog ID, thumbnail path.
+  Each row uses a new `InfoRow` templated control (`Helpers/Controls/InfoRow.cs` + `Resources/Components/InfoRow.xaml`) with a copy-to-clipboard ghost button that's only visible on hover — the popup reads as quiet reference data when idle, reveals affordances on intent, and quietly absorbs the *Copy path* use case so the inline button stays gone. Window is non-modal so it can stay open while you keep browsing; reopening for the same clip just brings the existing instance to the front (handled by `MainWindow`'s instance tracking) instead of stacking duplicates.
+- **Three entry points to the popup**, registered in priority order:
+  1. **`Alt+Enter`** key binding on `MainWindow` — Windows-wide convention for *Properties* (Explorer, Task Manager, etc.).
+  2. **Right-click on the editor-pane thumbnail** — primary discovery affordance.
+  3. **Right-click on a catalog card** — *Show clip info...* sits at the top of the existing card context menu, above *Open file location*.
+  All three route through a single `ShowInfoCommand` on `VideoDetailViewModel`, which fires a `ShowInfoRequested` event that `MainWindow` subscribes to and turns into a window. Keeping the VM out of window construction keeps the layer split clean.
 - **Cinematic design system.** Replaced the default ModernWpfUI look with a custom dark, content-first design inspired by DaVinci Resolve's media pool and Adobe Bridge — the audience this app actually serves. New design tokens live under `src/VideoArchiveManager.App/Resources/Theme/`:
   - `Colors.xaml` — layered near-black surfaces (`App.Background.Base/Elevated/Highest` at `#16161A`/`#1E1E22`/`#26262C`), three foreground tiers (Primary/Secondary/Tertiary) that replace every former `Opacity="0.7"` hierarchy hack, and a single warm-amber accent (`#F5A623`) chosen specifically *not* to be the default Windows blue every WPF app ships with. Overrides on `SystemControlBackgroundChromeMediumLowBrush` / `SystemAccentColor*` so existing references upgrade for free; `ModernWpf.ThemeManager.Current.AccentColor` is also set in `App.xaml.cs` so accent-derived brushes resolved at template-build time pick it up belt-and-braces.
   - `Typography.xaml` — Display / H1 / H2 / Section / Body / BodyMuted / BodySmall / Caption / Mono on Segoe UI Variable. The new `App.Type.Section` (11px SemiBold UPPERCASE) replaces the old 13px+0.8 opacity `SectionHeader` and visibly anchors sidebar groups as rail labels rather than competing-with-content headings.
@@ -31,6 +44,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ### Changed
 
+- **Editor pane METADATA block removed.** The inline 8-row grid (Duration / Resolution / Camera / Codec / Size / Folder / Location / GPS) under the thumbnail is gone. The right sidebar now reads as a *workspace* (review state, tags, notes, action buttons), not a *workspace + reference dump* — matching how DaVinci Resolve, Adobe Bridge, Final Cut Pro, and Premiere Pro split inspection from action. Reference data lives in the new clip-info popup, which holds roughly 2.5× as many fields as the old block did.
 - **Editor action row trimmed.** Removed *Copy path* — the catalog right-click *Open file location* command and the editor's *Open location* button cover the realistic workflows (reveal in Explorer, then drag from there). The action row is now Play in app / Play externally / Open location, primary-secondary-secondary in importance order. The `CopyFilePathCommand` itself remains on `VideoDetailViewModel` so re-adding the button is a one-line XAML change if anyone misses it.
 
 ### Fixed

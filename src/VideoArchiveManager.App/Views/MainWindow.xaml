@@ -39,6 +39,10 @@
         <KeyBinding Key="L" Modifiers="Control+Shift" Command="{Binding ClearFiltersCommand}" />
         <KeyBinding Key="R" Modifiers="Control+Shift" Command="{Binding StartReviewSessionCommand}" />
         <KeyBinding Key="F" Modifiers="Control" Command="{x:Static ApplicationCommands.Find}" />
+        <!-- Windows convention: Alt+Enter opens "Properties" / "Get info" for
+             the current selection. We mirror that here so the clip-info
+             popup is reachable without a right-click hunt. -->
+        <KeyBinding Key="Enter" Modifiers="Alt" Command="{Binding Detail.ShowInfoCommand}" />
     </Window.InputBindings>
 
     <Window.CommandBindings>
@@ -444,6 +448,11 @@
                          and Remove commands both operate on the current selection — make
                          sure the right-clicked clip is actually selected first. -->
                     <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                        <MenuItem Header="Show clip _info..."
+                                  InputGestureText="Alt+Enter"
+                                  Command="{Binding Detail.ShowInfoCommand}"
+                                  ToolTip="Open the full clip-info popup (file system, video, camera, location, catalog, internal)." />
+                        <Separator />
                         <MenuItem Header="_Open file location"
                                   Command="{Binding Detail.OpenFileLocationCommand}"
                                   ToolTip="Reveal the source video file in Windows Explorer." />
@@ -714,10 +723,24 @@
                                   Visibility="{Binding Detail.Current, Converter={StaticResource NullToVisibility}}">
                         <StackPanel Margin="16" DataContext="{Binding Detail}">
                             <!-- Thumbnail only in normal mode; in review mode the video
-                                 is showing in its own column so we hide this. -->
+                                 is showing in its own column so we hide this. The thumbnail
+                                 right-click is the primary entry point for the clip-info
+                                 popup (mirrored on catalog cards and Alt+Enter). -->
                             <Image Source="{Binding LargeThumbnail}" MaxHeight="220"
                                    Stretch="Uniform" Margin="0,0,0,12"
-                                   Visibility="{Binding IsPlayerVisible, Converter={StaticResource BoolToVisibilityInverted}}" />
+                                   Cursor="Hand"
+                                   Visibility="{Binding IsPlayerVisible, Converter={StaticResource BoolToVisibilityInverted}}">
+                                <Image.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Show clip _info..."
+                                                  InputGestureText="Alt+Enter"
+                                                  Command="{Binding PlacementTarget.DataContext.ShowInfoCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                        <Separator />
+                                        <MenuItem Header="_Open file location"
+                                                  Command="{Binding PlacementTarget.DataContext.OpenFileLocationCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                    </ContextMenu>
+                                </Image.ContextMenu>
+                            </Image>
 
                             <TextBlock Text="{Binding Current.FileName}"
                                        Style="{StaticResource App.Type.H2}"
@@ -748,80 +771,6 @@
                                        FontSize="11"
                                        Margin="0,4,0,0"
                                        Visibility="{Binding CanPlayInApp, Converter={StaticResource BoolToVisibilityInverted}}" />
-
-                            <TextBlock Text="METADATA" Style="{StaticResource App.Type.Section}" />
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition /><RowDefinition /><RowDefinition />
-                                    <RowDefinition /><RowDefinition /><RowDefinition />
-                                    <RowDefinition /><RowDefinition />
-                                </Grid.RowDefinitions>
-                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Duration"
-                                           Foreground="{DynamicResource App.Foreground.Tertiary}"
-                                           FontSize="11" Margin="0,3,12,3" />
-                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Current.DurationText}"
-                                           FontSize="13" Margin="0,2,0,2" />
-                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Resolution"
-                                           Foreground="{DynamicResource App.Foreground.Tertiary}"
-                                           FontSize="11" Margin="0,3,12,3" />
-                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Current.Resolution}"
-                                           FontSize="13" Margin="0,2,0,2" />
-                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Camera"
-                                           Foreground="{DynamicResource App.Foreground.Tertiary}"
-                                           FontSize="11" Margin="0,3,12,3" />
-                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Current.Camera}"
-                                           FontSize="13" Margin="0,2,0,2" />
-                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Codec"
-                                           Foreground="{DynamicResource App.Foreground.Tertiary}"
-                                           FontSize="11" Margin="0,3,12,3" />
-                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Current.Codec}"
-                                           FontSize="13" Margin="0,2,0,2" />
-                                <TextBlock Grid.Row="4" Grid.Column="0" Text="Size"
-                                           Foreground="{DynamicResource App.Foreground.Tertiary}"
-                                           FontSize="11" Margin="0,3,12,3" />
-                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Current.FileSizeText}"
-                                           FontSize="13" Margin="0,2,0,2" />
-                                <TextBlock Grid.Row="5" Grid.Column="0" Text="Folder"
-                                           Foreground="{DynamicResource App.Foreground.Tertiary}"
-                                           FontSize="11" Margin="0,3,12,3" />
-                                <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Current.FolderPath}"
-                                           FontSize="13" Margin="0,2,0,2"
-                                           TextWrapping="Wrap"
-                                           Foreground="{DynamicResource App.Foreground.Secondary}" />
-
-                                <!-- Location row: only shown if LocationText is set (from folder parsing
-                                     today, or from reverse-geocoded GPS once that's wired up). -->
-                                <TextBlock Grid.Row="6" Grid.Column="0" Text="Location"
-                                           Foreground="{DynamicResource App.Foreground.Tertiary}"
-                                           FontSize="11" Margin="0,3,12,3"
-                                           Visibility="{Binding Current.HasLocation, Converter={StaticResource BoolToVisibility}}" />
-                                <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding Current.LocationText}"
-                                           FontSize="13" Margin="0,2,0,2"
-                                           TextWrapping="Wrap"
-                                           Visibility="{Binding Current.HasLocation, Converter={StaticResource BoolToVisibility}}" />
-
-                                <!-- GPS row: only shown if coords were extracted from the file. -->
-                                <TextBlock Grid.Row="7" Grid.Column="0" Text="GPS"
-                                           Foreground="{DynamicResource App.Foreground.Tertiary}"
-                                           FontSize="11" Margin="0,3,12,3"
-                                           Visibility="{Binding Current.HasGps, Converter={StaticResource BoolToVisibility}}" />
-                                <StackPanel Grid.Row="7" Grid.Column="1" Orientation="Horizontal"
-                                            Margin="0,2,0,2"
-                                            Visibility="{Binding Current.HasGps, Converter={StaticResource BoolToVisibility}}">
-                                    <TextBlock Text="{Binding Current.GpsText}" FontSize="13" />
-                                    <TextBlock Margin="8,0,0,0" FontSize="13">
-                                        <Hyperlink NavigateUri="{Binding Current.GpsMapUrl}"
-                                                   RequestNavigate="Hyperlink_RequestNavigate"
-                                                   Foreground="{DynamicResource App.Accent}">
-                                            Open in map
-                                        </Hyperlink>
-                                    </TextBlock>
-                                </StackPanel>
-                            </Grid>
 
                             <TextBlock Text="TAGS" Style="{StaticResource App.Type.Section}" />
                             <ItemsControl ItemsSource="{Binding Tags}">

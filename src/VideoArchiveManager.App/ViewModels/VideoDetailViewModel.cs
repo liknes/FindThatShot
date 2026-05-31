@@ -81,6 +81,21 @@ public partial class VideoDetailViewModel : ObservableObject
     // existing name) — subscribers deduplicate by Id.
     public event EventHandler<Tag>? TagCatalogChanged;
 
+    // Fires when the user asks to see the full info popup for the current
+    // clip (right-click on the editor thumbnail / catalog card, or the
+    // Alt+Enter shortcut). MainWindow listens and opens VideoInfoWindow.
+    // The VM doesn't construct the window itself — that would couple the
+    // VM to a specific UI host and to the sidecar service's view-side
+    // formatting concerns.
+    public event EventHandler<VideoItemViewModel>? ShowInfoRequested;
+
+    [RelayCommand]
+    private void ShowInfo()
+    {
+        if (Current is null) return;
+        ShowInfoRequested?.Invoke(this, Current);
+    }
+
     public async Task LoadAsync(VideoItemViewModel? item)
     {
         ClosePlayer();
