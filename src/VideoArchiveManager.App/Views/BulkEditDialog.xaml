@@ -52,9 +52,10 @@
 
             <CheckBox Content="Add a tag" IsChecked="{Binding ApplyTag}" />
             <StackPanel Orientation="Horizontal" Margin="24,4,0,12" IsEnabled="{Binding ApplyTag}">
-                <TextBox Width="180"
-                         Text="{Binding NewTagName, UpdateSourceTrigger=PropertyChanged}"
-                         ui:ControlHelper.PlaceholderText="Tag name" />
+                <ui:AutoSuggestBox Width="180"
+                                   Text="{Binding NewTagName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                   ItemsSource="{Binding TagSuggestions}"
+                                   PlaceholderText="Tag name" />
                 <ComboBox Width="140" Margin="6,0,0,0"
                           ItemsSource="{Binding AvailableTagTypes}"
                           SelectedItem="{Binding NewTagType}" />

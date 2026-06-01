@@ -816,6 +816,10 @@ public partial class MainViewModel : ObservableObject
         // keeps cameras / root folders in sync too.
         await ReloadFiltersAsync();
         await SearchAsync();
+        // Also refresh the detail editor's AutoSuggestBox cache so a tag
+        // minted in bulk edit shows up immediately when the user starts
+        // typing in the per-clip tag field.
+        await Detail.RefreshTagCatalogAsync();
     }
 
     // One-click "I want to do a review batch now" affordance.

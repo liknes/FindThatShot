@@ -52,6 +52,19 @@ public partial class VideoDetailViewModel : ObservableObject
     public ObservableCollection<VideoStatus> AvailableStatuses { get; } = new(Enum.GetValues<VideoStatus>());
     public ObservableCollection<int> RatingValues { get; } = new(new[] { 0, 1, 2, 3, 4, 5 });
 
+    // Snapshot of every Tag in the catalog, used to populate the
+    // AutoSuggestBox dropdown. Refreshed when a video is loaded, when
+    // the user adds a tag via this editor, and explicitly via
+    // RefreshTagCatalogAsync (called by the main window after a bulk
+    // edit, which can also mint new tags). Keeps the suggestion list
+    // off the hot path — filtering happens in-memory.
+    private List<Tag> _allTagsCache = new();
+
+    // Filtered, type-aware, attached-tag-excluded view of _allTagsCache
+    // matching the user's current NewTagName / NewTagType. Bound to
+    // ui:AutoSuggestBox.ItemsSource so each keystroke updates the dropdown.
+    public ObservableCollection<string> TagSuggestions { get; } = new();
+
     [ObservableProperty]
     private string _newTagName = string.Empty;
 
@@ -118,6 +131,51 @@ public partial class VideoDetailViewModel : ObservableObject
         var tags = await _tagService.GetTagsForVideoAsync(item.Id);
         foreach (var t in tags) Tags.Add(t);
         OnPropertyChanged(nameof(LargeThumbnail));
+
+        // Refresh the suggestion cache for the AutoSuggestBox. Cheap
+        // single-table query and the user is likely about to start
+        // tagging this clip.
+        await RefreshTagCatalogAsync();
+    }
+
+    // Reloads the in-memory tag catalog used by the AutoSuggestBox.
+    // Public so the host (MainViewModel) can call it after BulkEdit,
+    // which can mint new tags the detail editor wouldn't otherwise
+    // know about until the next video selection.
+    public async Task RefreshTagCatalogAsync(CancellationToken cancellationToken = default)
+    {
+        var all = await _tagService.GetAllAsync(cancellationToken);
+        _allTagsCache = all.ToList();
+        UpdateTagSuggestions();
+    }
+
+    partial void OnNewTagNameChanged(string value) => UpdateTagSuggestions();
+
+    partial void OnNewTagTypeChanged(TagType value) => UpdateTagSuggestions();
+
+    // Rebuilds TagSuggestions from _allTagsCache using a case-insensitive
+    // "contains" match against NewTagName, filtered to the currently
+    // selected NewTagType (matches the DB's (Name, Type) uniqueness
+    // contract), and excluding tags already attached to the current
+    // video. Capped to 20 entries so the dropdown stays scannable.
+    private void UpdateTagSuggestions()
+    {
+        TagSuggestions.Clear();
+        if (_allTagsCache.Count == 0) return;
+        if (string.IsNullOrWhiteSpace(NewTagName)) return;
+
+        var attachedIds = Tags.Select(t => t.Id).ToHashSet();
+        var query = NewTagName.Trim();
+
+        var matches = _allTagsCache
+            .Where(t => t.Type == NewTagType)
+            .Where(t => !attachedIds.Contains(t.Id))
+            .Where(t => t.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(t => t.Name, StringComparer.OrdinalIgnoreCase)
+            .Select(t => t.Name)
+            .Take(20);
+
+        foreach (var name in matches) TagSuggestions.Add(name);
     }
 
     [RelayCommand]
@@ -176,6 +234,13 @@ public partial class VideoDetailViewModel : ObservableObject
         }
         NewTagName = string.Empty;
         Current.TagSummary = string.Join(", ", Tags.Select(t => t.Name));
+
+        // Keep the suggestion cache fresh if this was a brand-new tag —
+        // otherwise the next "Add" would miss it until a video reload.
+        if (!_allTagsCache.Any(t => t.Id == tag.Id))
+        {
+            _allTagsCache.Add(tag);
+        }
 
         // Notify the main window so the sidebar tag picker can pick up a
         // brand-new tag without waiting for the next ReloadFiltersAsync.

@@ -23,12 +23,54 @@ public partial class BulkEditViewModel : ObservableObject
         _contextFactory = contextFactory;
         _tagService = tagService;
         _sidecar = sidecar;
+
+        // Fire-and-forget load of the tag catalog for the AutoSuggestBox.
+        // The dialog typically takes longer to fill out than this query
+        // takes to return, so the cache is ready by the time the user
+        // starts typing in the tag field.
+        _ = LoadTagCatalogAsync();
     }
 
     public IReadOnlyList<int> TargetIds { get; private set; } = Array.Empty<int>();
 
     public ObservableCollection<VideoStatus> AvailableStatuses { get; } = new(Enum.GetValues<VideoStatus>());
     public ObservableCollection<TagType> AvailableTagTypes { get; } = new(Enum.GetValues<TagType>());
+
+    // Cached snapshot of every Tag in the catalog. Filtered into
+    // TagSuggestions on each keystroke / type change.
+    private List<Tag> _allTagsCache = new();
+
+    // AutoSuggestBox.ItemsSource — names that contain the user's input
+    // (case-insensitive) within the selected tag type.
+    public ObservableCollection<string> TagSuggestions { get; } = new();
+
+    private async Task LoadTagCatalogAsync()
+    {
+        var all = await _tagService.GetAllAsync();
+        _allTagsCache = all.ToList();
+        UpdateTagSuggestions();
+    }
+
+    partial void OnNewTagNameChanged(string value) => UpdateTagSuggestions();
+
+    partial void OnNewTagTypeChanged(TagType value) => UpdateTagSuggestions();
+
+    private void UpdateTagSuggestions()
+    {
+        TagSuggestions.Clear();
+        if (_allTagsCache.Count == 0) return;
+        if (string.IsNullOrWhiteSpace(NewTagName)) return;
+
+        var query = NewTagName.Trim();
+        var matches = _allTagsCache
+            .Where(t => t.Type == NewTagType)
+            .Where(t => t.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(t => t.Name, StringComparer.OrdinalIgnoreCase)
+            .Select(t => t.Name)
+            .Take(20);
+
+        foreach (var name in matches) TagSuggestions.Add(name);
+    }
 
     [ObservableProperty]
     private bool _applyStatus;

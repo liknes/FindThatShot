@@ -236,6 +236,21 @@ public partial class MainWindow : Window
             System.Windows.Threading.DispatcherPriority.Background);
     }
 
+    // ModernWpf's AutoSuggestBox raises QuerySubmitted on Enter (or when
+    // the user picks a suggestion with Enter). The Text binding has
+    // already pushed NewTagName, so we just kick the existing
+    // AddTagCommand on the detail VM. Keeps the Enter-to-add UX that the
+    // old TextBox + KeyBinding gave us, plus dropdown-driven completion.
+    private void NewTagSuggest_QuerySubmitted(
+        ModernWpf.Controls.AutoSuggestBox sender,
+        ModernWpf.Controls.AutoSuggestBoxQuerySubmittedEventArgs args)
+    {
+        if (_viewModel.Detail.AddTagCommand.CanExecute(null))
+        {
+            _viewModel.Detail.AddTagCommand.Execute(null);
+        }
+    }
+
     private async void PlayerPlayPause_Click(object sender, RoutedEventArgs e)
     {
         if (!App.IsPlayerAvailable) return;
