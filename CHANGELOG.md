@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-06-01
+
 ### Added
 
 - **Lightroom-style folder tree in the sidebar.** The flat *ROOT FOLDERS* `ListBox` (registered roots only, no way to drill in) has been replaced with a hierarchical *FOLDERS* `TreeView` that mirrors the on-disk layout of the catalogued footage — drive → registered root → subfolder → subfolder, exactly the panel shape Lightroom / Bridge / Premiere users already have muscle memory for. Selecting *any* node filters the catalog to clips under that path (uses the existing `SearchQuery.RootFolderPath` prefix match), so the rail collapses from a "remove root folder" toolbar into a fast spatial navigator: drives across the top show recursive video counts, registered roots sit underneath, and every subfolder the scanner discovered is reachable in two clicks. Implementation details:
@@ -177,7 +179,8 @@ First public release.
 
 - Responsive default window size; date pickers and the *Play externally* button are no longer clipped at common screen widths.
 
-[Unreleased]: https://github.com/liknes/FindThatShot/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/liknes/FindThatShot/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/liknes/FindThatShot/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/liknes/FindThatShot/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/liknes/FindThatShot/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/liknes/FindThatShot/compare/v0.4.0...v0.4.1
