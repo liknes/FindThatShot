@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-06-01
+
 ### Added
 
 - **DaVinci Resolve-style proxy playback in the in-app player (opt-in via *Settings → PLAYBACK → Prefer DaVinci Resolve proxies for in-app playback*, default off).** Reviewing high-bitrate 4K 60p hero clips for the sole purpose of tagging is wasted decode work — Resolve users already have a proxy ladder generated for their edit (typically 1080p ProRes Proxy / DNxHR LB / H.264 in a sibling `Proxy` folder), and that's the better source to feed our player. When the new setting is on, `VideoDetailViewModel.PlayInApp` consults a new `IProxyResolver` service (`DaVinciProxyResolver`, registered as a singleton in `App.xaml.cs`) which probes `<hero-folder>/Proxy/<same-base-name>.<any-ext>` and, when a match exists, hands the proxy path to `MediaSource` instead of the hero. The match is filename-stem only (no hard-coded extension list), so it transparently handles whichever codec the user told Resolve to produce — `.mov` for ProRes/DNxHR, `.mp4` for H.264/H.265, `.mkv` for the occasional offline workflow — without us needing a new config field every time the encoder choice changes. The resolver is intentionally orthogonal to `AppSettings.ExcludedFolderNames` (which already excludes `Proxy` from the scanner so proxies never appear as their own catalog entries): the scanner does catalog work, the resolver does direct `Directory.EnumerateFiles` probes at playback time, the two systems never coordinate. Catalog entries, thumbnails, ffprobe metadata, sidecars and the *Play externally* command all continue to point at the hero file regardless of the setting — proxy substitution lives **only** at the in-app playback chokepoint. The resolver swallows all I/O failures (offline drives, permission denied, malformed paths) and returns `null`, so callers can fall back to the hero file unconditionally — proxy resolution is opportunistic by design and a missing proxy is never an error. Defaults to `false` so a fresh install behaves predictably (the file you clicked is the file that plays); users with a Resolve workflow flip it on once and forget it. `JsonSettingsStore.MergeWithUserOverrides` carries the new field through round-trip, `SettingsViewModel.BuildSettings` carries it forward on Save so opening Settings doesn't reset it, and the Settings dialog gains a new *PLAYBACK* section between *SIDECAR FILES* and *SCANNING* with the explanatory copy spelling out exactly which side of the catalog/playback split is affected.
@@ -208,7 +210,8 @@ First public release.
 
 - Responsive default window size; date pickers and the *Play externally* button are no longer clipped at common screen widths.
 
-[Unreleased]: https://github.com/liknes/FindThatShot/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/liknes/FindThatShot/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/liknes/FindThatShot/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/liknes/FindThatShot/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/liknes/FindThatShot/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/liknes/FindThatShot/compare/v0.5.0...v0.6.0
