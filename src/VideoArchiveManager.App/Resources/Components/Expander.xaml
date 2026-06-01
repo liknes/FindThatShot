@@ -126,7 +126,13 @@
              expander in the rail sets Margin="0,0,0,0" so it sits flush
              with the sidebar Padding). -->
         <Setter Property="Margin" Value="0,12,0,0" />
+        <!-- VerticalAlignment defaults to Stretch (not Top) so when an
+             Expander sits in a star-sized parent row it grows to fill
+             that row's full height; the inner template's body row (Height=*)
+             then gives that height to the body content. -->
+        <Setter Property="VerticalAlignment" Value="Stretch" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Stretch" />
         <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="ExpandDirection" Value="Down" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
@@ -136,7 +142,18 @@
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
+                            <!-- Body row is star-sized so an expanded
+                                 panel inside a star-sized parent row
+                                 (the rail Grid in MainWindow.xaml uses
+                                 BoolToStarOrAuto on its row heights)
+                                 stretches its body to fill all available
+                                 height. When the Expander is collapsed,
+                                 the body's Visibility=Collapsed makes its
+                                 measured height 0, and because the parent
+                                 row is Auto in that case, the * here
+                                 collapses to nothing too — header remains
+                                 the only visible content. -->
+                            <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
 
                         <!-- Header row. Two columns: the toggle band
@@ -169,10 +186,19 @@
                         <!-- Body. Visibility flips to Visible when
                              IsExpanded=true (trigger below). Padding gives
                              the body content a small top gap from the
-                             header so the chrome doesn't feel cramped. -->
+                             header so the chrome doesn't feel cramped.
+                             HorizontalAlignment / VerticalAlignment default
+                             to Stretch so the body content fills both axes
+                             of the row — call sites can drop a single
+                             control (e.g. a TreeView) directly into the
+                             Expander and it'll stretch to the full row
+                             height when the panel takes star share of the
+                             rail. -->
                         <ContentPresenter x:Name="ExpandSite"
                                           Grid.Row="1"
                                           Margin="0,4,0,0"
+                                          HorizontalAlignment="Stretch"
+                                          VerticalAlignment="Stretch"
                                           Visibility="Collapsed" />
                     </Grid>
                     <ControlTemplate.Triggers>

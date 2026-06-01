@@ -11,4 +11,8 @@
     <conv:WidthToAspectHeightConverter x:Key="WidthTo16x9Height" Ratio="0.5625" />
     <conv:CountToVisibilityConverter x:Key="EmptyToVisibility" />
     <conv:CountToVisibilityConverter x:Key="NotEmptyToVisibility" ShowWhenZero="False" />
+    <!-- true → star, false → Auto. Used by the sidebar rail's outer Grid
+         so an expanded panel grabs proportional rail height while a
+         collapsed one shrinks to header-only Auto height. -->
+    <conv:BoolToGridLengthConverter x:Key="BoolToStarOrAuto" />
 </ResourceDictionary>

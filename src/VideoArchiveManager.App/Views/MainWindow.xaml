@@ -280,8 +280,33 @@
             <Border Grid.Column="0" Padding="10"
                     BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                     BorderThickness="0,0,1,0">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel>
+                <!-- Sidebar rail layout (Lightroom-style proportional split).
+                     Each panel (FOLDERS / TAGS / CAMERAS) gets its own
+                     star-sized row whose Height is bound through
+                     BoolToStarOrAuto: true → 1*, false → Auto. So:
+                       * All three expanded → each panel gets 1/3 of rail.
+                       * Two collapsed → the one expanded takes all the
+                         leftover space (the user's specific request:
+                         "if I minimize Tags + Cameras, Folders should
+                         maximize"). 
+                       * All three collapsed → just headers stack at the
+                         top, rest of the rail sits empty.
+                     The bottom row (Auto) holds the two general-view
+                     CheckBoxes; they always render at natural height
+                     regardless of what's expanded above.
+                     There's no outer ScrollViewer here on purpose —
+                     star sizing inside a ScrollViewer is meaningless
+                     (the ScrollViewer offers infinite vertical space, so
+                     * has nothing to share). Each panel relies on its
+                     inner control (TreeView / ListBox) for content
+                     scrolling once the panel itself is sized. -->
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="{Binding IsFoldersPanelExpanded, Converter={StaticResource BoolToStarOrAuto}}" />
+                        <RowDefinition Height="{Binding IsTagsPanelExpanded, Converter={StaticResource BoolToStarOrAuto}}" />
+                        <RowDefinition Height="{Binding IsCamerasPanelExpanded, Converter={StaticResource BoolToStarOrAuto}}" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
                         <!-- FOLDERS expander.
                              The section label sits in Expander.Header and the
                              trailing "Add folder" (+) affordance lives in
@@ -295,7 +320,8 @@
                              IsExpanded is TwoWay-bound to MainViewModel so
                              collapse state persists across launches via
                              AppSettings.SidebarFoldersExpanded. -->
-                        <Expander Style="{StaticResource App.Expander}"
+                        <Expander Grid.Row="0"
+                                  Style="{StaticResource App.Expander}"
                                   Margin="0"
                                   IsExpanded="{Binding IsFoldersPanelExpanded, Mode=TwoWay}">
                             <Expander.Header>
@@ -314,12 +340,24 @@
                                         Command="{Binding AddRootFolderCommand}"
                                         Visibility="{Binding RootFolders.Count, Converter={StaticResource NotEmptyToVisibility}}" />
                             </Expander.Tag>
-                            <StackPanel>
+                            <!-- Body laid out as a Grid (Auto + *) so the TreeView
+                                 stretches to fill the rail row when FOLDERS is
+                                 the only expanded panel. The empty state at row 0
+                                 only renders in the zero-folders edge case (its
+                                 own Visibility binding) and otherwise contributes
+                                 0 height — letting the tree have the full slot. -->
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+
                                 <!-- First-run empty state: shown when no root folders are
                                      configured. Headline + subtext + a primary CTA that
                                      triggers the same Add folder picker as Ctrl+O / the
                                      File menu. Replaces the tree while empty. -->
-                                <Border Padding="0,4,0,8"
+                                <Border Grid.Row="0"
+                                        Padding="0,4,0,8"
                                         Visibility="{Binding RootFolders.Count, Converter={StaticResource EmptyToVisibility}}">
                                     <helpers:EmptyState Glyph="{StaticResource Icon.Folder}"
                                                         Headline="No folders yet"
@@ -338,12 +376,17 @@
                                      SelectedItemChanged (handled in code-behind) mirrors
                                      the TreeView's read-only SelectedItem onto the
                                      SelectedFolderNode property on the VM, which then
-                                     flows into the catalog filter. -->
+                                     flows into the catalog filter.
+                                     No MaxHeight here: the parent Grid row's *
+                                     sizing controls overall height. The TreeView's
+                                     own ScrollViewer takes over once content
+                                     exceeds the granted height. -->
                                 <TreeView x:Name="FolderTreeView"
+                                          Grid.Row="1"
                                           ItemsSource="{Binding FolderTree}"
                                           Style="{StaticResource App.TreeView}"
-                                          MaxHeight="320"
                                           Margin="0,4,0,0"
+                                          VerticalAlignment="Stretch"
                                           SelectedItemChanged="FolderTreeView_OnSelectedItemChanged"
                                           Visibility="{Binding RootFolders.Count, Converter={StaticResource NotEmptyToVisibility}}">
                             <TreeView.ContextMenu>
@@ -446,7 +489,7 @@
                                 </HierarchicalDataTemplate>
                                     </TreeView.ItemTemplate>
                                 </TreeView>
-                            </StackPanel>
+                            </Grid>
                         </Expander>
 
                         <!-- TAGS expander. Same chrome family as FOLDERS:
@@ -459,7 +502,8 @@
                              ARE active filter state, so collapsing the
                              panel doesn't drop the filters; reopening
                              reveals them unchanged. -->
-                        <Expander Style="{StaticResource App.Expander}"
+                        <Expander Grid.Row="1"
+                                  Style="{StaticResource App.Expander}"
                                   IsExpanded="{Binding IsTagsPanelExpanded, Mode=TwoWay}">
                             <Expander.Header>
                                 <TextBlock Text="TAGS"
@@ -476,8 +520,19 @@
                                         ToolTip="Remove all selected tag filters."
                                         Command="{Binding ClearTagFiltersCommand}" />
                             </Expander.Tag>
-                            <StackPanel>
-                                <ItemsControl ItemsSource="{Binding SelectedTagFilters}"
+                            <!-- Body Grid: chips (Auto) + filter input (Auto)
+                                 + picker list (*). The list takes whatever
+                                 height is left over so when TAGS is the only
+                                 expanded panel, the picker fills the rail. -->
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+
+                                <ItemsControl Grid.Row="0"
+                                              ItemsSource="{Binding SelectedTagFilters}"
                                               Margin="0,0,0,4">
                                     <ItemsControl.ItemsPanel>
                                         <ItemsPanelTemplate>
@@ -502,20 +557,29 @@
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
 
-                                <TextBox Text="{Binding TagFilterSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                <TextBox Grid.Row="1"
+                                         Text="{Binding TagFilterSearchText, UpdateSourceTrigger=PropertyChanged}"
                                          ui:ControlHelper.PlaceholderText="Type to filter tags…"
                                          Margin="0,0,0,4" />
 
+                                <!-- MinHeight ensures the picker stays usable
+                                     even when TAGS is sharing rail space
+                                     with two other expanded panels on a
+                                     short window. The list's own
+                                     ScrollViewer takes over once content
+                                     exceeds the granted height. -->
                                 <ListBox x:Name="TagFilterList"
+                                         Grid.Row="2"
                                          ItemsSource="{Binding FilteredTags}"
-                                         Height="180"
+                                         MinHeight="120"
                                          DisplayMemberPath="Name"
                                          Style="{StaticResource App.ListBox}"
+                                         VerticalAlignment="Stretch"
                                          SelectionChanged="TagFilterList_OnSelectionChanged"
                                          VirtualizingPanel.IsVirtualizing="True"
                                          VirtualizingPanel.VirtualizationMode="Recycling"
                                          ToolTip="Click a tag to add it as a filter. Multiple tags are combined with AND (videos must have every selected tag)." />
-                            </StackPanel>
+                            </Grid>
                         </Expander>
 
                         <!-- CAMERAS expander. Last sidebar panel; matches
@@ -525,7 +589,8 @@
                              OUTSIDE every expander so they remain visible
                              whatever the user has collapsed — they're
                              general view modes, not section content. -->
-                        <Expander Style="{StaticResource App.Expander}"
+                        <Expander Grid.Row="2"
+                                  Style="{StaticResource App.Expander}"
                                   IsExpanded="{Binding IsCamerasPanelExpanded, Mode=TwoWay}">
                             <Expander.Header>
                                 <TextBlock Text="CAMERAS"
@@ -542,24 +607,34 @@
                                         ToolTip="Remove the camera filter."
                                         Command="{Binding ClearCameraFilterCommand}" />
                             </Expander.Tag>
+                            <!-- MinHeight keeps the camera picker usable in
+                                 the 3-panel-expanded layout; VerticalAlignment
+                                 Stretch lets it fill the row when it's the
+                                 only expanded panel. -->
                             <ListBox ItemsSource="{Binding Cameras}"
                                      SelectedItem="{Binding CameraFilter}"
                                      Style="{StaticResource App.ListBox}"
-                                     Height="120" />
+                                     MinHeight="100"
+                                     VerticalAlignment="Stretch" />
                         </Expander>
 
-                        <CheckBox Content="Show only available files"
-                                  IsChecked="{Binding ShowOnlyAvailable}"
-                                  FontSize="12"
-                                  Margin="0,12,0,0" />
+                        <!-- General view-mode toggles. Always visible
+                             regardless of which sections are collapsed —
+                             they're orthogonal to the FOLDERS / TAGS /
+                             CAMERAS filters above. -->
+                        <StackPanel Grid.Row="3">
+                            <CheckBox Content="Show only available files"
+                                      IsChecked="{Binding ShowOnlyAvailable}"
+                                      FontSize="12"
+                                      Margin="0,12,0,0" />
 
-                        <CheckBox Content="Show only unreviewed"
-                                  IsChecked="{Binding OnlyUnreviewed}"
-                                  FontSize="12"
-                                  Margin="0,4,0,0"
-                                  ToolTip="Limit the catalog to clips that look untouched: still marked Unreviewed OR have no tags yet. Same signal used by the &quot;Start review session&quot; button." />
-                    </StackPanel>
-                </ScrollViewer>
+                            <CheckBox Content="Show only unreviewed"
+                                      IsChecked="{Binding OnlyUnreviewed}"
+                                      FontSize="12"
+                                      Margin="0,4,0,0"
+                                      ToolTip="Limit the catalog to clips that look untouched: still marked Unreviewed OR have no tags yet. Same signal used by the &quot;Start review session&quot; button." />
+                        </StackPanel>
+                    </Grid>
             </Border>
 
             <!-- Drag handle between the sidebar and the catalog grid.
@@ -574,8 +649,14 @@
             <!-- Zero-results overlay: shows when Videos is empty (initial scan
                  not run yet, or filters returning nothing). Sits in the same
                  grid cell as the catalog so it overlays the empty area
-                 without affecting the layout. -->
+                 without affecting the layout.
+                 Panel.ZIndex="1" lifts the overlay above the ListBox so its
+                 "Clear filters" CTA actually receives clicks — the ListBox
+                 has Background="Transparent" which is hit-test visible in
+                 WPF, and being later in document order it would otherwise
+                 swallow clicks aimed at the empty-state button. -->
             <helpers:EmptyState Grid.Column="2"
+                                Panel.ZIndex="1"
                                 Glyph="{StaticResource Icon.Search}"
                                 Headline="No clips match"
                                 Subtext="Try adjusting filters, clearing your search, or scanning a folder to bring videos into the catalog."
