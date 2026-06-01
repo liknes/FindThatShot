@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.modernwpf.com/2019"
         xmlns:helpers="clr-namespace:VideoArchiveManager.App.Helpers.Controls"
-        Title="About Video Archive Manager"
+        Title="About Find That Shot"
         Width="540" SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
         Background="{DynamicResource App.Background.Base}"
@@ -26,7 +26,7 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0">
-            <TextBlock Text="Video Archive Manager"
+            <TextBlock Text="Find That Shot"
                        Style="{StaticResource App.Type.Display}" />
             <TextBlock x:Name="VersionText"
                        Style="{StaticResource App.Type.Caption}"

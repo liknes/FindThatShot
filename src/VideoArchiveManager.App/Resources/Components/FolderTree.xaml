@@ -1,0 +1,192 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        Folder tree styling.
+
+        The default WPF TreeViewItem template uses Highlight system brushes
+        and a thick disclosure triangle that reads as "1990s Explorer"
+        against our cinematic dark surfaces. This file replaces both the
+        expander and the container so the tree feels like the rest of the
+        app: 12px row height, 4px radius hover/select pill, an accent-
+        amber selection on App.Accent.Subtle, and a single chevron glyph
+        that rotates 90° between collapsed and expanded states.
+
+        The container Style itself wires IsExpanded / IsSelected as TwoWay
+        bindings against the data model (FolderNode.IsExpanded /
+        FolderNode.IsSelected). Application sites only need to set
+        ItemTemplate / ItemsSource — selection persistence, expansion
+        persistence across rebuilds, and the "expand ancestors when
+        restoring selection" trick all flow through the data model.
+    -->
+
+    <!-- Disclosure chevron. ▶ at rest, rotates to ▼ when the parent
+         TreeViewItem.IsExpanded flips. Pure Fluent glyph so it lives at
+         the same baseline as every other icon in the app. -->
+    <Style x:Key="App.TreeViewItem.ChevronToggle" TargetType="ToggleButton">
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Width" Value="16" />
+        <Setter Property="Height" Value="20" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource App.Foreground.Tertiary}" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border Background="{TemplateBinding Background}"
+                            CornerRadius="2">
+                        <TextBlock x:Name="Glyph"
+                                   FontFamily="{StaticResource App.Icon.FontFamily}"
+                                   FontSize="9"
+                                   Text="{StaticResource Icon.ChevronRight}"
+                                   Foreground="{TemplateBinding Foreground}"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   RenderTransformOrigin="0.5,0.5"
+                                   UseLayoutRounding="True"
+                                   TextOptions.TextRenderingMode="ClearType">
+                            <TextBlock.RenderTransform>
+                                <RotateTransform x:Name="GlyphRotate" Angle="0" />
+                            </TextBlock.RenderTransform>
+                        </TextBlock>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="GlyphRotate"
+                                                         Storyboard.TargetProperty="Angle"
+                                                         To="90"
+                                                         Duration="0:0:0.12">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseOut" />
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="GlyphRotate"
+                                                         Storyboard.TargetProperty="Angle"
+                                                         To="0"
+                                                         Duration="0:0:0.12" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource App.Foreground.Primary}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
+        Container style for FolderNode rows.
+
+        Layout: 16px chevron + ContentPresenter that takes the rest.
+        The HierarchicalDataTemplate at the call site renders the Header
+        (folder glyph + name + count) so this template stays generic.
+
+        IsExpanded / IsSelected are TwoWay-bound to the data item so:
+            * Persisted expansion state survives tree rebuilds
+              (MainViewModel snapshots them before RebuildFolderTreeAsync).
+            * Programmatic selection (e.g. restore-after-rebuild)
+              propagates back into the visual tree via standard binding —
+              no manual visual-tree walks.
+    -->
+    <Style x:Key="App.TreeViewItem" TargetType="TreeViewItem">
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource App.Foreground.Primary}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+        <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TreeViewItem">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <Border x:Name="Bd"
+                                Grid.Row="0"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="4"
+                                Padding="2,1,6,1"
+                                Margin="0,1">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="16" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <ToggleButton x:Name="Expander"
+                                              Grid.Column="0"
+                                              ClickMode="Press"
+                                              IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                              Style="{StaticResource App.TreeViewItem.ChevronToggle}" />
+                                <ContentPresenter x:Name="PART_Header"
+                                                  Grid.Column="1"
+                                                  ContentSource="Header"
+                                                  HorizontalAlignment="Stretch"
+                                                  VerticalAlignment="Center"
+                                                  Margin="2,0,0,0"
+                                                  SnapsToDevicePixels="True" />
+                            </Grid>
+                        </Border>
+
+                        <ItemsPresenter x:Name="ItemsHost"
+                                        Grid.Row="1"
+                                        Margin="14,0,0,0"
+                                        Visibility="Collapsed" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsExpanded" Value="True">
+                            <Setter TargetName="ItemsHost" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <!-- Leaf nodes hide the chevron entirely so the
+                             rail doesn't look like every row is collapsible. -->
+                        <Trigger Property="HasItems" Value="False">
+                            <Setter TargetName="Expander" Property="Visibility" Value="Hidden" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource App.Background.Hover}" />
+                        </Trigger>
+                        <!-- Selection wins over hover. App.Accent.Subtle is
+                             a 20% accent fill — visible without shouting,
+                             matches the chip / pill language. -->
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource App.Accent.Subtle}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- TreeView host style. Transparent, no border, vertical scroll on
+         demand. Virtualization on by default — recycling mode keeps
+         realized-container churn down on large catalogs. -->
+    <Style x:Key="App.TreeView" TargetType="TreeView">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="ItemContainerStyle" Value="{StaticResource App.TreeViewItem}" />
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+        <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True" />
+        <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling" />
+    </Style>
+
+</ResourceDictionary>

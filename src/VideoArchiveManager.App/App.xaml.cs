@@ -221,7 +221,7 @@ public partial class App : Application
         {
             MessageBox.Show(
                 $"Failed to initialize the database:\n\n{ex.Message}",
-                "Video Archive Manager",
+                "Find That Shot",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
             Shutdown(1);

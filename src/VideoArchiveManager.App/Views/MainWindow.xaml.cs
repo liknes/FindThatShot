@@ -236,6 +236,17 @@ public partial class MainWindow : Window
             System.Windows.Threading.DispatcherPriority.Background);
     }
 
+    // TreeView.SelectedItem is read-only — you can only set selection via
+    // the user clicking or via the data model's IsSelected TwoWay binding
+    // (see App.TreeViewItem in Resources/Components/FolderTree.xaml). The
+    // VM's filter pipeline reads SelectedFolderNode, so we mirror the
+    // event-driven selection onto it here. Selecting null clears the
+    // folder filter, matching what "Clear filters" does.
+    private void FolderTreeView_OnSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+    {
+        _viewModel.SelectedFolderNode = e.NewValue as FolderNode;
+    }
+
     // ModernWpf's AutoSuggestBox raises QuerySubmitted on Enter (or when
     // the user picks a suggestion with Enter). The Text binding has
     // already pushed NewTagName, so we just kick the existing
@@ -426,9 +437,9 @@ public partial class MainWindow : Window
     private static string BuildWindowTitle()
     {
         var version = Assembly.GetExecutingAssembly().GetName().Version;
-        if (version is null) return "Video Archive Manager";
+        if (version is null) return "Find That Shot";
         // Build is the third component; skip the trailing .0 that AssemblyVersion always adds.
-        return $"Video Archive Manager \u2014 {version.Major}.{version.Minor}.{version.Build}";
+        return $"Find That Shot \u2014 {version.Major}.{version.Minor}.{version.Build}";
     }
 
     private void FocusSearchMenu_Click(object sender, RoutedEventArgs e)

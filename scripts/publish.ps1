@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Publish + pack Video Archive Manager with Velopack.
+    Publish + pack Find That Shot with Velopack.
 
 .DESCRIPTION
     1. Restores the local 'vpk' dotnet tool (if needed).
@@ -114,7 +114,7 @@ $vpkArgs = @(
     '--packId', 'VideoArchiveManager',
     '--packVersion', $Version,
     '--packDir', $PublishDir,
-    '--packTitle', 'Video Archive Manager',
+    '--packTitle', 'Find That Shot',
     '--packAuthors', 'Find That Shot',
     '--mainExe', 'VideoArchiveManager.exe',
     '--outputDir', $ReleaseDir

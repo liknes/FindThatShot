@@ -102,6 +102,17 @@ public partial class MainViewModel : ObservableObject
         _settingsStore.Current.WriteSidecarFiles ? "Sidecars: ON" : "Sidecars: OFF";
 
     public ObservableCollection<RootFolder> RootFolders { get; } = new();
+
+    // Hierarchical folder view shown in the sidebar (Lightroom-style).
+    // Top-level nodes are synthetic drive roots ("E:\", "C:\"); registered
+    // root folders sit directly beneath their drive; every distinct
+    // VideoItem.FolderPath under a registered root is mirrored into the
+    // tree with counts rolled up. Rebuilt by RebuildFolderTreeAsync,
+    // which is called from ReloadFiltersAsync so every existing
+    // refresh path (initial load, post-scan, remove-folder, bulk-edit,
+    // remove-offline) keeps the tree in sync without new wiring.
+    public ObservableCollection<FolderNode> FolderTree { get; } = new();
+
     public ObservableCollection<Tag> AllTags { get; } = new();
     public ObservableCollection<string> Cameras { get; } = new();
 
@@ -139,6 +150,20 @@ public partial class MainViewModel : ObservableObject
 
     [ObservableProperty]
     private RootFolder? _selectedRootFolder;
+
+    // The user's current pick in the folder tree. Drives the catalog
+    // filter via SearchQuery.RootFolderPath (a path-prefix match in
+    // SearchService). Mirrored into SelectedRootFolder when the node is
+    // a registered root so the existing RemoveRootFolderCommand
+    // CanExecute / CommandParameter wiring keeps working unchanged.
+    [ObservableProperty]
+    private FolderNode? _selectedFolderNode;
+
+    // Gates the tree's "Remove folder…" context-menu item: only nodes
+    // that map to a RootFolder entity can be removed (drives and
+    // intermediate folders are derived state, not catalog records).
+    // Notified whenever SelectedFolderNode changes.
+    public bool CanRemoveSelectedFolder => SelectedFolderNode?.IsRegisteredRoot == true;
 
     [ObservableProperty]
     private DateTime? _dateFrom;
@@ -197,9 +222,23 @@ public partial class MainViewModel : ObservableObject
     // only get applied when the user explicitly clicks Search.
     partial void OnStatusFilterChanged(VideoStatus? value) => OnFilterChanged();
     partial void OnMinRatingFilterChanged(int value) => OnFilterChanged();
-    partial void OnCameraFilterChanged(string? value) => OnFilterChanged();
+    partial void OnCameraFilterChanged(string? value)
+    {
+        ClearCameraFilterCommand.NotifyCanExecuteChanged();
+        OnFilterChanged();
+    }
     partial void OnTagFilterSearchTextChanged(string value) => RebuildFilteredTags();
-    partial void OnSelectedRootFolderChanged(RootFolder? value) => OnFilterChanged();
+    // SelectedRootFolder is now derived from SelectedFolderNode (set
+    // only when the picked tree node is a registered root). The search
+    // is triggered by the SelectedFolderNode change handler below; we
+    // intentionally don't fire it from here to avoid two searches per
+    // selection click.
+    partial void OnSelectedFolderNodeChanged(FolderNode? value)
+    {
+        SelectedRootFolder = value?.RootFolder;
+        OnPropertyChanged(nameof(CanRemoveSelectedFolder));
+        OnFilterChanged();
+    }
     partial void OnDateFromChanged(DateTime? value) => OnFilterChanged();
     partial void OnDateToChanged(DateTime? value) => OnFilterChanged();
     partial void OnShowOnlyAvailableChanged(bool value) => OnFilterChanged();
@@ -214,6 +253,18 @@ public partial class MainViewModel : ObservableObject
 
         await ReloadFiltersAsync();
         await SearchAsync();
+
+        // Best-effort startup update check. Fire-and-forget so it never
+        // blocks the catalog load, delayed a few seconds so it doesn't
+        // race the initial search/thumbnail work for network bandwidth on
+        // slow connections. Failures are swallowed silently — the only
+        // user-visible effect is the status-bar update pill appearing
+        // when a newer release is published on GitHub.
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(TimeSpan.FromSeconds(3));
+            await CheckForUpdatesSilentlyAsync();
+        });
     }
 
     private async Task ReloadFiltersAsync()
@@ -222,6 +273,11 @@ public partial class MainViewModel : ObservableObject
         var roots = await ctx.RootFolders.OrderBy(r => r.Path).ToListAsync();
         RootFolders.Clear();
         foreach (var r in roots) RootFolders.Add(r);
+
+        // Rebuild the sidebar folder tree from the same context so the
+        // registered-root snapshot and the distinct-folder-paths query
+        // see a consistent view of the catalog.
+        await RebuildFolderTreeAsync(ctx);
 
         var tags = await _tagService.GetAllAsync();
         AllTags.Clear();
@@ -242,6 +298,367 @@ public partial class MainViewModel : ObservableObject
         var cams = await _searchService.GetDistinctCamerasAsync();
         Cameras.Clear();
         foreach (var c in cams) Cameras.Add(c);
+    }
+
+    // Rebuilds the sidebar folder tree from the catalog.
+    //
+    // Shape (Lightroom-style):
+    //   * Top-level nodes are synthetic drives — one per distinct
+    //     drive that hosts a registered root or has video data. We
+    //     try to read the volume label so the rail shows
+    //     "MediaExtension I (E:)" instead of a bare "E:\".
+    //   * Direct children of a drive are the registered RootFolder
+    //     entries that live on it.
+    //   * Beneath each registered root we materialise the real
+    //     subfolder structure from the distinct VideoItem.FolderPath
+    //     values that fall under it. Empty intermediate folders
+    //     (no own count, but ancestors of leaves) are kept so the
+    //     hierarchy is navigable.
+    //   * Any video folder that doesn't fall under a registered root
+    //     (e.g. orphaned after the user removed the root but kept the
+    //     records — currently impossible since RemoveRootFolderAsync
+    //     also clears the rows, but cheap defensive coverage) gets
+    //     attached straight under its drive.
+    //
+    // Counts are rolled up post-build so each node displays the
+    // recursive total (its own clips + every descendant's). Expansion
+    // state and the current selection are snapshotted before the
+    // rebuild and restored against the new tree by FullPath so a
+    // post-scan refresh doesn't collapse what the user just opened.
+    private async Task RebuildFolderTreeAsync(VideoArchiveDbContext ctx)
+    {
+        // 1. Snapshot UI state that survives the rebuild.
+        var expandedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        CollectExpandedPaths(FolderTree, expandedPaths);
+        var previousSelection = SelectedFolderNode?.FullPath;
+
+        // 2. Pull the data we need in two cheap queries.
+        var folderCounts = await ctx.VideoItems
+            .Where(v => v.FolderPath != null && v.FolderPath != string.Empty)
+            .GroupBy(v => v.FolderPath)
+            .Select(g => new { Path = g.Key, Count = g.Count() })
+            .ToListAsync();
+
+        var registeredRoots = RootFolders.ToList();
+
+        // 3. Build the tree in-memory keyed by canonical path so we
+        //    can dedupe shared ancestors across siblings.
+        var nodeByPath = new Dictionary<string, FolderNode>(StringComparer.OrdinalIgnoreCase);
+        var driveNodes = new Dictionary<string, FolderNode>(StringComparer.OrdinalIgnoreCase);
+        var registeredByPath = new Dictionary<string, FolderNode>(StringComparer.OrdinalIgnoreCase);
+
+        // First-build default: auto-expand drives so registered roots are
+        // visible without an extra click. Subsequent rebuilds honour
+        // whatever the user had open.
+        var isFirstBuild = expandedPaths.Count == 0;
+
+        FolderNode EnsureDriveNode(string drivePath)
+        {
+            var normalized = drivePath; // GetPathRoot already includes the trailing separator on Windows.
+            if (driveNodes.TryGetValue(normalized, out var existing)) return existing;
+            var node = new FolderNode
+            {
+                Name = FormatDriveLabel(normalized),
+                FullPath = normalized,
+                IsDriveRoot = true,
+                IsExpanded = isFirstBuild || expandedPaths.Contains(normalized)
+            };
+            driveNodes[normalized] = node;
+            nodeByPath[normalized] = node;
+            return node;
+        }
+
+        // Register each root folder under its drive first so subsequent
+        // video paths can attach to the right anchor (longest matching
+        // prefix wins below).
+        foreach (var rf in registeredRoots.OrderBy(r => r.Path, StringComparer.OrdinalIgnoreCase))
+        {
+            var canonical = TrimTrailingSeparator(rf.Path);
+            var drive = Path.GetPathRoot(canonical);
+            if (string.IsNullOrEmpty(drive)) continue;
+
+            var driveNode = EnsureDriveNode(drive);
+
+            // If the registered root IS the drive itself (e.g. user added "E:\"),
+            // promote the drive node to a registered root rather than nesting it.
+            if (string.Equals(canonical, TrimTrailingSeparator(drive), StringComparison.OrdinalIgnoreCase))
+            {
+                driveNode.IsRegisteredRoot = true;
+                driveNode.RootFolder = rf;
+                registeredByPath[TrimTrailingSeparator(drive)] = driveNode;
+                continue;
+            }
+
+            if (nodeByPath.ContainsKey(canonical)) continue;
+
+            var rootNode = new FolderNode
+            {
+                Name = !string.IsNullOrWhiteSpace(rf.Name)
+                    ? rf.Name!
+                    : Path.GetFileName(canonical),
+                FullPath = canonical,
+                IsRegisteredRoot = true,
+                RootFolder = rf,
+                IsExpanded = expandedPaths.Contains(canonical)
+            };
+            driveNode.Children.Add(rootNode);
+            nodeByPath[canonical] = rootNode;
+            registeredByPath[canonical] = rootNode;
+        }
+
+        // Precompute root prefixes ordered longest-first so a video under
+        // "E:\Footage\Personal" attaches to that root rather than "E:\Footage".
+        var rootPrefixes = registeredByPath
+            .Select(kv => new { Canonical = kv.Key, Prefix = EnsureTrailingSeparator(kv.Key) })
+            .OrderByDescending(r => r.Prefix.Length)
+            .ToList();
+
+        // Step 2: materialise every distinct video folder, walking
+        // segment-by-segment from its anchor (root node or drive node)
+        // and creating intermediate nodes lazily.
+        foreach (var folder in folderCounts)
+        {
+            if (string.IsNullOrEmpty(folder.Path)) continue;
+            var canonicalFolder = TrimTrailingSeparator(folder.Path);
+
+            FolderNode anchor;
+            string anchorPath;
+
+            // Try to attach to the longest registered root prefix.
+            var match = rootPrefixes.FirstOrDefault(r =>
+                canonicalFolder.Equals(r.Canonical, StringComparison.OrdinalIgnoreCase) ||
+                canonicalFolder.StartsWith(r.Prefix, StringComparison.OrdinalIgnoreCase));
+
+            if (match is not null)
+            {
+                anchor = registeredByPath[match.Canonical];
+                anchorPath = match.Canonical;
+            }
+            else
+            {
+                // No registered root contains this folder — attach under its drive.
+                var drive = Path.GetPathRoot(canonicalFolder);
+                if (string.IsNullOrEmpty(drive)) continue;
+                anchor = EnsureDriveNode(drive);
+                anchorPath = TrimTrailingSeparator(drive);
+            }
+
+            // Folder == anchor: just credit its videos to the anchor node.
+            if (canonicalFolder.Equals(anchorPath, StringComparison.OrdinalIgnoreCase))
+            {
+                anchor.OwnCount += folder.Count;
+                continue;
+            }
+
+            // Compute the relative path below the anchor and walk segments.
+            var relative = canonicalFolder.Substring(anchorPath.Length)
+                .TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            var segments = relative.Split(
+                new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar },
+                StringSplitOptions.RemoveEmptyEntries);
+
+            var current = anchor;
+            var currentPath = anchorPath;
+            foreach (var segment in segments)
+            {
+                currentPath = string.IsNullOrEmpty(currentPath)
+                    ? segment
+                    : currentPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                        + Path.DirectorySeparatorChar + segment;
+                if (!nodeByPath.TryGetValue(currentPath, out var child))
+                {
+                    child = new FolderNode
+                    {
+                        Name = segment,
+                        FullPath = currentPath,
+                        IsExpanded = expandedPaths.Contains(currentPath)
+                    };
+                    current.Children.Add(child);
+                    nodeByPath[currentPath] = child;
+                }
+                current = child;
+            }
+            current.OwnCount += folder.Count;
+        }
+
+        // 4. Roll up counts (post-order) so parents show recursive totals.
+        foreach (var drive in driveNodes.Values)
+        {
+            RollUpCounts(drive);
+        }
+
+        // 5. Alphabetise children at every level. OrdinalIgnoreCase keeps
+        //    things deterministic regardless of locale.
+        foreach (var node in nodeByPath.Values)
+        {
+            SortChildren(node);
+        }
+
+        // 6. Replace the live collection. Done as a single Clear/Add pass
+        //    so the TreeView only re-binds once.
+        FolderTree.Clear();
+        foreach (var drive in driveNodes.Values.OrderBy(d => d.FullPath, StringComparer.OrdinalIgnoreCase))
+        {
+            FolderTree.Add(drive);
+        }
+
+        // 7. Restore selection by path if the previous node still exists.
+        if (!string.IsNullOrEmpty(previousSelection)
+            && nodeByPath.TryGetValue(previousSelection, out var restored))
+        {
+            // Expand the chain up to the selected node so the TreeView
+            // realises the container — otherwise IsSelected wouldn't
+            // visibly highlight a node inside a collapsed branch.
+            ExpandAncestors(restored, nodeByPath);
+            SelectedFolderNode = restored;
+            restored.IsSelected = true;
+        }
+        else if (previousSelection is not null)
+        {
+            // Previously selected folder vanished (e.g. its only video was
+            // removed). Clear the filter so the catalog isn't trapped on
+            // an empty result set.
+            SelectedFolderNode = null;
+        }
+    }
+
+    private static int RollUpCounts(FolderNode node)
+    {
+        var total = node.OwnCount;
+        foreach (var c in node.Children)
+        {
+            total += RollUpCounts(c);
+        }
+        node.VideoCount = total;
+        return total;
+    }
+
+    private static void SortChildren(FolderNode node)
+    {
+        if (node.Children.Count <= 1) return;
+        var sorted = node.Children
+            .OrderBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        node.Children.Clear();
+        foreach (var c in sorted) node.Children.Add(c);
+    }
+
+    private static void CollectExpandedPaths(IEnumerable<FolderNode> nodes, HashSet<string> sink)
+    {
+        foreach (var n in nodes)
+        {
+            if (n.IsExpanded) sink.Add(n.FullPath);
+            CollectExpandedPaths(n.Children, sink);
+        }
+    }
+
+    private static void ExpandAncestors(FolderNode node, IReadOnlyDictionary<string, FolderNode> nodeByPath)
+    {
+        var path = node.FullPath;
+        while (true)
+        {
+            var parentPath = Path.GetDirectoryName(path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+            if (string.IsNullOrEmpty(parentPath) || string.Equals(parentPath, path, StringComparison.OrdinalIgnoreCase))
+            {
+                break;
+            }
+            if (nodeByPath.TryGetValue(parentPath, out var parent))
+            {
+                parent.IsExpanded = true;
+                path = parent.FullPath;
+            }
+            else
+            {
+                path = parentPath;
+            }
+        }
+    }
+
+    private static string TrimTrailingSeparator(string path)
+    {
+        if (string.IsNullOrEmpty(path)) return path;
+        var root = Path.GetPathRoot(path);
+        // Don't trim the separator off a path that IS a drive root
+        // ("E:\") — the trailing separator is part of its canonical
+        // form and Path.GetPathRoot("E:") returns "E:" (no slash),
+        // which is a different beast we don't want to manufacture.
+        if (!string.IsNullOrEmpty(root)
+            && path.Equals(root, StringComparison.OrdinalIgnoreCase))
+        {
+            return path;
+        }
+        return path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+    }
+
+    private static string EnsureTrailingSeparator(string path)
+    {
+        if (string.IsNullOrEmpty(path)) return path;
+        if (path[path.Length - 1] == Path.DirectorySeparatorChar
+            || path[path.Length - 1] == Path.AltDirectorySeparatorChar)
+        {
+            return path;
+        }
+        return path + Path.DirectorySeparatorChar;
+    }
+
+    private static string? NormalizeFolderPrefix(string? fullPath)
+    {
+        if (string.IsNullOrWhiteSpace(fullPath)) return null;
+        return EnsureTrailingSeparator(fullPath);
+    }
+
+    private static string FormatDriveLabel(string drivePath)
+    {
+        // Mirror Windows Explorer's drive label format ("Windows (C:)",
+        // "MediaExtension I (E:)", "Local Disk (D:)"):
+        //   1. Use the volume label when set.
+        //   2. Fall back to a DriveType-based default ("Local Disk",
+        //      "Removable Disk", "CD/DVD Drive", "Network Drive", "RAM Disk")
+        //      so drives without a custom label still get a friendly name.
+        //   3. Only fall back to the bare path for things DriveInfo can't
+        //      reason about at all (UNC shares it can't resolve, etc.).
+        // Drive letter is always shown in parens for consistency, regardless
+        // of which branch produced the prefix.
+        var trimmed = drivePath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+        string? label = null;
+        DriveType driveType = DriveType.Unknown;
+        try
+        {
+            // DriveInfo only works for fixed / removable / network-mapped
+            // drives — UNC paths (\\server\share) make the ctor throw.
+            // Catch generously so unresolvable shares don't break the tree.
+            var info = new DriveInfo(drivePath);
+            driveType = info.DriveType;
+            if (info.IsReady)
+            {
+                label = info.VolumeLabel;
+            }
+        }
+        catch
+        {
+            // Offline / unmapped / network share without a drive letter —
+            // fall through to the bare drive path at the bottom.
+        }
+
+        if (!string.IsNullOrWhiteSpace(label))
+        {
+            return $"{label} ({trimmed})";
+        }
+
+        var defaultName = driveType switch
+        {
+            DriveType.Fixed => "Local Disk",
+            DriveType.Removable => "Removable Disk",
+            DriveType.CDRom => "CD/DVD Drive",
+            DriveType.Network => "Network Drive",
+            DriveType.Ram => "RAM Disk",
+            _ => null
+        };
+
+        return defaultName is not null
+            ? $"{defaultName} ({trimmed})"
+            : drivePath;
     }
 
     // Called when the editor attaches a tag. Inserts the tag into AllTags
@@ -318,6 +735,11 @@ public partial class MainViewModel : ObservableObject
 
     private bool CanClearTagFilters() => SelectedTagFilters.Count > 0;
 
+    [RelayCommand(CanExecute = nameof(CanClearCameraFilter))]
+    private void ClearCameraFilter() => CameraFilter = null;
+
+    private bool CanClearCameraFilter() => !string.IsNullOrEmpty(CameraFilter);
+
     // Tracks the currently-running search so that fast successive filter
     // changes don't race — a newer call cancels any older one before its
     // results can clobber the grid.
@@ -347,7 +769,12 @@ public partial class MainViewModel : ObservableObject
                 : SelectedTagFilters.Select(t => t.Id).ToArray(),
             DateFrom = DateFrom,
             DateTo = DateTo,
-            RootFolderPath = SelectedRootFolder?.Path,
+            // The folder tree feeds the path prefix now. EnsureTrailingSeparator
+            // turns "E:\20070101 - Brasil" into "E:\20070101 - Brasil\" so
+            // SearchService's StartsWith match doesn't accidentally pick up
+            // sibling folders like "E:\20070101 - Brasilia" — a latent bug
+            // when the old SelectedRootFolder path was passed in raw.
+            RootFolderPath = NormalizeFolderPrefix(SelectedFolderNode?.FullPath),
             FileExists = ShowOnlyAvailable ? true : null,
             OnlyUnreviewed = OnlyUnreviewed ? true : null,
             Take = 500
@@ -557,7 +984,7 @@ public partial class MainViewModel : ObservableObject
         {
             MessageBox.Show(
                 "ffprobe.exe was not found. Open Settings to configure the FFmpeg paths.",
-                "Video Archive Manager",
+                "Find That Shot",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
             return;
@@ -698,6 +1125,54 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private bool _isCheckingForUpdates;
 
+    // Set by the silent background check kicked off in InitializeAsync.
+    // The status bar binds a "Update available · vX.Y.Z" pill to these so
+    // the user has a calm, dismissible indicator instead of a popup on
+    // every launch. Clicking the pill invokes CheckForUpdatesCommand (the
+    // existing explicit flow), which re-validates and opens the install
+    // confirmation dialog.
+    [ObservableProperty]
+    private bool _isUpdateAvailable;
+
+    [ObservableProperty]
+    private string? _availableUpdateVersion;
+
+    // Tracks whether the silent startup check has already run so we never
+    // hit GitHub more than once per session from this path. The explicit
+    // user-initiated CheckForUpdatesCommand is unaffected and may be
+    // re-run at will.
+    private bool _silentUpdateCheckDone;
+
+    private async Task CheckForUpdatesSilentlyAsync()
+    {
+        if (_silentUpdateCheckDone) return;
+        _silentUpdateCheckDone = true;
+
+        try
+        {
+            var result = await _updateService.CheckAsync().ConfigureAwait(false);
+
+            // Surface failures here ONLY through the silent log path; do
+            // NOT touch StatusMessage or show any dialog. The user can
+            // still hit Help -> Check for updates to get the explicit
+            // error dialog if they care to investigate.
+            if (!result.Success) return;
+            if (result.NotInstalledMode) return;
+            if (!result.UpdateAvailable) return;
+
+            await Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                AvailableUpdateVersion = result.AvailableVersion;
+                IsUpdateAvailable = true;
+            });
+        }
+        catch
+        {
+            // Network down, GitHub rate-limited, etc. The pill simply
+            // stays hidden — this path is best-effort by design.
+        }
+    }
+
     [RelayCommand]
     private async Task CheckForUpdatesAsync()
     {
@@ -737,6 +1212,12 @@ public partial class MainViewModel : ObservableObject
 
             if (!result.UpdateAvailable)
             {
+                // If the silent check had previously raised the pill but
+                // the user has since installed via another path (or the
+                // release was yanked), clear it so we don't keep nagging.
+                IsUpdateAvailable = false;
+                AvailableUpdateVersion = null;
+
                 var v = result.CurrentVersion is null ? string.Empty : $" (v{result.CurrentVersion})";
                 StatusMessage = $"Up to date{v}";
                 MessageBox.Show(
@@ -746,6 +1227,13 @@ public partial class MainViewModel : ObservableObject
                     MessageBoxImage.Information);
                 return;
             }
+
+            // Keep the pill in sync with whatever the explicit check just
+            // observed — particularly important when the user hits "Check
+            // for updates" before the silent path has run, or when a
+            // newer release dropped since the silent check.
+            IsUpdateAvailable = true;
+            AvailableUpdateVersion = result.AvailableVersion;
 
             StatusMessage = $"Update available: v{result.AvailableVersion}";
             var confirm = MessageBox.Show(
@@ -841,7 +1329,7 @@ public partial class MainViewModel : ObservableObject
             CameraFilter = null;
             SelectedTagFilters.Clear();
             TagFilterSearchText = string.Empty;
-            SelectedRootFolder = null;
+            SelectedFolderNode = null;
             DateFrom = null;
             DateTo = null;
             OnlyUnreviewed = true;
@@ -877,7 +1365,7 @@ public partial class MainViewModel : ObservableObject
             CameraFilter = null;
             SelectedTagFilters.Clear();
             TagFilterSearchText = string.Empty;
-            SelectedRootFolder = null;
+            SelectedFolderNode = null;
             DateFrom = null;
             DateTo = null;
             OnlyUnreviewed = false;

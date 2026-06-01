@@ -1,4 +1,4 @@
-# FindThatShot - Video Archive Manager
+# Find That Shot
 
 A Windows desktop application for organizing a large local video archive across internal and external drives. **Source video files are never moved, renamed, deleted, or modified by this app under any circumstances** — it only catalogs them, generates thumbnails, and stores searchable metadata, tags, notes, ratings, and workflow status. The files the app writes or removes on disk are:
 
@@ -223,7 +223,7 @@ The installer and binaries are currently unsigned. End users will see a SmartScr
 
 ## Licensing & attribution
 
-Video Archive Manager itself is licensed under the **GNU General Public License v3** (see `LICENSE`). The installed application bundles several third-party components with their own licenses:
+Find That Shot itself is licensed under the **GNU General Public License v3** (see `LICENSE`). The installed application bundles several third-party components with their own licenses:
 
 - **FFmpeg** (Gyan.dev "full" build, version 8.1.1) — GPLv3, https://ffmpeg.org/. Used in two ways: (a) invoked as separate `ffmpeg.exe` / `ffprobe.exe` processes for scanning and thumbnails, and (b) the same FFmpeg shared-library DLLs are loaded in-process by the in-app player (FFME).
 - **FFME — Sinaxxr fork** — Ms-PL, https://github.com/sinaxxr/ffmediaelement (fork of https://github.com/unosquare/ffmediaelement). WPF-native video player control used for in-app playback.
@@ -232,7 +232,7 @@ Video Archive Manager itself is licensed under the **GNU General Public License 
 - **OpenStreetMap / Nominatim** — map data © OpenStreetMap contributors, ODbL.
 - Plus a number of MIT-licensed .NET libraries (CommunityToolkit.Mvvm, ModernWpfUI, Entity Framework Core, Microsoft.Data.Sqlite, Microsoft.Extensions.\*).
 
-The full attribution list, including project URLs and links to the corresponding source code, ships with the application as `THIRD-PARTY-NOTICES.md` next to `VideoArchiveManager.exe`. It is also accessible from inside the app via **Help → About Video Archive Manager… → View third-party notices…**.
+The full attribution list, including project URLs and links to the corresponding source code, ships with the application as `THIRD-PARTY-NOTICES.md` next to `VideoArchiveManager.exe`. It is also accessible from inside the app via **Help → About Find That Shot… → View third-party notices…**.
 
 If you redistribute the app (e.g. by sharing the installer with others), keep `LICENSE` and `THIRD-PARTY-NOTICES.md` alongside it. If you modify the source and distribute the result, you must do so under the GPLv3.
 

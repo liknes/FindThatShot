@@ -8,7 +8,7 @@
         xmlns:enums="clr-namespace:VideoArchiveManager.Core.Models.Enums;assembly=VideoArchiveManager.Core"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         xmlns:ffme="clr-namespace:Unosquare.FFME;assembly=ffme.win"
-        Title="Video Archive Manager"
+        Title="Find That Shot"
         Width="1400" Height="880"
         MinWidth="1024" MinHeight="640"
         WindowStartupLocation="CenterScreen"
@@ -77,33 +77,10 @@
                 </Style>
             </Border.Style>
             <DockPanel LastChildFill="True">
-                <!-- Brand mark: a 4px-tall accent strip + the app name. Gives
-                     the menu row a subtle identity anchor that the default
-                     ModernWpfUI title bar (above this row) doesn't carry on
-                     its own. The accent color cues the user that this is
-                     "the app's" surface, not generic Windows chrome. -->
-                <StackPanel DockPanel.Dock="Left"
-                            Orientation="Horizontal"
-                            VerticalAlignment="Center"
-                            Margin="12,0,8,0">
-                    <Border Width="3" Height="20"
-                            Background="{DynamicResource App.Accent}"
-                            CornerRadius="2"
-                            VerticalAlignment="Center"
-                            Margin="0,0,10,0" />
-                    <TextBlock Text="VIDEO ARCHIVE"
-                               FontSize="11"
-                               FontWeight="SemiBold"
-                               Foreground="{DynamicResource App.Foreground.Primary}"
-                               VerticalAlignment="Center" />
-                    <Border Width="1" Height="16"
-                            Background="{DynamicResource App.Border.Subtle}"
-                            VerticalAlignment="Center"
-                            Margin="12,0,8,0" />
-                </StackPanel>
                 <Menu DockPanel.Dock="Left"
                       Background="Transparent"
                       VerticalAlignment="Center"
+                      Margin="8,0,0,0"
                       Padding="4,2">
                     <MenuItem Header="_File">
                         <MenuItem Header="_Add folder…"
@@ -178,7 +155,7 @@
                                   IsEnabled="{Binding IsCheckingForUpdates, Converter={StaticResource InverseBool}}"
                                   ToolTip="Look for a newer version on GitHub Releases and install it. Only works when running from an installed build (Setup.exe)." />
                         <Separator />
-                        <MenuItem Header="_About Video Archive Manager…" Click="About_Click" />
+                        <MenuItem Header="_About Find That Shot…" Click="About_Click" />
                     </MenuItem>
                 </Menu>
 
@@ -188,6 +165,7 @@
                     <TextBox x:Name="SearchBox"
                              Width="260"
                              Margin="0,2,0,2"
+                             FontSize="13"
                              Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                              ui:ControlHelper.PlaceholderText="Search filename, folder, tags, notes, camera..."
                              VerticalAlignment="Center">
@@ -225,6 +203,7 @@
                     -->
                     <ComboBox Width="140"
                               Margin="0,2,0,2"
+                              FontSize="13"
                               ItemsSource="{Binding Cameras}"
                               SelectedItem="{Binding CameraFilter}"
                               ui:ControlHelper.PlaceholderText="Camera"
@@ -248,9 +227,13 @@
                     </StackPanel>
                     -->
                     <DatePicker Margin="6,2,0,2"
+                                FontSize="13"
+                                CalendarStyle="{StaticResource App.Calendar}"
                                 SelectedDate="{Binding DateFrom}"
                                 ui:ControlHelper.PlaceholderText="From" />
                     <DatePicker Margin="6,2,0,2"
+                                FontSize="13"
+                                CalendarStyle="{StaticResource App.Calendar}"
                                 SelectedDate="{Binding DateTo}"
                                 ui:ControlHelper.PlaceholderText="To" />
                     <Button Margin="10,2,0,2"
@@ -290,13 +273,35 @@
                     BorderThickness="0,0,1,0">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
-                        <TextBlock Text="ROOT FOLDERS" Style="{StaticResource App.Type.Section}" />
+                        <!-- FOLDERS section header + inline "Add folder" affordance.
+                             A ghost-styled plus button sits flush right so the
+                             user can grow the catalog without opening the File
+                             menu. Hidden in the zero-folders empty state since
+                             the EmptyState card below carries the primary CTA. -->
+                        <Grid Margin="0,0,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="FOLDERS"
+                                       Style="{StaticResource App.Type.Section}" />
+                            <Button Grid.Column="1"
+                                    Style="{StaticResource App.Button.Ghost}"
+                                    helpers:Theme.Icon="{StaticResource Icon.Add}"
+                                    Height="24"
+                                    FontSize="11"
+                                    Padding="6,0"
+                                    VerticalAlignment="Center"
+                                    ToolTip="Add a root folder to catalogue (Ctrl+O)"
+                                    Command="{Binding AddRootFolderCommand}"
+                                    Visibility="{Binding RootFolders.Count, Converter={StaticResource NotEmptyToVisibility}}" />
+                        </Grid>
 
                         <!-- First-run empty state: shown when no root folders are
                              configured. Headline + subtext + a primary CTA that
                              triggers the same Add folder picker as Ctrl+O / the
-                             File menu. Replaces the ListBox + Remove button while
-                             empty. -->
+                             File menu. Replaces the tree while empty. -->
                         <Border Padding="0,8,0,12"
                                 Visibility="{Binding RootFolders.Count, Converter={StaticResource EmptyToVisibility}}">
                             <helpers:EmptyState Glyph="{StaticResource Icon.Folder}"
@@ -308,31 +313,122 @@
                                                 Padding="0" />
                         </Border>
 
-                        <ListBox ItemsSource="{Binding RootFolders}"
-                                 SelectedItem="{Binding SelectedRootFolder}"
-                                 Height="180"
-                                 Visibility="{Binding RootFolders.Count, Converter={StaticResource NotEmptyToVisibility}}">
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <StackPanel>
-                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource App.Foreground.Primary}" />
-                                        <TextBlock Text="{Binding Path}" TextWrapping="Wrap"
-                                                   Foreground="{DynamicResource App.Foreground.Tertiary}"
-                                                   FontSize="11" />
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
-                        <Button Content="Remove selected"
-                                Margin="0,8,0,0"
-                                Style="{StaticResource App.Button.Destructive}"
-                                helpers:Theme.Icon="{StaticResource Icon.Trash}"
-                                HorizontalAlignment="Stretch"
-                                Visibility="{Binding RootFolders.Count, Converter={StaticResource NotEmptyToVisibility}}"
-                                ToolTip="Remove the selected root folder and any catalog entries imported from it. Source video files will NOT be touched."
-                                Command="{Binding RemoveRootFolderCommand}"
-                                CommandParameter="{Binding SelectedRootFolder}" />
+                        <!-- Lightroom-style folder tree.
+                             ItemsSource is the hierarchical FolderTree built in
+                             MainViewModel.RebuildFolderTreeAsync. Selection /
+                             expansion are TwoWay-bound to FolderNode through
+                             App.TreeViewItem in Resources/Components/FolderTree.xaml.
+                             SelectedItemChanged (handled in code-behind) mirrors
+                             the TreeView's read-only SelectedItem onto the
+                             SelectedFolderNode property on the VM, which then
+                             flows into the catalog filter. -->
+                        <TreeView x:Name="FolderTreeView"
+                                  ItemsSource="{Binding FolderTree}"
+                                  Style="{StaticResource App.TreeView}"
+                                  MaxHeight="320"
+                                  Margin="0,4,0,0"
+                                  SelectedItemChanged="FolderTreeView_OnSelectedItemChanged"
+                                  Visibility="{Binding RootFolders.Count, Converter={StaticResource NotEmptyToVisibility}}">
+                            <TreeView.ContextMenu>
+                                <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                                    <!-- Visible only for nodes that map to a
+                                         registered RootFolder entity. CanRemoveSelectedFolder
+                                         on the VM gates Remove + the menu's enabled state
+                                         so right-clicking an intermediate folder does
+                                         nothing dangerous. -->
+                                    <MenuItem Header="_Remove folder…"
+                                              InputGestureText=""
+                                              Command="{Binding RemoveRootFolderCommand}"
+                                              CommandParameter="{Binding SelectedRootFolder}"
+                                              IsEnabled="{Binding CanRemoveSelectedFolder}"
+                                              ToolTip="Remove this root folder and any catalog entries imported from it. Source video files will NOT be touched." />
+                                    <Separator />
+                                    <MenuItem Header="_Add folder…"
+                                              InputGestureText="Ctrl+O"
+                                              Command="{Binding AddRootFolderCommand}" />
+                                </ContextMenu>
+                            </TreeView.ContextMenu>
+                            <TreeView.ItemTemplate>
+                                <HierarchicalDataTemplate ItemsSource="{Binding Children}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <!-- Folder glyph. Drives use a "device"-ish
+                                             open folder; registered roots and
+                                             subfolders use the standard folder
+                                             glyph. The visual distinction signals
+                                             "you can right-click here to manage"
+                                             vs "this is just a navigable folder". -->
+                                        <TextBlock Grid.Column="0"
+                                                   FontFamily="{StaticResource App.Icon.FontFamily}"
+                                                   FontSize="13"
+                                                   Margin="0,0,8,0"
+                                                   VerticalAlignment="Center"
+                                                   TextOptions.TextRenderingMode="ClearType">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Text" Value="{StaticResource Icon.Folder}" />
+                                                    <Setter Property="Foreground" Value="{DynamicResource App.Foreground.Secondary}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsDriveRoot}" Value="True">
+                                                            <Setter Property="Text" Value="{StaticResource Icon.FolderOpen}" />
+                                                            <Setter Property="Foreground" Value="{DynamicResource App.Accent}" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding IsRegisteredRoot}" Value="True">
+                                                            <Setter Property="Foreground" Value="{DynamicResource App.Accent}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding Name}"
+                                                   VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   Foreground="{DynamicResource App.Foreground.Primary}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="FontWeight" Value="Normal" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsDriveRoot}" Value="True">
+                                                            <Setter Property="FontWeight" Value="SemiBold" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding IsRegisteredRoot}" Value="True">
+                                                            <Setter Property="FontWeight" Value="Medium" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                        <!-- Recursive video count. Mono so the
+                                             numbers right-align cleanly when several
+                                             folders stack with three-/four-digit
+                                             totals. Hidden when 0 so empty
+                                             subtrees stay quiet. -->
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{Binding VideoCount}"
+                                                   VerticalAlignment="Center"
+                                                   Margin="12,0,0,0"
+                                                   FontFamily="{StaticResource App.FontFamily.Mono}"
+                                                   FontSize="11"
+                                                   Foreground="{DynamicResource App.Foreground.Tertiary}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding VideoCount}" Value="0">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Grid>
+                                </HierarchicalDataTemplate>
+                            </TreeView.ItemTemplate>
+                        </TreeView>
 
                         <Grid Margin="0,0,0,0">
                             <Grid.ColumnDefinitions>
@@ -386,22 +482,43 @@
                                  ItemsSource="{Binding FilteredTags}"
                                  Height="180"
                                  DisplayMemberPath="Name"
+                                 Style="{StaticResource App.ListBox}"
                                  SelectionChanged="TagFilterList_OnSelectionChanged"
                                  VirtualizingPanel.IsVirtualizing="True"
                                  VirtualizingPanel.VirtualizationMode="Recycling"
                                  ToolTip="Click a tag to add it as a filter. Multiple tags are combined with AND (videos must have every selected tag)." />
 
-                        <TextBlock Text="CAMERAS" Style="{StaticResource App.Type.Section}" />
+                        <Grid Margin="0,0,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="CAMERAS"
+                                       Style="{StaticResource App.Type.Section}" />
+                            <Button Grid.Column="1"
+                                    Content="Clear"
+                                    Style="{StaticResource App.Button.Ghost}"
+                                    Height="24"
+                                    FontSize="11"
+                                    Padding="8,0"
+                                    VerticalAlignment="Center"
+                                    ToolTip="Remove the camera filter."
+                                    Command="{Binding ClearCameraFilterCommand}" />
+                        </Grid>
                         <ListBox ItemsSource="{Binding Cameras}"
                                  SelectedItem="{Binding CameraFilter}"
+                                 Style="{StaticResource App.ListBox}"
                                  Height="120" />
 
                         <CheckBox Content="Show only available files"
                                   IsChecked="{Binding ShowOnlyAvailable}"
+                                  FontSize="12"
                                   Margin="0,12,0,0" />
 
                         <CheckBox Content="Show only unreviewed"
                                   IsChecked="{Binding OnlyUnreviewed}"
+                                  FontSize="12"
                                   Margin="0,4,0,0"
                                   ToolTip="Limit the catalog to clips that look untouched: still marked Unreviewed OR have no tags yet. Same signal used by the &quot;Start review session&quot; button." />
                     </StackPanel>
@@ -811,18 +928,30 @@
                                         helpers:Theme.Icon="{StaticResource Icon.Add}" />
                             </StackPanel>
 
-                            <TextBlock Text="STATUS" Style="{StaticResource App.Type.Section}" />
-                            <ComboBox ItemsSource="{Binding AvailableStatuses}"
-                                      SelectedItem="{Binding Status}" />
-
-                            <TextBlock Text="RATING" Style="{StaticResource App.Type.Section}" />
-                            <ComboBox ItemsSource="{Binding RatingValues}"
-                                      SelectedItem="{Binding Rating}" />
-
                             <TextBlock Text="NOTES" Style="{StaticResource App.Type.Section}" />
                             <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
                                      AcceptsReturn="True" TextWrapping="Wrap"
                                      MinHeight="80" />
+
+                            <Grid Margin="0,12,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="STATUS" Style="{StaticResource App.Type.Section}" />
+                                    <ComboBox ItemsSource="{Binding AvailableStatuses}"
+                                              SelectedItem="{Binding Status}"
+                                              HorizontalAlignment="Stretch" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="RATING" Style="{StaticResource App.Type.Section}" />
+                                    <ComboBox Width="80"
+                                              ItemsSource="{Binding RatingValues}"
+                                              SelectedItem="{Binding Rating}" />
+                                </StackPanel>
+                            </Grid>
 
                             <Button Content="Save changes"
                                     Command="{Binding SaveCommand}"
@@ -844,6 +973,7 @@
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
@@ -910,9 +1040,76 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Update-available pill (middle-right). Visible only when
+                     the silent startup update check (or a manual recheck via
+                     Help → Check for updates…) has found a newer release on
+                     GitHub. Clicking the pill re-invokes the explicit update
+                     command, which opens the install confirmation dialog
+                     and hands off to Velopack. Mirrors the scan pill's
+                     accent-on-accent.subtle chrome — same visual family,
+                     same 24h pill geometry — so the status bar reads as one
+                     consistent affordance rail rather than three random
+                     widgets. -->
+                <Button Grid.Column="2"
+                        Margin="12,0,0,0"
+                        Padding="0"
+                        BorderThickness="0"
+                        Background="Transparent"
+                        Cursor="Hand"
+                        Command="{Binding CheckForUpdatesCommand}"
+                        Visibility="{Binding IsUpdateAvailable, Converter={StaticResource BoolToVisibility}}"
+                        ToolTip="A new version is available on GitHub. Click to view details and install (the app will close and restart on the new version when ready).">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <!-- TextElement.Foreground on the Border drives the
+                                 fill of every TextBlock inside, so the hover
+                                 trigger can swap accent-amber -> on-accent
+                                 (dark) in one place without per-TextBlock
+                                 Foreground bindings that would otherwise win
+                                 over inheritance. -->
+                            <Border x:Name="Bd"
+                                    Padding="10,3"
+                                    CornerRadius="12"
+                                    Height="24"
+                                    Background="{DynamicResource App.Accent.Subtle}"
+                                    BorderBrush="{DynamicResource App.Accent}"
+                                    BorderThickness="1"
+                                    TextElement.Foreground="{DynamicResource App.Accent}">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock FontFamily="{StaticResource App.Icon.FontFamily}"
+                                               FontSize="11"
+                                               Text="{StaticResource Icon.Download}"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,6,0" />
+                                    <TextBlock Text="Update available"
+                                               FontSize="11"
+                                               FontWeight="Medium"
+                                               VerticalAlignment="Center" />
+                                    <TextBlock Text=" · v"
+                                               FontSize="11"
+                                               VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding AvailableUpdateVersion}"
+                                               FontSize="11"
+                                               FontFamily="{StaticResource App.FontFamily.Mono}"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource App.Accent}" />
+                                    <Setter TargetName="Bd" Property="TextElement.Foreground" Value="{DynamicResource App.Accent.OnAccent}" />
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Opacity" Value="0.5" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
                 <!-- Sidecars pill (right). Always visible. Green dot when on,
                      tertiary dot when off. Two clean lines of state in 24h. -->
-                <Border Grid.Column="2"
+                <Border Grid.Column="3"
                         Margin="8,0,0,0"
                         Padding="10,3"
                         CornerRadius="12"

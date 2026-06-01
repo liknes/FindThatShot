@@ -1,6 +1,6 @@
 # Third-party notices
 
-Video Archive Manager itself is licensed under the GNU General Public License v3 (see `LICENSE` at the root of this repository). Source code is available at https://github.com/liknes/FindThatShot.
+Find That Shot itself is licensed under the GNU General Public License v3 (see `LICENSE` at the root of this repository). Source code is available at https://github.com/liknes/FindThatShot.
 
 The installed application bundles or links to several third-party components. Their licenses, sources, and obligations are listed below. Where a component is GPL-licensed, the corresponding source is either bundled by upstream or available at the URL given here; you may also request the source through the project's GitHub repository.
 
@@ -83,4 +83,4 @@ The installed application bundles or links to several third-party components. Th
 
 ---
 
-If you redistribute Video Archive Manager, you must keep this file and the `LICENSE` file alongside the executable. If you modify the application and distribute the result, you must do so under the GNU General Public License v3.
+If you redistribute Find That Shot, you must keep this file and the `LICENSE` file alongside the executable. If you modify the application and distribute the result, you must do so under the GNU General Public License v3.
