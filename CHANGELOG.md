@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-06-01
+
 ### Added
 
 - **Resizable sidebar.** The left rail (FOLDERS / TAGS / CAMERAS) used to be locked at 260px, so long folder paths like `20250712 - Torvastad - Promo (Final cut)` truncated mid-name and there was no way to recover the rest of the text without a tooltip hover. A new 5px `GridSplitter` (`Resources/Components/GridSplitter.xaml` → `App.GridSplitter`) sits between the sidebar and the catalog grid; drag it to size the rail anywhere between 200px and 600px (clamped at the column level via `MinWidth` / `MaxWidth`, *and* defensively in `JsonSettingsStore.MergeWithUserOverrides` so a hand-edited `settings.json` can't shove the panel off-screen). The splitter paints a single 1px `App.Border.Subtle` hairline at rest, brightens to `App.Accent.Subtle` and grows to 3px on hover, and switches to solid `App.Accent` while dragging — visual feedback the surface is interactive without screaming for attention. Cursor flips to size-west-east anywhere across the 5px hit area, not just the 1px line. Width persists across launches via a new `AppSettings.SidebarWidth` field (default 260): `MainWindow.xaml.cs` reads it on the constructor before caching `_normalLeftWidth` so review mode round-trips to the user's drag width rather than the XAML default; `MainViewModel.PersistSidebarWidthAsync` is invoked on `Thumb.DragCompleted` (not on every layout pass — drag-completion is the explicit signal of user intent and gates the disk write to one round trip per drag). The new splitter column is collapsed to width 0 in review mode so the 5px hairline doesn't float as dead chrome between the player and the editor; `_normalSplitterWidth` is snapshotted on the way in and restored on the way out, mirroring the existing pattern for `_normalLeftWidth` / `_normalListWidth` / `_normalEditorWidth`. Trailing 1px sidebar/editor separators were left in place; together with the splitter line they form a single visually-quiet vertical rule between the rail and the grid.
@@ -198,7 +200,8 @@ First public release.
 
 - Responsive default window size; date pickers and the *Play externally* button are no longer clipped at common screen widths.
 
-[Unreleased]: https://github.com/liknes/FindThatShot/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/liknes/FindThatShot/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/liknes/FindThatShot/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/liknes/FindThatShot/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/liknes/FindThatShot/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/liknes/FindThatShot/compare/v0.4.1...v0.5.0
