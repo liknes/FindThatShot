@@ -6,14 +6,14 @@
 
         Replaces the old TagChipBorder (light SystemAccentColorLight2 fill with
         black text). The new pill is dark-on-dark with accent-amber text, a
-        subtle 1px border, and a clean U+00D7 close glyph. Compose in a
+        subtle 1px border, and a Segoe Fluent Icons Cancel glyph. Compose in a
         DataTemplate as:
 
             <Border Style="{StaticResource App.TagChip}">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="{Binding Name}" Style="{StaticResource App.TagChip.Text}" />
                     <Button Style="{StaticResource App.Button.ChipClose}"
-                            helpers:Theme.Icon="&#x00D7;"
+                            helpers:Theme.Icon="{StaticResource Icon.Cancel}"
                             Margin="6,0,0,0"
                             Command="..."
                             CommandParameter="{Binding}" />

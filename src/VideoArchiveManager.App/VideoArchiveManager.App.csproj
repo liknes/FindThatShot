@@ -11,6 +11,11 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
     <PackageReference Include="ModernWpfUI" Version="0.9.6" />
+    <!-- WebView2 hosts the Leaflet/OpenStreetMap location preview in the
+         right sidebar editor. Evergreen runtime ships preinstalled on
+         Win10 22H2+ / Win11; older boxes fall back to a hidden map area
+         (EnsureCoreWebView2Async fails, caught in LocationMapView). -->
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3967.48" />
     <!-- Sinaxxr fork of FFME (Unosquare.FFME) tracking FFmpeg 8.x; upstream
          FFME 7.0 is hard-pinned to FFmpeg 7. We use the existing FFmpeg 8
          shared binaries already bundled in tools/ffmpeg/ for FFprobe so the

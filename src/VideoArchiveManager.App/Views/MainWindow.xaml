@@ -546,7 +546,7 @@
                                                     <TextBlock Text="{Binding Name}"
                                                                Style="{StaticResource App.TagChip.Text}" />
                                                     <Button Style="{StaticResource App.Button.ChipClose}"
-                                                            helpers:Theme.Icon="&#x00D7;"
+                                                            helpers:Theme.Icon="{StaticResource Icon.Cancel}"
                                                             Margin="6,0,-2,0"
                                                             ToolTip="Remove this tag filter."
                                                             Command="{Binding DataContext.RemoveTagFilterCommand, RelativeSource={RelativeSource AncestorType=Window}}"
@@ -697,6 +697,9 @@
                                   Command="{Binding Detail.ShowInfoCommand}"
                                   ToolTip="Open the full clip-info popup (file system, video, camera, location, catalog, internal)." />
                         <Separator />
+                        <MenuItem Header="Play _externally"
+                                  Command="{Binding Detail.PlayCommand}"
+                                  ToolTip="Open the source video in the OS default media player (shell-associated for the file extension)." />
                         <MenuItem Header="_Open file location"
                                   Command="{Binding Detail.OpenFileLocationCommand}"
                                   ToolTip="Reveal the source video file in Windows Explorer." />
@@ -990,33 +993,38 @@
                     <ScrollViewer VerticalScrollBarVisibility="Auto"
                                   Visibility="{Binding Detail.Current, Converter={StaticResource NullToVisibility}}">
                         <StackPanel Margin="16" DataContext="{Binding Detail}">
-                            <!-- Thumbnail only in normal mode; in review mode the video
-                                 is showing in its own column so we hide this. The thumbnail
-                                 right-click is the primary entry point for the clip-info
-                                 popup (mirrored on catalog cards and Alt+Enter). -->
-                            <Image Source="{Binding LargeThumbnail}" MaxHeight="220"
-                                   Stretch="Uniform" Margin="0,0,0,12"
-                                   Cursor="Hand"
-                                   Visibility="{Binding IsPlayerVisible, Converter={StaticResource BoolToVisibilityInverted}}">
-                                <Image.ContextMenu>
-                                    <ContextMenu>
-                                        <MenuItem Header="Show clip _info..."
-                                                  InputGestureText="Alt+Enter"
-                                                  Command="{Binding PlacementTarget.DataContext.ShowInfoCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                        <Separator />
-                                        <MenuItem Header="_Open file location"
-                                                  Command="{Binding PlacementTarget.DataContext.OpenFileLocationCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                    </ContextMenu>
-                                </Image.ContextMenu>
-                            </Image>
+                            <!-- Location preview. Always rendered (the control itself
+                                 handles the "no GPS" state by falling back to a
+                                 grayscaled regional view) so the sidebar layout stays
+                                 stable across clips with and without coordinates.
+                                 Hidden in review mode because the in-app player owns
+                                 its own column and the sidebar focuses on tags /
+                                 notes / status in that mode. See LocationMapView
+                                 for the WebView2 / Leaflet lifecycle. -->
+                            <Border Margin="0,0,0,16"
+                                    Height="180"
+                                    CornerRadius="4"
+                                    ClipToBounds="True"
+                                    Background="#1E1E1E"
+                                    BorderBrush="{DynamicResource App.Border.Subtle}"
+                                    BorderThickness="1"
+                                    Visibility="{Binding IsPlayerVisible, Converter={StaticResource BoolToVisibilityInverted}}">
+                                <controls:LocationMapView Latitude="{Binding Current.GpsLatitude}"
+                                                          Longitude="{Binding Current.GpsLongitude}" />
+                            </Border>
 
-                            <TextBlock Text="{Binding Current.FileName}"
-                                       Style="{StaticResource App.Type.H2}"
-                                       TextWrapping="Wrap" />
-                            <TextBlock Text="{Binding Current.FilePath}"
-                                       Style="{StaticResource App.Type.Caption}"
-                                       TextWrapping="Wrap" Margin="0,2,0,12" />
+                            <!-- Filename / path header intentionally omitted: the
+                                 catalog card the user clicked already shows the
+                                 filename, the clip-info popup (Alt+Enter) carries
+                                 the full path, and the *Open location* button
+                                 below reveals the file in Explorer. Keeping the
+                                 sidebar focused on actions / tags / notes / status
+                                 reads cleaner than a wrapping path header. -->
 
+                            <!-- "Play externally" intentionally lives on the catalog
+                                 right-click menu now, not in the sidebar — the
+                                 sidebar row is the in-editor primary actions only
+                                 (start review, reveal in Explorer). -->
                             <WrapPanel ItemHeight="40">
                                 <Button Content="Play in app" Margin="0,4,0,4"
                                         Command="{Binding PlayInAppCommand}"
@@ -1024,10 +1032,6 @@
                                         Style="{StaticResource App.Button.Primary}"
                                         helpers:Theme.Icon="{StaticResource Icon.Play}"
                                         Visibility="{Binding IsPlayerVisible, Converter={StaticResource BoolToVisibilityInverted}}" />
-                                <Button Content="Play externally" Margin="6,4,0,4"
-                                        Command="{Binding PlayCommand}"
-                                        Style="{StaticResource App.Button.Secondary}"
-                                        helpers:Theme.Icon="{StaticResource Icon.External}" />
                                 <Button Content="Open location" Margin="6,4,0,4"
                                         Command="{Binding OpenFileLocationCommand}"
                                         Style="{StaticResource App.Button.Secondary}"
@@ -1054,7 +1058,7 @@
                                                 <TextBlock Text="{Binding Name}"
                                                            Style="{StaticResource App.TagChip.Text}" />
                                                 <Button Style="{StaticResource App.Button.ChipClose}"
-                                                        helpers:Theme.Icon="&#x00D7;"
+                                                        helpers:Theme.Icon="{StaticResource Icon.Cancel}"
                                                         Margin="6,0,-2,0"
                                                         ToolTip="Remove this tag from the clip."
                                                         Command="{Binding DataContext.RemoveTagCommand, RelativeSource={RelativeSource AncestorType=Window}}"
