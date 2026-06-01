@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-06-01
+
 ### Added
 
 - **PROXY badge in the player toolbar tells you at a glance whether you're watching the original clip or the substituted proxy.** Pairs with the proxy-playback setting introduced in 0.9.0: a small amber-bordered pill labelled `PROXY` (Consolas / 11px / SemiBold on `App.Accent.Subtle` background, sharing the chrome family with the *Update available* status-bar pill and the *Primary* button) floats at the left edge of the player's transport row whenever `VideoDetailViewModel.IsPlayingProxy` is `true`, and disappears entirely (no layout reservation, no greyed-out placeholder) when the player is back on the hero file. Hover the chip for a tooltip showing the resolved proxy file path (`Playing proxy: <full-path>`), so a quick check can confirm exactly which transcode is feeding the picture without leaving the review surface. State plumbing: `VideoDetailViewModel` gained `IsPlayingProxy` (bool) and `ActiveProxyPath` (string?) observable properties, both set inside `PlayInApp` when the resolver returns a non-null match and cleared back to `false`/`null` in `ClosePlayer`, so the chip's lifecycle is bound to the same "is a clip mounted in the player?" moment as the rest of the toolbar — no risk of leftover state after switching clips or closing the player. The transport row's `WrapPanel` was wrapped in a `Grid` so the chip and the centered button cluster occupy the same layout cell: `HorizontalAlignment="Left"` on the chip + `HorizontalAlignment="Center"` on the WrapPanel keeps the buttons visually centered to the full toolbar width regardless of whether the chip is present, avoiding the layout jump that a `DockPanel`/`StackPanel` reservation would have introduced.
@@ -218,7 +220,8 @@ First public release.
 
 - Responsive default window size; date pickers and the *Play externally* button are no longer clipped at common screen widths.
 
-[Unreleased]: https://github.com/liknes/FindThatShot/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/liknes/FindThatShot/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/liknes/FindThatShot/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/liknes/FindThatShot/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/liknes/FindThatShot/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/liknes/FindThatShot/compare/v0.6.0...v0.7.0
