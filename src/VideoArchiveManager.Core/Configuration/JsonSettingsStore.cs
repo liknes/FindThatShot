@@ -77,6 +77,15 @@ public class JsonSettingsStore : ISettingsStore
                 UpdateRepoUrl = !string.IsNullOrWhiteSpace(loaded.UpdateRepoUrl) ? loaded.UpdateRepoUrl : baseline.UpdateRepoUrl,
                 MaxScanParallelism = loaded.MaxScanParallelism > 0 ? loaded.MaxScanParallelism : baseline.MaxScanParallelism,
                 PageSize = loaded.PageSize > 0 ? loaded.PageSize : baseline.PageSize,
+                // Sidebar width: clamp to a sane range so a corrupted /
+                // hand-edited settings.json can't shove the rail off-screen
+                // or down to a single-pixel slit.
+                SidebarWidth = loaded.SidebarWidth >= 200d && loaded.SidebarWidth <= 600d
+                    ? loaded.SidebarWidth
+                    : baseline.SidebarWidth,
+                SidebarFoldersExpanded = loaded.SidebarFoldersExpanded,
+                SidebarTagsExpanded = loaded.SidebarTagsExpanded,
+                SidebarCamerasExpanded = loaded.SidebarCamerasExpanded,
                 SupportedExtensions = DedupePreserveOrder(
                     loaded.SupportedExtensions is { Count: > 0 } ? loaded.SupportedExtensions : baseline.SupportedExtensions),
                 ExcludedFolderNames = DedupePreserveOrder(

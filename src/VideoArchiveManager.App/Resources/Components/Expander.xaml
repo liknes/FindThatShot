@@ -1,0 +1,188 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        Sidebar Expander styling.
+
+        Used to wrap the FOLDERS / TAGS / CAMERAS sections in the rail so
+        the user can collapse panels they don't need (Lightroom-style),
+        freeing rail height for whichever panel they're currently using.
+
+        Design contract:
+            * The whole header row is the toggle hit-target. Click anywhere
+              along the chevron + label band to collapse / expand. The
+              chevron animates 90° between states (mirrors the folder-tree
+              chevron in FolderTree.xaml so the rail reads as one visual
+              family).
+            * The header carries:
+                - A 9px Fluent chevron on the left.
+                - The section label (passed via Expander.Header) in the
+                  middle. Call sites use App.Type.Section typography with
+                  Margin="0" so it sits flush in the header band.
+                - An optional trailing-control slot exposed via
+                  Expander.Tag: the Add (+) / Clear ghost buttons on the
+                  FOLDERS / TAGS / CAMERAS sections live here. We use Tag
+                  because it's a built-in object slot on every framework
+                  element and avoids introducing a custom templated
+                  control just for one extra content area. The Tag content
+                  is rendered OUTSIDE the toggle hit-area so clicking
+                  Add / Clear doesn't accidentally collapse the section.
+            * Hover lights up the header band with App.Background.Hover
+              (same pill chrome the folder tree and list items use).
+            * Body sits flush below the header with a small top gap; the
+              outer Expander.Margin gives sections vertical breathing room
+              when stacked in the sidebar StackPanel.
+
+        Inner ToggleButton template (App.Expander.HeaderToggle) is a private
+        helper for App.Expander; not intended for direct use.
+    -->
+
+    <Style x:Key="App.Expander.HeaderToggle" TargetType="ToggleButton">
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource App.Foreground.Primary}" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border x:Name="Bd"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="4"
+                            Padding="2,4"
+                            SnapsToDevicePixels="True">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="16" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="Glyph"
+                                       Grid.Column="0"
+                                       FontFamily="{StaticResource App.Icon.FontFamily}"
+                                       FontSize="9"
+                                       Text="{StaticResource Icon.ChevronRight}"
+                                       Foreground="{DynamicResource App.Foreground.Tertiary}"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       RenderTransformOrigin="0.5,0.5"
+                                       UseLayoutRounding="True"
+                                       TextOptions.TextRenderingMode="ClearType">
+                                <TextBlock.RenderTransform>
+                                    <RotateTransform x:Name="GlyphRotate" Angle="0" />
+                                </TextBlock.RenderTransform>
+                            </TextBlock>
+                            <ContentPresenter Grid.Column="1"
+                                              Margin="2,0,0,0"
+                                              HorizontalAlignment="Stretch"
+                                              VerticalAlignment="Center" />
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="GlyphRotate"
+                                                         Storyboard.TargetProperty="Angle"
+                                                         To="90"
+                                                         Duration="0:0:0.12">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseOut" />
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="GlyphRotate"
+                                                         Storyboard.TargetProperty="Angle"
+                                                         To="0"
+                                                         Duration="0:0:0.12" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource App.Background.Hover}" />
+                            <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource App.Foreground.Primary}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="App.Expander" TargetType="Expander">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource App.Foreground.Primary}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <!-- Default Margin gives a visual gap between sections in the
+             stacked rail layout. Call sites can override (e.g. the first
+             expander in the rail sets Margin="0,0,0,0" so it sits flush
+             with the sidebar Padding). -->
+        <Setter Property="Margin" Value="0,12,0,0" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="ExpandDirection" Value="Down" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Expander">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <!-- Header row. Two columns: the toggle band
+                             (chevron + label) on the left grows to fill,
+                             the optional trailing-control slot (Tag) on
+                             the right hugs its content. -->
+                        <Grid Grid.Row="0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ToggleButton x:Name="HeaderSite"
+                                          Grid.Column="0"
+                                          Style="{StaticResource App.Expander.HeaderToggle}"
+                                          IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                          Content="{TemplateBinding Header}"
+                                          ContentTemplate="{TemplateBinding HeaderTemplate}" />
+                            <!-- Trailing-controls slot. Hosts whatever the
+                                 call site puts in Expander.Tag (typically
+                                 a small ghost button: Add, Clear, etc.).
+                                 Lives outside the ToggleButton so its
+                                 mouse events don't toggle the section. -->
+                            <ContentPresenter Grid.Column="1"
+                                              Content="{TemplateBinding Tag}"
+                                              VerticalAlignment="Center"
+                                              HorizontalAlignment="Right"
+                                              Margin="4,0,0,0" />
+                        </Grid>
+
+                        <!-- Body. Visibility flips to Visible when
+                             IsExpanded=true (trigger below). Padding gives
+                             the body content a small top gap from the
+                             header so the chrome doesn't feel cramped. -->
+                        <ContentPresenter x:Name="ExpandSite"
+                                          Grid.Row="1"
+                                          Margin="0,4,0,0"
+                                          Visibility="Collapsed" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsExpanded" Value="True">
+                            <Setter TargetName="ExpandSite" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>

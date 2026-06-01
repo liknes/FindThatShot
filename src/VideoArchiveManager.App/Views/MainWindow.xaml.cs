@@ -24,6 +24,7 @@ public partial class MainWindow : Window
 
     // Cached so we can restore the original 3-column layout when leaving review mode.
     private GridLength _normalLeftWidth;
+    private GridLength _normalSplitterWidth;
     private GridLength _normalListWidth;
     private GridLength _normalEditorWidth;
 
@@ -41,9 +42,28 @@ public partial class MainWindow : Window
         DataContext = viewModel;
         Title = BuildWindowTitle();
 
+        // Apply the user's last-saved sidebar width BEFORE caching it as the
+        // "normal mode" width below, so the cached value reflects the user's
+        // preferences (review mode then restores to that, not to the XAML
+        // default 260px). Skip silently if the settings store says nothing
+        // sensible — the column XAML default 260px stays in place.
+        try
+        {
+            var persisted = _viewModel.InitialSidebarWidth;
+            if (persisted >= 200d && persisted <= 600d)
+            {
+                LeftSidebarColumn.Width = new GridLength(persisted);
+            }
+        }
+        catch
+        {
+            // Defensive: any exception here just means we use the XAML default.
+        }
+
         // Remember the normal-mode column widths so we can restore them after
         // the user closes the in-app player.
         _normalLeftWidth = LeftSidebarColumn.Width;
+        _normalSplitterWidth = LeftSplitterColumn.Width;
         _normalListWidth = VideoListColumn.Width;
         _normalEditorWidth = EditorColumn.Width;
 
@@ -155,8 +175,17 @@ public partial class MainWindow : Window
     {
         if (reviewMode)
         {
+            // Snapshot the current sidebar width here (instead of relying on
+            // _normalLeftWidth from construction) so a user-resized rail is
+            // round-tripped correctly when leaving review mode. Same for
+            // the splitter column — it MUST collapse to 0 in review mode,
+            // otherwise the 5px hairline floats as dead chrome between the
+            // player and the editor.
+            _normalLeftWidth = LeftSidebarColumn.Width;
+            _normalSplitterWidth = LeftSplitterColumn.Width;
             LeftSidebarColumn.Width = new GridLength(0);
             LeftSidebarColumn.MinWidth = 0;
+            LeftSplitterColumn.Width = new GridLength(0);
             VideoListColumn.Width = new GridLength(0);
             PlayerColumn.Width = new GridLength(1, GridUnitType.Star);
             EditorColumn.Width = new GridLength(380);
@@ -166,11 +195,28 @@ public partial class MainWindow : Window
         {
             LeftSidebarColumn.Width = _normalLeftWidth;
             LeftSidebarColumn.MinWidth = 200;
+            LeftSplitterColumn.Width = _normalSplitterWidth;
             VideoListColumn.Width = _normalListWidth;
             PlayerColumn.Width = new GridLength(0);
             EditorColumn.Width = _normalEditorWidth;
             EditorColumn.MinWidth = 420;
         }
+    }
+
+    // Persist the user's last-dragged sidebar width so the rail starts in
+    // the same shape next launch. We only fire on DragCompleted (not on
+    // every layout pass) so the disk write is gated by user intent, not
+    // animation / window-resize churn. Width clamping happens in
+    // MainViewModel.PersistSidebarWidthAsync.
+    private void LeftSplitter_OnDragCompleted(object sender, DragCompletedEventArgs e)
+    {
+        if (_viewModel.Detail.IsPlayerVisible) return;
+        var width = LeftSidebarColumn.ActualWidth;
+        if (width <= 0) return;
+        // Update the cached "normal mode" width too so review mode round-trips
+        // to the user's drag rather than to the XAML default.
+        _normalLeftWidth = new GridLength(width);
+        _ = _viewModel.PersistSidebarWidthAsync(width);
     }
 
     private void VideoList_OnSelectionChanged(object sender, SelectionChangedEventArgs e)

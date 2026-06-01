@@ -27,6 +27,19 @@ public class AppSettings
 
     public int PageSize { get; set; } = 200;
 
+    // Persisted main-window sidebar layout. Width is the user's last
+    // dragged width of the FOLDERS / TAGS / CAMERAS rail; the three
+    // *Expanded flags persist Lightroom-style panel collapse state so
+    // the user's layout choices survive an app restart. All four
+    // honour their defaults if absent or out-of-range from settings.json.
+    public double SidebarWidth { get; set; } = 260d;
+
+    public bool SidebarFoldersExpanded { get; set; } = true;
+
+    public bool SidebarTagsExpanded { get; set; } = true;
+
+    public bool SidebarCamerasExpanded { get; set; } = true;
+
     public IReadOnlyList<string> SupportedExtensions { get; set; } = new[]
     {
         ".mp4", ".mov", ".mxf", ".avi", ".mkv"

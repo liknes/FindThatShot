@@ -201,6 +201,93 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private VideoItemViewModel? _selectedVideo;
 
+    // Sidebar panel collapse state (Lightroom-style). Initialised from the
+    // user's persisted preferences in InitializeAsync so the rail starts in
+    // the same shape it was in last session. The OnXxxChanged partials
+    // below mirror each toggle back into _settingsStore.Current and persist
+    // (fire-and-forget — this is best-effort UI state, not data integrity).
+    [ObservableProperty]
+    private bool _isFoldersPanelExpanded = true;
+
+    [ObservableProperty]
+    private bool _isTagsPanelExpanded = true;
+
+    [ObservableProperty]
+    private bool _isCamerasPanelExpanded = true;
+
+    partial void OnIsFoldersPanelExpandedChanged(bool value) => PersistSidebarPanelState();
+    partial void OnIsTagsPanelExpandedChanged(bool value) => PersistSidebarPanelState();
+    partial void OnIsCamerasPanelExpandedChanged(bool value) => PersistSidebarPanelState();
+
+    private void PersistSidebarPanelState()
+    {
+        // Skip while we're still booting up — Initialize sets the three
+        // properties from the loaded settings, which would otherwise
+        // immediately re-save them and waste an I/O round trip.
+        if (_isLoadingSidebarState) return;
+
+        var s = _settingsStore.Current;
+        s.SidebarFoldersExpanded = IsFoldersPanelExpanded;
+        s.SidebarTagsExpanded = IsTagsPanelExpanded;
+        s.SidebarCamerasExpanded = IsCamerasPanelExpanded;
+        _ = SaveSettingsSilentlyAsync(s);
+    }
+
+    // Set true while LoadSidebarPanelStateFromSettings copies persisted
+    // values onto the three observable properties so the OnXxxChanged
+    // partials don't bounce them straight back to disk.
+    private bool _isLoadingSidebarState;
+
+    public void LoadSidebarPanelStateFromSettings()
+    {
+        _isLoadingSidebarState = true;
+        try
+        {
+            var s = _settingsStore.Current;
+            IsFoldersPanelExpanded = s.SidebarFoldersExpanded;
+            IsTagsPanelExpanded = s.SidebarTagsExpanded;
+            IsCamerasPanelExpanded = s.SidebarCamerasExpanded;
+        }
+        finally
+        {
+            _isLoadingSidebarState = false;
+        }
+    }
+
+    // Read-only view of the persisted sidebar width so the window can
+    // size LeftSidebarColumn to the user's last drag on first paint
+    // without having to take an ISettingsStore dependency itself.
+    // Returns 0 when no sensible value is available.
+    public double InitialSidebarWidth => _settingsStore.Current.SidebarWidth;
+
+    // Persistence for the rail width (driven from MainWindow.xaml.cs on
+    // GridSplitter.DragCompleted). Callers pass the post-drag width; we
+    // clamp into a sane range and write through.
+    public Task PersistSidebarWidthAsync(double width)
+    {
+        if (double.IsNaN(width) || double.IsInfinity(width)) return Task.CompletedTask;
+        var clamped = Math.Clamp(width, 200d, 600d);
+        var s = _settingsStore.Current;
+        if (Math.Abs(s.SidebarWidth - clamped) < 0.5d) return Task.CompletedTask;
+        s.SidebarWidth = clamped;
+        return SaveSettingsSilentlyAsync(s);
+    }
+
+    private async Task SaveSettingsSilentlyAsync(AppSettings s)
+    {
+        try
+        {
+            await _settingsStore.SaveAsync(s);
+        }
+        catch
+        {
+            // UI-state persistence is best-effort. Disk full / file
+            // locked / settings.json hand-edited to read-only — none of
+            // those are worth nagging the user about; we just skip the
+            // save and the layout will reset on next launch.
+        }
+    }
+
     partial void OnSelectedVideoChanged(VideoItemViewModel? value)
     {
         _ = Detail.LoadAsync(value);
@@ -250,6 +337,12 @@ public partial class MainViewModel : ObservableObject
         {
             StatusMessage = "FFmpeg/FFprobe not found. Configure paths in Settings.";
         }
+
+        // Hydrate the sidebar panel collapse state from persisted settings
+        // BEFORE the window finishes its first layout pass so the rail
+        // starts in the user's last-saved shape rather than briefly
+        // flashing all-expanded and snapping shut.
+        LoadSidebarPanelStateFromSettings();
 
         await ReloadFiltersAsync();
         await SearchAsync();

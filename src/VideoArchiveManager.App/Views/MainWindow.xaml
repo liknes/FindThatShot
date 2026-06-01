@@ -262,7 +262,16 @@
              interact with any Win32 child window (unlike the previous LibVLCSharp VideoView). -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition x:Name="LeftSidebarColumn" Width="260" MinWidth="200" />
+                <ColumnDefinition x:Name="LeftSidebarColumn" Width="260" MinWidth="200" MaxWidth="600" />
+                <!-- 5px drag handle between the sidebar and the catalog
+                     grid. Sized to give a comfortable hit-target while
+                     painting only a subtle 1px hairline at rest (see
+                     App.GridSplitter in Resources/Components/GridSplitter.xaml).
+                     Width is collapsed to 0 in review mode (handled in
+                     ApplyReviewModeLayout in code-behind) so the splitter
+                     doesn't leave a dead gutter floating between the
+                     player and the editor. -->
+                <ColumnDefinition x:Name="LeftSplitterColumn" Width="5" />
                 <ColumnDefinition x:Name="VideoListColumn" Width="*" />
                 <ColumnDefinition x:Name="PlayerColumn" Width="0" />
                 <ColumnDefinition x:Name="EditorColumn" Width="460" MinWidth="420" />
@@ -273,62 +282,70 @@
                     BorderThickness="0,0,1,0">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
-                        <!-- FOLDERS section header + inline "Add folder" affordance.
-                             A ghost-styled plus button sits flush right so the
-                             user can grow the catalog without opening the File
-                             menu. Hidden in the zero-folders empty state since
-                             the EmptyState card below carries the primary CTA. -->
-                        <Grid Margin="0,0,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0"
-                                       Text="FOLDERS"
-                                       Style="{StaticResource App.Type.Section}" />
-                            <Button Grid.Column="1"
-                                    Style="{StaticResource App.Button.Ghost}"
-                                    helpers:Theme.Icon="{StaticResource Icon.Add}"
-                                    Height="24"
-                                    FontSize="11"
-                                    Padding="6,0"
-                                    VerticalAlignment="Center"
-                                    ToolTip="Add a root folder to catalogue (Ctrl+O)"
-                                    Command="{Binding AddRootFolderCommand}"
-                                    Visibility="{Binding RootFolders.Count, Converter={StaticResource NotEmptyToVisibility}}" />
-                        </Grid>
+                        <!-- FOLDERS expander.
+                             The section label sits in Expander.Header and the
+                             trailing "Add folder" (+) affordance lives in
+                             Expander.Tag, which the App.Expander template
+                             routes to a content presenter outside the toggle
+                             hit-area (so clicking + doesn't accidentally
+                             collapse the section). When the expander is
+                             collapsed the body — empty state + folder tree —
+                             is hidden, freeing rail height for whichever
+                             other panel the user is working with.
+                             IsExpanded is TwoWay-bound to MainViewModel so
+                             collapse state persists across launches via
+                             AppSettings.SidebarFoldersExpanded. -->
+                        <Expander Style="{StaticResource App.Expander}"
+                                  Margin="0"
+                                  IsExpanded="{Binding IsFoldersPanelExpanded, Mode=TwoWay}">
+                            <Expander.Header>
+                                <TextBlock Text="FOLDERS"
+                                           Style="{StaticResource App.Type.Section}"
+                                           Margin="0" />
+                            </Expander.Header>
+                            <Expander.Tag>
+                                <Button Style="{StaticResource App.Button.Ghost}"
+                                        helpers:Theme.Icon="{StaticResource Icon.Add}"
+                                        Height="24"
+                                        FontSize="11"
+                                        Padding="6,0"
+                                        VerticalAlignment="Center"
+                                        ToolTip="Add a root folder to catalogue (Ctrl+O)"
+                                        Command="{Binding AddRootFolderCommand}"
+                                        Visibility="{Binding RootFolders.Count, Converter={StaticResource NotEmptyToVisibility}}" />
+                            </Expander.Tag>
+                            <StackPanel>
+                                <!-- First-run empty state: shown when no root folders are
+                                     configured. Headline + subtext + a primary CTA that
+                                     triggers the same Add folder picker as Ctrl+O / the
+                                     File menu. Replaces the tree while empty. -->
+                                <Border Padding="0,4,0,8"
+                                        Visibility="{Binding RootFolders.Count, Converter={StaticResource EmptyToVisibility}}">
+                                    <helpers:EmptyState Glyph="{StaticResource Icon.Folder}"
+                                                        Headline="No folders yet"
+                                                        Subtext="Add a folder to start cataloguing your video archive."
+                                                        CtaText="Add folder"
+                                                        CtaIcon="{StaticResource Icon.Add}"
+                                                        CtaCommand="{Binding AddRootFolderCommand}"
+                                                        Padding="0" />
+                                </Border>
 
-                        <!-- First-run empty state: shown when no root folders are
-                             configured. Headline + subtext + a primary CTA that
-                             triggers the same Add folder picker as Ctrl+O / the
-                             File menu. Replaces the tree while empty. -->
-                        <Border Padding="0,8,0,12"
-                                Visibility="{Binding RootFolders.Count, Converter={StaticResource EmptyToVisibility}}">
-                            <helpers:EmptyState Glyph="{StaticResource Icon.Folder}"
-                                                Headline="No folders yet"
-                                                Subtext="Add a folder to start cataloguing your video archive."
-                                                CtaText="Add folder"
-                                                CtaIcon="{StaticResource Icon.Add}"
-                                                CtaCommand="{Binding AddRootFolderCommand}"
-                                                Padding="0" />
-                        </Border>
-
-                        <!-- Lightroom-style folder tree.
-                             ItemsSource is the hierarchical FolderTree built in
-                             MainViewModel.RebuildFolderTreeAsync. Selection /
-                             expansion are TwoWay-bound to FolderNode through
-                             App.TreeViewItem in Resources/Components/FolderTree.xaml.
-                             SelectedItemChanged (handled in code-behind) mirrors
-                             the TreeView's read-only SelectedItem onto the
-                             SelectedFolderNode property on the VM, which then
-                             flows into the catalog filter. -->
-                        <TreeView x:Name="FolderTreeView"
-                                  ItemsSource="{Binding FolderTree}"
-                                  Style="{StaticResource App.TreeView}"
-                                  MaxHeight="320"
-                                  Margin="0,4,0,0"
-                                  SelectedItemChanged="FolderTreeView_OnSelectedItemChanged"
-                                  Visibility="{Binding RootFolders.Count, Converter={StaticResource NotEmptyToVisibility}}">
+                                <!-- Lightroom-style folder tree.
+                                     ItemsSource is the hierarchical FolderTree built in
+                                     MainViewModel.RebuildFolderTreeAsync. Selection /
+                                     expansion are TwoWay-bound to FolderNode through
+                                     App.TreeViewItem in Resources/Components/FolderTree.xaml.
+                                     SelectedItemChanged (handled in code-behind) mirrors
+                                     the TreeView's read-only SelectedItem onto the
+                                     SelectedFolderNode property on the VM, which then
+                                     flows into the catalog filter. -->
+                                <TreeView x:Name="FolderTreeView"
+                                          ItemsSource="{Binding FolderTree}"
+                                          Style="{StaticResource App.TreeView}"
+                                          MaxHeight="320"
+                                          Margin="0,4,0,0"
+                                          SelectedItemChanged="FolderTreeView_OnSelectedItemChanged"
+                                          Visibility="{Binding RootFolders.Count, Converter={StaticResource NotEmptyToVisibility}}">
                             <TreeView.ContextMenu>
                                 <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
                                     <!-- Visible only for nodes that map to a
@@ -427,89 +444,109 @@
                                         </TextBlock>
                                     </Grid>
                                 </HierarchicalDataTemplate>
-                            </TreeView.ItemTemplate>
-                        </TreeView>
+                                    </TreeView.ItemTemplate>
+                                </TreeView>
+                            </StackPanel>
+                        </Expander>
 
-                        <Grid Margin="0,0,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0"
-                                       Text="TAGS"
-                                       Style="{StaticResource App.Type.Section}" />
-                            <Button Grid.Column="1"
-                                    Content="Clear"
-                                    Style="{StaticResource App.Button.Ghost}"
-                                    Height="24"
-                                    FontSize="11"
-                                    Padding="8,0"
-                                    VerticalAlignment="Center"
-                                    ToolTip="Remove all selected tag filters."
-                                    Command="{Binding ClearTagFiltersCommand}" />
-                        </Grid>
+                        <!-- TAGS expander. Same chrome family as FOLDERS:
+                             section label in the header, "Clear" ghost
+                             button in Expander.Tag (so it stays clickable
+                             without toggling the section).
+                             The chip strip + filter input + picker list
+                             live in the body and disappear together when
+                             the user collapses the section. The chips
+                             ARE active filter state, so collapsing the
+                             panel doesn't drop the filters; reopening
+                             reveals them unchanged. -->
+                        <Expander Style="{StaticResource App.Expander}"
+                                  IsExpanded="{Binding IsTagsPanelExpanded, Mode=TwoWay}">
+                            <Expander.Header>
+                                <TextBlock Text="TAGS"
+                                           Style="{StaticResource App.Type.Section}"
+                                           Margin="0" />
+                            </Expander.Header>
+                            <Expander.Tag>
+                                <Button Content="Clear"
+                                        Style="{StaticResource App.Button.Ghost}"
+                                        Height="24"
+                                        FontSize="11"
+                                        Padding="8,0"
+                                        VerticalAlignment="Center"
+                                        ToolTip="Remove all selected tag filters."
+                                        Command="{Binding ClearTagFiltersCommand}" />
+                            </Expander.Tag>
+                            <StackPanel>
+                                <ItemsControl ItemsSource="{Binding SelectedTagFilters}"
+                                              Margin="0,0,0,4">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Style="{StaticResource App.TagChip}">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Name}"
+                                                               Style="{StaticResource App.TagChip.Text}" />
+                                                    <Button Style="{StaticResource App.Button.ChipClose}"
+                                                            helpers:Theme.Icon="&#x00D7;"
+                                                            Margin="6,0,-2,0"
+                                                            ToolTip="Remove this tag filter."
+                                                            Command="{Binding DataContext.RemoveTagFilterCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                            CommandParameter="{Binding}" />
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
 
-                        <ItemsControl ItemsSource="{Binding SelectedTagFilters}"
-                                      Margin="0,0,0,4">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <WrapPanel />
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Style="{StaticResource App.TagChip}">
-                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding Name}"
-                                                       Style="{StaticResource App.TagChip.Text}" />
-                                            <Button Style="{StaticResource App.Button.ChipClose}"
-                                                    helpers:Theme.Icon="&#x00D7;"
-                                                    Margin="6,0,-2,0"
-                                                    ToolTip="Remove this tag filter."
-                                                    Command="{Binding DataContext.RemoveTagFilterCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                    CommandParameter="{Binding}" />
-                                        </StackPanel>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                                <TextBox Text="{Binding TagFilterSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                         ui:ControlHelper.PlaceholderText="Type to filter tags…"
+                                         Margin="0,0,0,4" />
 
-                        <TextBox Text="{Binding TagFilterSearchText, UpdateSourceTrigger=PropertyChanged}"
-                                 ui:ControlHelper.PlaceholderText="Type to filter tags…"
-                                 Margin="0,0,0,4" />
+                                <ListBox x:Name="TagFilterList"
+                                         ItemsSource="{Binding FilteredTags}"
+                                         Height="180"
+                                         DisplayMemberPath="Name"
+                                         Style="{StaticResource App.ListBox}"
+                                         SelectionChanged="TagFilterList_OnSelectionChanged"
+                                         VirtualizingPanel.IsVirtualizing="True"
+                                         VirtualizingPanel.VirtualizationMode="Recycling"
+                                         ToolTip="Click a tag to add it as a filter. Multiple tags are combined with AND (videos must have every selected tag)." />
+                            </StackPanel>
+                        </Expander>
 
-                        <ListBox x:Name="TagFilterList"
-                                 ItemsSource="{Binding FilteredTags}"
-                                 Height="180"
-                                 DisplayMemberPath="Name"
-                                 Style="{StaticResource App.ListBox}"
-                                 SelectionChanged="TagFilterList_OnSelectionChanged"
-                                 VirtualizingPanel.IsVirtualizing="True"
-                                 VirtualizingPanel.VirtualizationMode="Recycling"
-                                 ToolTip="Click a tag to add it as a filter. Multiple tags are combined with AND (videos must have every selected tag)." />
-
-                        <Grid Margin="0,0,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0"
-                                       Text="CAMERAS"
-                                       Style="{StaticResource App.Type.Section}" />
-                            <Button Grid.Column="1"
-                                    Content="Clear"
-                                    Style="{StaticResource App.Button.Ghost}"
-                                    Height="24"
-                                    FontSize="11"
-                                    Padding="8,0"
-                                    VerticalAlignment="Center"
-                                    ToolTip="Remove the camera filter."
-                                    Command="{Binding ClearCameraFilterCommand}" />
-                        </Grid>
-                        <ListBox ItemsSource="{Binding Cameras}"
-                                 SelectedItem="{Binding CameraFilter}"
-                                 Style="{StaticResource App.ListBox}"
-                                 Height="120" />
+                        <!-- CAMERAS expander. Last sidebar panel; matches
+                             the FOLDERS / TAGS chrome. The two
+                             rail-bottom CheckBoxes (Show only available
+                             files / Show only unreviewed) are deliberately
+                             OUTSIDE every expander so they remain visible
+                             whatever the user has collapsed — they're
+                             general view modes, not section content. -->
+                        <Expander Style="{StaticResource App.Expander}"
+                                  IsExpanded="{Binding IsCamerasPanelExpanded, Mode=TwoWay}">
+                            <Expander.Header>
+                                <TextBlock Text="CAMERAS"
+                                           Style="{StaticResource App.Type.Section}"
+                                           Margin="0" />
+                            </Expander.Header>
+                            <Expander.Tag>
+                                <Button Content="Clear"
+                                        Style="{StaticResource App.Button.Ghost}"
+                                        Height="24"
+                                        FontSize="11"
+                                        Padding="8,0"
+                                        VerticalAlignment="Center"
+                                        ToolTip="Remove the camera filter."
+                                        Command="{Binding ClearCameraFilterCommand}" />
+                            </Expander.Tag>
+                            <ListBox ItemsSource="{Binding Cameras}"
+                                     SelectedItem="{Binding CameraFilter}"
+                                     Style="{StaticResource App.ListBox}"
+                                     Height="120" />
+                        </Expander>
 
                         <CheckBox Content="Show only available files"
                                   IsChecked="{Binding ShowOnlyAvailable}"
@@ -525,11 +562,20 @@
                 </ScrollViewer>
             </Border>
 
+            <!-- Drag handle between the sidebar and the catalog grid.
+                 Width persistence: Thumb.DragCompleted in code-behind
+                 reads the post-drag column width and writes it back to
+                 settings via MainViewModel.PersistSidebarWidthAsync. -->
+            <GridSplitter x:Name="LeftSplitter"
+                          Grid.Column="1"
+                          Style="{StaticResource App.GridSplitter}"
+                          Thumb.DragCompleted="LeftSplitter_OnDragCompleted" />
+
             <!-- Zero-results overlay: shows when Videos is empty (initial scan
                  not run yet, or filters returning nothing). Sits in the same
                  grid cell as the catalog so it overlays the empty area
                  without affecting the layout. -->
-            <helpers:EmptyState Grid.Column="1"
+            <helpers:EmptyState Grid.Column="2"
                                 Glyph="{StaticResource Icon.Search}"
                                 Headline="No clips match"
                                 Subtext="Try adjusting filters, clearing your search, or scanning a folder to bring videos into the catalog."
@@ -538,7 +584,7 @@
                                 CtaCommand="{Binding ClearFiltersCommand}"
                                 Visibility="{Binding Videos.Count, Converter={StaticResource EmptyToVisibility}}" />
 
-            <ListBox Grid.Column="1"
+            <ListBox Grid.Column="2"
                      x:Name="VideoListBox"
                      ItemsSource="{Binding Videos}"
                      SelectedItem="{Binding SelectedVideo}"
@@ -685,7 +731,7 @@
                  GridLength would require a custom AnimationTimeline; the
                  cross-fade gives 90% of the perceived smoothness without
                  that cost). -->
-            <Border Grid.Column="2"
+            <Border Grid.Column="3"
                     Background="Black"
                     DataContext="{Binding Detail}"
                     Opacity="0">
@@ -818,7 +864,7 @@
                  catalog grid from the editor in normal mode, but draws an
                  unwanted pale line down the right edge of the in-app player
                  in review mode, so it's collapsed while IsPlayerVisible. -->
-            <Border Grid.Column="3"
+            <Border Grid.Column="4"
                     BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
                 <Border.Style>
                     <Style TargetType="Border">

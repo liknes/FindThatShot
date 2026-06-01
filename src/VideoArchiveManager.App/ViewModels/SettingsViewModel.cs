@@ -250,7 +250,14 @@ public partial class SettingsViewModel : ObservableObject
             PageSize = _store.Current.PageSize,
             SupportedExtensions = _store.Current.SupportedExtensions,
             ExcludedFolderNames = SplitList(ExcludedFolderNames),
-            ExcludedFileNamePatterns = SplitList(ExcludedFileNamePatterns)
+            ExcludedFileNamePatterns = SplitList(ExcludedFileNamePatterns),
+            // Carry forward sidebar layout state from the live store
+            // so saving the Settings dialog doesn't accidentally reset
+            // the user's last drag-resize / collapse state on the rail.
+            SidebarWidth = _store.Current.SidebarWidth,
+            SidebarFoldersExpanded = _store.Current.SidebarFoldersExpanded,
+            SidebarTagsExpanded = _store.Current.SidebarTagsExpanded,
+            SidebarCamerasExpanded = _store.Current.SidebarCamerasExpanded
         };
     }
 

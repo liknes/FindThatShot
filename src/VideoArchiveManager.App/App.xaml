@@ -25,6 +25,8 @@
                 <ResourceDictionary Source="Resources/Components/FolderTree.xaml" />
                 <ResourceDictionary Source="Resources/Components/Lists.xaml" />
                 <ResourceDictionary Source="Resources/Components/Calendar.xaml" />
+                <ResourceDictionary Source="Resources/Components/Expander.xaml" />
+                <ResourceDictionary Source="Resources/Components/GridSplitter.xaml" />
                 <ResourceDictionary Source="Resources/Styles.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
