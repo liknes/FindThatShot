@@ -48,6 +48,17 @@ public partial class VideoDetailViewModel : ObservableObject
     [ObservableProperty]
     private bool _isPlayerVisible;
 
+    // True when PlayInApp substituted a DaVinci-style proxy for the hero
+    // clip's MediaSource. Surfaces a "PROXY" badge in the player toolbar
+    // so the user can tell at a glance whether they're watching the
+    // original file or a transcoded preview. ActiveProxyPath carries the
+    // resolved absolute path for the chip's tooltip.
+    [ObservableProperty]
+    private bool _isPlayingProxy;
+
+    [ObservableProperty]
+    private string? _activeProxyPath;
+
     public bool CanPlayInApp => App.IsPlayerAvailable;
 
     public string? PlayerUnavailableMessage => App.IsPlayerAvailable ? null : App.PlayerInitError;
@@ -198,15 +209,19 @@ public partial class VideoDetailViewModel : ObservableObject
         // decode on heavy 4K 60p sources. Falls back to the hero file
         // unconditionally when no proxy exists, so this is always safe.
         var sourcePath = Current.FilePath;
+        string? activeProxy = null;
         if (_settings.Current.PreferProxyForPlayback)
         {
             var proxyPath = _proxyResolver.TryResolveProxy(Current.FilePath);
             if (!string.IsNullOrEmpty(proxyPath) && File.Exists(proxyPath))
             {
                 sourcePath = proxyPath;
+                activeProxy = proxyPath;
             }
         }
 
+        ActiveProxyPath = activeProxy;
+        IsPlayingProxy = activeProxy is not null;
         MediaSource = new Uri(sourcePath, UriKind.Absolute);
         IsPlayerVisible = true;
     }
@@ -215,6 +230,8 @@ public partial class VideoDetailViewModel : ObservableObject
     private void ClosePlayer()
     {
         MediaSource = null;
+        ActiveProxyPath = null;
+        IsPlayingProxy = false;
         IsPlayerVisible = false;
     }
 

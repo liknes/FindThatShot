@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+### Added
+
+- **PROXY badge in the player toolbar tells you at a glance whether you're watching the original clip or the substituted proxy.** Pairs with the proxy-playback setting introduced in 0.9.0: a small amber-bordered pill labelled `PROXY` (Consolas / 11px / SemiBold on `App.Accent.Subtle` background, sharing the chrome family with the *Update available* status-bar pill and the *Primary* button) floats at the left edge of the player's transport row whenever `VideoDetailViewModel.IsPlayingProxy` is `true`, and disappears entirely (no layout reservation, no greyed-out placeholder) when the player is back on the hero file. Hover the chip for a tooltip showing the resolved proxy file path (`Playing proxy: <full-path>`), so a quick check can confirm exactly which transcode is feeding the picture without leaving the review surface. State plumbing: `VideoDetailViewModel` gained `IsPlayingProxy` (bool) and `ActiveProxyPath` (string?) observable properties, both set inside `PlayInApp` when the resolver returns a non-null match and cleared back to `false`/`null` in `ClosePlayer`, so the chip's lifecycle is bound to the same "is a clip mounted in the player?" moment as the rest of the toolbar — no risk of leftover state after switching clips or closing the player. The transport row's `WrapPanel` was wrapped in a `Grid` so the chip and the centered button cluster occupy the same layout cell: `HorizontalAlignment="Left"` on the chip + `HorizontalAlignment="Center"` on the WrapPanel keeps the buttons visually centered to the full toolbar width regardless of whether the chip is present, avoiding the layout jump that a `DockPanel`/`StackPanel` reservation would have introduced.
+
+### Fixed
+
+- **Folder tree video counts no longer hide behind the overlay scrollbar.** The custom `App.TreeViewItem` row template reserved only 6px of right padding inside its `Bd` `Border`, but the rail's overlay scrollbar is 12px wide — so as soon as the FOLDERS tree grew tall enough to scroll, the scrollbar painted over the right-aligned `VideoCount` column on each row, leaving rows looking like they had no count (or worse, a partial count). Bumped the row's right padding to 16px to clear the scrollbar with a 4px buffer; left padding stays at 2px so the chevron + folder glyph still sit flush at the row's left edge. Pure cosmetic XAML change — no behaviour, layout, or selection logic affected.
+
 ## [0.9.0] - 2026-06-01
 
 ### Added

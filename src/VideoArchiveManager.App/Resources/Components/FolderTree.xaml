@@ -120,11 +120,15 @@
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
+                        <!-- Right padding (16) reserves clearance for the
+                             12px overlay vertical scrollbar so the right-
+                             aligned VideoCount column doesn't get covered
+                             when the tree scrolls. -->
                         <Border x:Name="Bd"
                                 Grid.Row="0"
                                 Background="{TemplateBinding Background}"
                                 CornerRadius="4"
-                                Padding="2,1,6,1"
+                                Padding="2,1,16,1"
                                 Margin="0,1">
                             <Grid>
                                 <Grid.ColumnDefinitions>

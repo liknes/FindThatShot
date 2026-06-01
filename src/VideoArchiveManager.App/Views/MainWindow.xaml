@@ -905,37 +905,61 @@
                                            TextAlignment="Left" />
                             </Grid>
 
-                            <!-- Buttons row -->
-                            <WrapPanel Grid.Row="1" HorizontalAlignment="Center" ItemHeight="40">
-                                <Button x:Name="PlayPauseButton"
-                                        Content="Pause"
-                                        MinWidth="110"
-                                        Margin="0,4,0,4"
-                                        Click="PlayerPlayPause_Click"
-                                        Style="{StaticResource App.Button.Primary}"
-                                        helpers:Theme.Icon="{StaticResource Icon.Pause}"
-                                        ToolTip="Toggle play / pause (Space)" />
-                                <Button Margin="6,4,0,4"
-                                        Click="PlayerSkipBack_Click"
-                                        Style="{StaticResource App.Button.IconOnly}"
-                                        helpers:Theme.Icon="{StaticResource Icon.SkipBack}"
-                                        ToolTip="Skip back 5 seconds" />
-                                <Button Margin="6,4,0,4"
-                                        Click="PlayerSkipForward_Click"
-                                        Style="{StaticResource App.Button.IconOnly}"
-                                        helpers:Theme.Icon="{StaticResource Icon.SkipForward}"
-                                        ToolTip="Skip forward 5 seconds" />
-                                <Button Content="Stop" MinWidth="80" Margin="6,4,0,4"
-                                        Click="PlayerStop_Click"
-                                        Style="{StaticResource App.Button.Secondary}"
-                                        helpers:Theme.Icon="{StaticResource Icon.Stop}"
-                                        ToolTip="Stop playback (resets position)" />
-                                <Button Content="Close" MinWidth="100" Margin="16,4,0,4"
-                                        Command="{Binding ClosePlayerCommand}"
-                                        Style="{StaticResource App.Button.Ghost}"
-                                        helpers:Theme.Icon="{StaticResource Icon.Close}"
-                                        ToolTip="Close the player and return to the catalog" />
-                            </WrapPanel>
+                            <!-- Buttons row. Outer Grid lets the PROXY chip float at
+                                 the left while the transport WrapPanel stays centered
+                                 within the full toolbar width — same visual rhythm
+                                 regardless of whether a proxy is active. The chip is
+                                 visibility-bound to Detail.IsPlayingProxy so it's
+                                 entirely absent for non-proxy playback (no layout
+                                 reservation) and pops in only when a substitution
+                                 actually happened. -->
+                            <Grid Grid.Row="1">
+                                <Border HorizontalAlignment="Left"
+                                        VerticalAlignment="Center"
+                                        Background="{DynamicResource App.Accent.Subtle}"
+                                        BorderBrush="{DynamicResource App.Accent}"
+                                        BorderThickness="1"
+                                        CornerRadius="3"
+                                        Padding="6,2"
+                                        Visibility="{Binding IsPlayingProxy, Converter={StaticResource BoolToVisibility}}"
+                                        ToolTip="{Binding ActiveProxyPath, StringFormat='Playing proxy: {0}'}">
+                                    <TextBlock Text="PROXY"
+                                               FontFamily="Consolas"
+                                               FontSize="11"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource App.Accent}" />
+                                </Border>
+                                <WrapPanel HorizontalAlignment="Center" ItemHeight="40">
+                                    <Button x:Name="PlayPauseButton"
+                                            Content="Pause"
+                                            MinWidth="110"
+                                            Margin="0,4,0,4"
+                                            Click="PlayerPlayPause_Click"
+                                            Style="{StaticResource App.Button.Primary}"
+                                            helpers:Theme.Icon="{StaticResource Icon.Pause}"
+                                            ToolTip="Toggle play / pause (Space)" />
+                                    <Button Margin="6,4,0,4"
+                                            Click="PlayerSkipBack_Click"
+                                            Style="{StaticResource App.Button.IconOnly}"
+                                            helpers:Theme.Icon="{StaticResource Icon.SkipBack}"
+                                            ToolTip="Skip back 5 seconds" />
+                                    <Button Margin="6,4,0,4"
+                                            Click="PlayerSkipForward_Click"
+                                            Style="{StaticResource App.Button.IconOnly}"
+                                            helpers:Theme.Icon="{StaticResource Icon.SkipForward}"
+                                            ToolTip="Skip forward 5 seconds" />
+                                    <Button Content="Stop" MinWidth="80" Margin="6,4,0,4"
+                                            Click="PlayerStop_Click"
+                                            Style="{StaticResource App.Button.Secondary}"
+                                            helpers:Theme.Icon="{StaticResource Icon.Stop}"
+                                            ToolTip="Stop playback (resets position)" />
+                                    <Button Content="Close" MinWidth="100" Margin="16,4,0,4"
+                                            Command="{Binding ClosePlayerCommand}"
+                                            Style="{StaticResource App.Button.Ghost}"
+                                            helpers:Theme.Icon="{StaticResource Icon.Close}"
+                                            ToolTip="Close the player and return to the catalog" />
+                                </WrapPanel>
+                            </Grid>
                         </Grid>
                     </Border>
                 </Grid>
