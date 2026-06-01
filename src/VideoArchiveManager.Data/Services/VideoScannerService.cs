@@ -338,8 +338,15 @@ public class VideoScannerService : IVideoScannerService
                 existing.Codec = ffprobeResult.Codec ?? existing.Codec;
                 existing.Camera ??= ffprobeResult.Camera;
             }
-            existing.GpsLatitude ??= gpsLat;
-            existing.GpsLongitude ??= gpsLon;
+            // Embedded GPS (DJI SRT telemetry or FFprobe-extracted QuickTime
+            // location) is always authoritative: overwrite whatever is on
+            // the entity, but never null out an existing value just because
+            // a rescan happened to miss it. This is what makes the manual
+            // GPS picker safe — user-entered coordinates survive rescans
+            // that don't find embedded GPS, but they get replaced the
+            // moment a real GPS source appears for the clip.
+            if (gpsLat.HasValue) existing.GpsLatitude = gpsLat;
+            if (gpsLon.HasValue) existing.GpsLongitude = gpsLon;
             await ctx.SaveChangesAsync(cancellationToken);
             return new ProcessResult(ProcessAction.Updated, existing.Id);
         }

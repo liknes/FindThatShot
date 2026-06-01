@@ -1000,8 +1000,21 @@
                                  Hidden in review mode because the in-app player owns
                                  its own column and the sidebar focuses on tags /
                                  notes / status in that mode. See LocationMapView
-                                 for the WebView2 / Leaflet lifecycle. -->
-                            <Border Margin="0,0,0,16"
+                                 for the WebView2 / Leaflet lifecycle.
+
+                                 The map's affordances (Set / Edit / Clear / Copy /
+                                 pick-mode TextBox + Save + Cancel) intentionally
+                                 live in the sibling Grid *below* this Border, not
+                                 overlaid on top: WebView2's hosted Chromium HWND
+                                 paints above all WPF content in its rectangle, so
+                                 WPF buttons drawn over the map would be invisible
+                                 / unclickable (the classic WPF "airspace" issue).
+                                 Pick mode itself still hits the map directly —
+                                 the embedded JS click handler posts coords back
+                                 over the WebMessage bridge, so the map remains
+                                 the primary input surface even though the
+                                 chrome around it is plain WPF. -->
+                            <Border Margin="0,0,0,8"
                                     Height="180"
                                     CornerRadius="4"
                                     ClipToBounds="True"
@@ -1009,9 +1022,90 @@
                                     BorderBrush="{DynamicResource App.Border.Subtle}"
                                     BorderThickness="1"
                                     Visibility="{Binding IsPlayerVisible, Converter={StaticResource BoolToVisibilityInverted}}">
-                                <controls:LocationMapView Latitude="{Binding Current.GpsLatitude}"
-                                                          Longitude="{Binding Current.GpsLongitude}" />
+                                <controls:LocationMapView x:Name="LocationMap"
+                                                          Latitude="{Binding Current.GpsLatitude}"
+                                                          Longitude="{Binding Current.GpsLongitude}"
+                                                          IsPickingMode="{Binding IsPickingLocation}"
+                                                          LocationPicked="LocationMap_OnLocationPicked" />
                             </Border>
+
+                            <!-- Location actions row, three mutually exclusive states
+                                 stacked into the same logical slot via nested
+                                 Visibility Borders (same pattern as elsewhere in
+                                 the editor). Hidden in review mode for symmetry
+                                 with the map above. -->
+                            <Grid Margin="0,0,0,16"
+                                  Visibility="{Binding IsPlayerVisible, Converter={StaticResource BoolToVisibilityInverted}}">
+
+                                <!-- State A: no GPS, not picking → primary CTA. -->
+                                <Border Visibility="{Binding Current.HasGps, Converter={StaticResource BoolToVisibilityInverted}}">
+                                    <Border Visibility="{Binding IsPickingLocation, Converter={StaticResource BoolToVisibilityInverted}}">
+                                        <Button Content="Set location"
+                                                HorizontalAlignment="Stretch"
+                                                Command="{Binding BeginPickLocationCommand}"
+                                                Style="{StaticResource App.Button.Primary}"
+                                                helpers:Theme.Icon="{StaticResource Icon.Add}"
+                                                ToolTip="Assign GPS coordinates to this clip by clicking the map or typing them in." />
+                                    </Border>
+                                </Border>
+
+                                <!-- State B: GPS exists, not picking → inline action row. -->
+                                <Border Visibility="{Binding Current.HasGps, Converter={StaticResource BoolToVisibility}}">
+                                    <Border Visibility="{Binding IsPickingLocation, Converter={StaticResource BoolToVisibilityInverted}}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Button Content="Edit location"
+                                                    Command="{Binding BeginPickLocationCommand}"
+                                                    Style="{StaticResource App.Button.Secondary}"
+                                                    helpers:Theme.Icon="{StaticResource Icon.Edit}"
+                                                    ToolTip="Click the map or type a new coordinate pair to replace the saved GPS." />
+                                            <Button Content="Clear"
+                                                    Margin="6,0,0,0"
+                                                    Command="{Binding ClearLocationCommand}"
+                                                    Style="{StaticResource App.Button.Ghost}"
+                                                    helpers:Theme.Icon="{StaticResource Icon.Trash}"
+                                                    ToolTip="Remove the GPS coordinates on this clip (the LocationText label is left alone)." />
+                                            <Button Content="Copy"
+                                                    Margin="6,0,0,0"
+                                                    Command="{Binding CopyLocationCommand}"
+                                                    Style="{StaticResource App.Button.Ghost}"
+                                                    helpers:Theme.Icon="{StaticResource Icon.Copy}"
+                                                    ToolTip="Copy 'lat, lon' to the clipboard in invariant-culture format." />
+                                        </StackPanel>
+                                    </Border>
+                                </Border>
+
+                                <!-- State C: picking → TextBox + Save + Cancel. -->
+                                <Border Visibility="{Binding IsPickingLocation, Converter={StaticResource BoolToVisibility}}">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <TextBox Grid.Row="0"
+                                                 Text="{Binding PendingCoordsText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 VerticalContentAlignment="Center"
+                                                 FontFamily="{StaticResource App.FontFamily.Mono}"
+                                                 FontSize="12"
+                                                 ToolTip="Click on the map, or type/paste 'lat, lon' (e.g. 60.482, 6.902)."
+                                                 ui:ControlHelper.PlaceholderText="Click the map, or type: 60.482, 6.902" />
+                                        <StackPanel Grid.Row="1"
+                                                    Orientation="Horizontal"
+                                                    HorizontalAlignment="Right"
+                                                    Margin="0,6,0,0">
+                                            <Button Content="Cancel"
+                                                    Command="{Binding CancelPickLocationCommand}"
+                                                    Style="{StaticResource App.Button.Ghost}"
+                                                    helpers:Theme.Icon="{StaticResource Icon.Cancel}" />
+                                            <Button Content="Save"
+                                                    Margin="6,0,0,0"
+                                                    Command="{Binding SaveLocationCommand}"
+                                                    Style="{StaticResource App.Button.Primary}"
+                                                    helpers:Theme.Icon="{StaticResource Icon.Save}"
+                                                    ToolTip="Save the GPS coordinates to the catalog, reverse-geocode for Location Text, and write the sidecar." />
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </Grid>
 
                             <!-- Filename / path header intentionally omitted: the
                                  catalog card the user clicked already shows the

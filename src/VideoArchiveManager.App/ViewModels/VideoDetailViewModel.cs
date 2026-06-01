@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.IO;
 using System.Windows;
 using System.Windows.Media.Imaging;
@@ -22,6 +23,7 @@ public partial class VideoDetailViewModel : ObservableObject
     private readonly ISidecarService _sidecar;
     private readonly IProxyResolver _proxyResolver;
     private readonly ISettingsStore _settings;
+    private readonly IReverseGeocodingService _reverseGeocoder;
 
     public VideoDetailViewModel(
         IDbContextFactory<VideoArchiveDbContext> contextFactory,
@@ -29,7 +31,8 @@ public partial class VideoDetailViewModel : ObservableObject
         IFileSystemService fileSystem,
         ISidecarService sidecar,
         IProxyResolver proxyResolver,
-        ISettingsStore settings)
+        ISettingsStore settings,
+        IReverseGeocodingService reverseGeocoder)
     {
         _contextFactory = contextFactory;
         _tagService = tagService;
@@ -37,6 +40,7 @@ public partial class VideoDetailViewModel : ObservableObject
         _sidecar = sidecar;
         _proxyResolver = proxyResolver;
         _settings = settings;
+        _reverseGeocoder = reverseGeocoder;
     }
 
     [ObservableProperty]
@@ -105,6 +109,33 @@ public partial class VideoDetailViewModel : ObservableObject
     [ObservableProperty]
     private string? _lastSaveStatus;
 
+    // Manual GPS picker state. The right-sidebar map enters pick mode when
+    // the user clicks the "+ Set location" CTA (or "Edit location" on a
+    // clip that already has GPS). While IsPickingLocation is true, the
+    // map installs a click handler that posts back lat/lon, and the
+    // sidebar reveals a small bottom form with a coords text input and
+    // Save / Cancel buttons. Pending* hold the in-progress coordinates
+    // until the user saves; on Save they are written to the entity, the
+    // result is reverse-geocoded to refresh LocationText, and a sidecar
+    // is written.
+    [ObservableProperty]
+    private bool _isPickingLocation;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SaveLocationCommand))]
+    private double? _pendingLatitude;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SaveLocationCommand))]
+    private double? _pendingLongitude;
+
+    // Two-way bound to a TextBox in the picker overlay. Accepts "lat, lon"
+    // or "lat,lon" using invariant-culture decimal separators (matches
+    // the format VideoItemViewModel.GpsText produces, so paste round-trips
+    // cleanly). Parsing happens in OnPendingCoordsTextChanged.
+    [ObservableProperty]
+    private string _pendingCoordsText = string.Empty;
+
     // Fires every time the editor attaches a tag to the current video.
     // MainViewModel listens so the sidebar's tag picker can show newly
     // created tags immediately, without requiring an app restart or
@@ -170,6 +201,92 @@ public partial class VideoDetailViewModel : ObservableObject
     partial void OnNewTagNameChanged(string value) => UpdateTagSuggestions();
 
     partial void OnNewTagTypeChanged(TagType value) => UpdateTagSuggestions();
+
+    // Selection change resets any half-started pick — otherwise the user
+    // would see the bottom picker form hovering over a different clip's
+    // map, which would be both confusing and a footgun (Save would
+    // persist the previous clip's pending coords to the new clip).
+    partial void OnCurrentChanged(VideoItemViewModel? value)
+    {
+        if (IsPickingLocation)
+        {
+            ResetPickState();
+        }
+    }
+
+    // Entering review mode (in-app player visible) collapses the whole
+    // map block, so any in-flight pick is no longer visible and would
+    // strand the user in a state with no way to Save / Cancel.
+    partial void OnIsPlayerVisibleChanged(bool value)
+    {
+        if (value && IsPickingLocation)
+        {
+            ResetPickState();
+        }
+    }
+
+    // Two-way bound to the picker TextBox. Accepts either "lat, lon" or
+    // "lat,lon" using invariant-culture decimals; rejects anything that
+    // doesn't parse to two finite doubles inside [-90, 90] / [-180, 180].
+    // Invalid input clears Pending* so SaveLocationCommand's CanExecute
+    // stays false — the disabled Save button is the visible signal.
+    partial void OnPendingCoordsTextChanged(string value)
+    {
+        if (TryParseCoords(value, out var lat, out var lon))
+        {
+            PendingLatitude = lat;
+            PendingLongitude = lon;
+        }
+        else
+        {
+            PendingLatitude = null;
+            PendingLongitude = null;
+        }
+    }
+
+    private static bool TryParseCoords(string? text, out double lat, out double lon)
+    {
+        lat = 0;
+        lon = 0;
+        if (string.IsNullOrWhiteSpace(text)) return false;
+
+        var trimmed = text.Trim();
+        var commaIdx = trimmed.IndexOf(',');
+        if (commaIdx <= 0 || commaIdx == trimmed.Length - 1) return false;
+
+        var latPart = trimmed[..commaIdx].Trim();
+        var lonPart = trimmed[(commaIdx + 1)..].Trim();
+
+        if (!double.TryParse(latPart, NumberStyles.Float, CultureInfo.InvariantCulture, out lat)) return false;
+        if (!double.TryParse(lonPart, NumberStyles.Float, CultureInfo.InvariantCulture, out lon)) return false;
+        if (!double.IsFinite(lat) || !double.IsFinite(lon)) return false;
+        if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return false;
+
+        return true;
+    }
+
+    private void ResetPickState()
+    {
+        IsPickingLocation = false;
+        PendingLatitude = null;
+        PendingLongitude = null;
+        PendingCoordsText = string.Empty;
+    }
+
+    // Called by the host (MainWindow code-behind) when LocationMapView
+    // raises LocationPicked. We update both Pending* and PendingCoordsText
+    // so the TextBox reflects the pin position, and the user can still
+    // tweak the value manually before hitting Save.
+    public void ApplyPickedLocation(double latitude, double longitude)
+    {
+        if (!IsPickingLocation) return;
+        PendingLatitude = latitude;
+        PendingLongitude = longitude;
+        PendingCoordsText = string.Format(
+            CultureInfo.InvariantCulture,
+            "{0:0.######}, {1:0.######}",
+            latitude, longitude);
+    }
 
     // Rebuilds TagSuggestions from _allTagsCache using a case-insensitive
     // "contains" match against NewTagName, filtered to the currently
@@ -395,5 +512,160 @@ public partial class VideoDetailViewModel : ObservableObject
     {
         if (Current is null) return;
         _fileSystem.OpenWithDefaultPlayer(Current.FilePath);
+    }
+
+    // === Manual GPS location picker ===========================================
+
+    // Enter pick mode. When the clip already has GPS, seed the TextBox with
+    // the current coords so the user is editing rather than starting blank;
+    // otherwise start empty so they can type or click freshly.
+    [RelayCommand]
+    private void BeginPickLocation()
+    {
+        if (Current is null) return;
+        if (Current.GpsLatitude is double curLat && Current.GpsLongitude is double curLon)
+        {
+            PendingLatitude = curLat;
+            PendingLongitude = curLon;
+            PendingCoordsText = string.Format(
+                CultureInfo.InvariantCulture,
+                "{0:0.######}, {1:0.######}",
+                curLat, curLon);
+        }
+        else
+        {
+            PendingLatitude = null;
+            PendingLongitude = null;
+            PendingCoordsText = string.Empty;
+        }
+        IsPickingLocation = true;
+    }
+
+    [RelayCommand]
+    private void CancelPickLocation()
+    {
+        ResetPickState();
+    }
+
+    // SaveLocation is enabled only when both Pending* are valid.
+    private bool CanSaveLocation()
+        => Current is not null
+           && PendingLatitude.HasValue
+           && PendingLongitude.HasValue;
+
+    [RelayCommand(CanExecute = nameof(CanSaveLocation))]
+    private async Task SaveLocationAsync()
+    {
+        if (Current is null) return;
+        if (PendingLatitude is not double lat) return;
+        if (PendingLongitude is not double lon) return;
+
+        VideoItem? entity;
+        await using (var ctx = await _contextFactory.CreateDbContextAsync())
+        {
+            entity = await ctx.VideoItems.FirstOrDefaultAsync(v => v.Id == Current.Id);
+            if (entity is null) return;
+
+            entity.GpsLatitude = lat;
+            entity.GpsLongitude = lon;
+            entity.UpdatedAt = DateTime.UtcNow;
+            await ctx.SaveChangesAsync();
+        }
+
+        // Mirror onto the in-memory model so the map + the clip-info
+        // popup pick up the new coords immediately. VideoItemViewModel's
+        // GPS getters proxy directly to Model so we just need the model
+        // fields plus a property-change ping for the map binding.
+        Current.Model.GpsLatitude = lat;
+        Current.Model.GpsLongitude = lon;
+        Current.RefreshLocation();
+
+        // Reverse-geocode in the background; failures are non-fatal —
+        // LocationText simply stays as-is. Reuses the same Nominatim
+        // service the "Fill missing locations from GPS…" command uses,
+        // including its on-disk geocode cache.
+        var geoStatus = "geocode skipped";
+        try
+        {
+            var geo = await _reverseGeocoder.LookupAsync(lat, lon);
+            if (geo is not null && !string.IsNullOrWhiteSpace(geo.LocationShort))
+            {
+                await using var ctx = await _contextFactory.CreateDbContextAsync();
+                var fresh = await ctx.VideoItems.FirstOrDefaultAsync(v => v.Id == Current.Id);
+                if (fresh is not null)
+                {
+                    fresh.LocationText = geo.LocationShort;
+                    fresh.UpdatedAt = DateTime.UtcNow;
+                    await ctx.SaveChangesAsync();
+                    Current.Model.LocationText = geo.LocationShort;
+                    Current.RefreshLocation();
+                    entity = fresh;
+                    geoStatus = $"location → {geo.LocationShort}";
+                }
+            }
+            else
+            {
+                geoStatus = "geocode: no match";
+            }
+        }
+        catch
+        {
+            // Network blip / rate limit / parse error — keep the GPS save
+            // but signal geocode didn't run. The user can retry via the
+            // existing "Fill missing locations from GPS…" catalog command.
+            geoStatus = "geocode failed";
+        }
+
+        var sidecarStatus = await WriteSidecarStatusAsync(entity);
+        LastSaveStatus = $"Location saved · {geoStatus} · {sidecarStatus}";
+
+        ResetPickState();
+    }
+
+    // Clear the GPS coords on the current clip. LocationText is left alone
+    // on purpose: it can be folder-derived (FolderNameParser) rather than
+    // strictly GPS-derived, so blanking it here would discard user-visible
+    // context that isn't actually about the dropped pin.
+    [RelayCommand]
+    private async Task ClearLocationAsync()
+    {
+        if (Current is null) return;
+        if (Current.GpsLatitude is null && Current.GpsLongitude is null) return;
+
+        VideoItem? entity;
+        await using (var ctx = await _contextFactory.CreateDbContextAsync())
+        {
+            entity = await ctx.VideoItems.FirstOrDefaultAsync(v => v.Id == Current.Id);
+            if (entity is null) return;
+
+            entity.GpsLatitude = null;
+            entity.GpsLongitude = null;
+            entity.UpdatedAt = DateTime.UtcNow;
+            await ctx.SaveChangesAsync();
+        }
+
+        Current.Model.GpsLatitude = null;
+        Current.Model.GpsLongitude = null;
+        Current.RefreshLocation();
+
+        var sidecarStatus = await WriteSidecarStatusAsync(entity);
+        LastSaveStatus = $"Location cleared · {sidecarStatus}";
+
+        ResetPickState();
+    }
+
+    [RelayCommand]
+    private void CopyLocation()
+    {
+        var text = Current?.GpsText;
+        if (string.IsNullOrEmpty(text)) return;
+        try
+        {
+            Clipboard.SetText(text);
+        }
+        catch
+        {
+            // Clipboard can intermittently fail on locked / RDP sessions; ignore.
+        }
     }
 }

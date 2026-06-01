@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
@@ -25,6 +26,14 @@ namespace VideoArchiveManager.App.Helpers.Controls;
 /// Leaflet stack reinitialising on every selection change.
 /// </para>
 /// <para>
+/// When <see cref="IsPickingMode"/> is true the page installs a click
+/// handler on the Leaflet map and posts the picked <c>(lat, lon)</c>
+/// back to the host via <c>chrome.webview.postMessage</c>; the host
+/// then raises <see cref="LocationPicked"/>. This is how the manual GPS
+/// picker in the sidebar editor lets the user assign coordinates to
+/// clips that have no embedded location data.
+/// </para>
+/// <para>
 /// WebView2 init failures (older runtime missing, sandboxed environment)
 /// are swallowed silently — the control simply renders empty, and the
 /// "Open in map" hyperlink in the clip-info popup still works as a
@@ -38,6 +47,7 @@ public class LocationMapView : UserControl
     private bool _coreInitialized;
     private bool _firstNavigationDone;
     private bool _updatePending;
+    private bool _pickModePending;
 
     // Regional-view fallback used when the bound clip has no GPS — keeps
     // the sidebar layout stable instead of collapsing the map area on
@@ -71,12 +81,15 @@ public class LocationMapView : UserControl
   .leaflet-container { background: #1e1e1e; }
   body.no-location .leaflet-tile-pane { filter: grayscale(1) brightness(0.55); }
   body.no-location .leaflet-control-attribution { opacity: 0.55; }
+  body.pick-mode .leaflet-container { cursor: crosshair !important; }
 </style>
 </head>
 <body>
 <div id="m"></div>
 <script>
   var map = null, marker = null;
+  var pickHandler = null;
+  var pickModeRequested = false;
   function setLocation(lat, lon, hasLocation) {
     var zoom = hasLocation ? 13 : 11;
     if (!map) {
@@ -87,6 +100,9 @@ public class LocationMapView : UserControl
       }).addTo(map);
       marker = L.marker([lat, lon]);
       if (hasLocation) marker.addTo(map);
+      // Host may have requested pick mode before the map existed
+      // (race during first NavigateToString); apply the pending state now.
+      if (pickModeRequested) setPickMode(true);
     } else {
       map.setView([lat, lon], zoom);
       marker.setLatLng([lat, lon]);
@@ -97,6 +113,26 @@ public class LocationMapView : UserControl
       }
     }
     document.body.classList.toggle('no-location', !hasLocation);
+  }
+  function setPickMode(enabled) {
+    pickModeRequested = enabled;
+    document.body.classList.toggle('pick-mode', enabled);
+    if (!map) return;
+    if (enabled && !pickHandler) {
+      pickHandler = function(e) {
+        try {
+          window.chrome.webview.postMessage(JSON.stringify({
+            type: 'pick',
+            lat: e.latlng.lat,
+            lon: e.latlng.lng
+          }));
+        } catch (err) { /* host disconnected */ }
+      };
+      map.on('click', pickHandler);
+    } else if (!enabled && pickHandler) {
+      map.off('click', pickHandler);
+      pickHandler = null;
+    }
   }
   setLocation(__LAT__, __LON__, __HAS__);
 </script>
@@ -118,6 +154,13 @@ public class LocationMapView : UserControl
             typeof(LocationMapView),
             new PropertyMetadata(null, OnCoordinateChanged));
 
+    public static readonly DependencyProperty IsPickingModeProperty =
+        DependencyProperty.Register(
+            nameof(IsPickingMode),
+            typeof(bool),
+            typeof(LocationMapView),
+            new PropertyMetadata(false, OnIsPickingModeChanged));
+
     public double? Latitude
     {
         get => (double?)GetValue(LatitudeProperty);
@@ -129,6 +172,25 @@ public class LocationMapView : UserControl
         get => (double?)GetValue(LongitudeProperty);
         set => SetValue(LongitudeProperty, value);
     }
+
+    /// <summary>
+    /// When true, the embedded Leaflet page installs a click handler that
+    /// posts <c>(lat, lon)</c> back to the host on every map click and
+    /// raises <see cref="LocationPicked"/>. Driven by the VM's
+    /// <c>IsPickingLocation</c> while the user is assigning a manual GPS
+    /// location to a clip without embedded coordinates.
+    /// </summary>
+    public bool IsPickingMode
+    {
+        get => (bool)GetValue(IsPickingModeProperty);
+        set => SetValue(IsPickingModeProperty, value);
+    }
+
+    /// <summary>
+    /// Raised when the user clicks the map while <see cref="IsPickingMode"/>
+    /// is true. Subscribers receive the lat/lon picked.
+    /// </summary>
+    public event EventHandler<LocationPickedEventArgs>? LocationPicked;
 
     public LocationMapView()
     {
@@ -147,6 +209,34 @@ public class LocationMapView : UserControl
         if (d is LocationMapView self)
         {
             self.QueueUpdate();
+        }
+    }
+
+    private static void OnIsPickingModeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is LocationMapView self)
+        {
+            self.ApplyPickMode((bool)e.NewValue);
+        }
+    }
+
+    // Forward the IsPickingMode DP into the embedded page. If the WebView2
+    // core isn't initialized yet we cache the desired state in
+    // _pickModePending and apply it once OnLoaded finishes; the JS side
+    // also defers internally if the Leaflet map isn't constructed yet,
+    // so we cover both startup orderings.
+    private async void ApplyPickMode(bool enabled)
+    {
+        _pickModePending = enabled;
+        if (!_coreInitialized || !_firstNavigationDone) return;
+        try
+        {
+            var script = enabled ? "setPickMode(true);" : "setPickMode(false);";
+            await _webView.CoreWebView2.ExecuteScriptAsync(script);
+        }
+        catch
+        {
+            // Stale call during tear-down; ignore.
         }
     }
 
@@ -189,6 +279,12 @@ public class LocationMapView : UserControl
             // hijacking the embedded map view.
             _webView.CoreWebView2.NewWindowRequested += OnNewWindowRequested;
 
+            // Inbound JS-to-host bridge for the manual GPS picker. The
+            // embedded page posts {type:"pick", lat, lon} on map click
+            // when pick mode is active; we forward as a LocationPicked
+            // event so the VM can update its PendingLatitude/Longitude.
+            _webView.CoreWebView2.WebMessageReceived += OnWebMessageReceived;
+
             QueueUpdate();
         }
         catch
@@ -196,6 +292,36 @@ public class LocationMapView : UserControl
             // Evergreen runtime missing or blocked. Leave the control
             // empty; parent visibility binding plus the clip-info popup's
             // "Open in map" hyperlink keep the workflow functional.
+        }
+    }
+
+    private void OnWebMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
+    {
+        // Treat every inbound message as untrusted: parse defensively,
+        // validate the type, range-check the coords, and swallow any
+        // exceptions so a malformed payload can't crash the editor.
+        try
+        {
+            var json = e.TryGetWebMessageAsString();
+            if (string.IsNullOrWhiteSpace(json)) return;
+
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            if (root.ValueKind != JsonValueKind.Object) return;
+            if (!root.TryGetProperty("type", out var typeEl)) return;
+            if (typeEl.GetString() != "pick") return;
+            if (!root.TryGetProperty("lat", out var latEl)) return;
+            if (!root.TryGetProperty("lon", out var lonEl)) return;
+            if (!latEl.TryGetDouble(out var lat)) return;
+            if (!lonEl.TryGetDouble(out var lon)) return;
+            if (!double.IsFinite(lat) || !double.IsFinite(lon)) return;
+            if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return;
+
+            LocationPicked?.Invoke(this, new LocationPickedEventArgs(lat, lon));
+        }
+        catch
+        {
+            // Unparseable / unexpected payload — ignore silently.
         }
     }
 
@@ -255,6 +381,15 @@ public class LocationMapView : UserControl
                     .Replace("__HAS__", hasText);
                 _webView.CoreWebView2.NavigateToString(html);
                 _firstNavigationDone = true;
+
+                // If pick mode was requested before the page existed
+                // (race during a fast click on the "+ Set location" CTA
+                // right after selection), forward it now so the click
+                // handler installs on the very first idle frame.
+                if (_pickModePending)
+                {
+                    ApplyPickMode(true);
+                }
             }
             else
             {
@@ -268,4 +403,20 @@ public class LocationMapView : UserControl
             // ignore stale calls.
         }
     }
+}
+
+/// <summary>
+/// Carries the picked latitude / longitude from
+/// <see cref="LocationMapView.LocationPicked"/>.
+/// </summary>
+public sealed class LocationPickedEventArgs : EventArgs
+{
+    public LocationPickedEventArgs(double latitude, double longitude)
+    {
+        Latitude = latitude;
+        Longitude = longitude;
+    }
+
+    public double Latitude { get; }
+    public double Longitude { get; }
 }

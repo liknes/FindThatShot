@@ -710,4 +710,13 @@ public partial class MainWindow : Window
             Helpers.Controls.Theme.SetIcon(PlayPauseButton, glyph);
         }
     }
+
+    // Manual GPS picker: forward the picked coords from the embedded
+    // Leaflet click handler into the VM. The control raises this on the
+    // UI thread (CoreWebView2.WebMessageReceived dispatches via the WPF
+    // synchronization context), so no marshalling is needed here.
+    private void LocationMap_OnLocationPicked(object? sender, Helpers.Controls.LocationPickedEventArgs e)
+    {
+        _viewModel.Detail.ApplyPickedLocation(e.Latitude, e.Longitude);
+    }
 }

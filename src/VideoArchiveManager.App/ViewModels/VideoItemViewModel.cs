@@ -116,4 +116,20 @@ public partial class VideoItemViewModel : ObservableObject
     public BitmapImage? Thumbnail => ThumbnailLoader.Load(Model.ThumbnailPath);
 
     public void RefreshThumbnail() => OnPropertyChanged(nameof(Thumbnail));
+
+    // Raise change notifications for every GPS / location-derived property
+    // after the underlying Model fields have been updated out-of-band (e.g.
+    // by the manual GPS picker writing through VideoDetailViewModel). The
+    // getters themselves are read-throughs to Model, so the value the
+    // bindings re-read after this call reflects the new state.
+    public void RefreshLocation()
+    {
+        OnPropertyChanged(nameof(GpsLatitude));
+        OnPropertyChanged(nameof(GpsLongitude));
+        OnPropertyChanged(nameof(HasGps));
+        OnPropertyChanged(nameof(GpsText));
+        OnPropertyChanged(nameof(GpsMapUrl));
+        OnPropertyChanged(nameof(LocationText));
+        OnPropertyChanged(nameof(HasLocation));
+    }
 }
