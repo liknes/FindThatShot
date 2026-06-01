@@ -167,6 +167,7 @@ public partial class App : Application
                 services.AddSingleton<IVideoLibraryService, VideoLibraryService>();
                 services.AddSingleton<ICatalogBackupService, CatalogBackupService>();
                 services.AddSingleton<ISidecarService, JsonSidecarService>();
+                services.AddSingleton<IProxyResolver, DaVinciProxyResolver>();
                 services.AddSingleton<IUpdateService, VelopackUpdateService>();
 
                 // Reverse-geocoding via OpenStreetMap Nominatim. The User-Agent

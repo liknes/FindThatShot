@@ -18,6 +18,15 @@ public class AppSettings
 
     public bool WriteSidecarFiles { get; set; } = false;
 
+    // When true, the in-app player substitutes the matching DaVinci Resolve
+    // proxy (sibling "Proxy" folder, same base name as the hero) for the
+    // original clip on Play in app. Falls back to the hero file when no proxy
+    // is found. Defaults to false so new users see no surprise substitution —
+    // opt in via Settings once a proxy workflow is established. The catalog,
+    // thumbnails, ffprobe metadata and "Play externally" command always
+    // continue to point at the hero file regardless of this flag.
+    public bool PreferProxyForPlayback { get; set; } = false;
+
     // GitHub repo (https://github.com/owner/repo) that hosts Velopack
     // release artifacts. The app's "Check for updates" command reads this
     // value at runtime. Empty / null disables the check.

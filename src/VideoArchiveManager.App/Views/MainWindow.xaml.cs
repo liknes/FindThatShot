@@ -71,6 +71,11 @@ public partial class MainWindow : Window
         {
             // FFME's MediaElement is its own player — no separate MediaPlayer
             // object to wire up. Subscribe to MediaElement events directly.
+            // MediaOpening fires BEFORE the stream is fully decoded so it's
+            // the only spot where MediaOptions (hardware acceleration, stream
+            // selection, codec params) can still be mutated — see the
+            // MediaElement_MediaOpening rationale for why we care.
+            VideoPlayer.MediaOpening += MediaElement_MediaOpening;
             VideoPlayer.MediaOpened += MediaElement_MediaOpened;
             VideoPlayer.MediaEnded += MediaElement_MediaEnded;
             VideoPlayer.PropertyChanged += MediaElement_PropertyChanged;
@@ -103,6 +108,7 @@ public partial class MainWindow : Window
 
             if (App.IsPlayerAvailable)
             {
+                VideoPlayer.MediaOpening -= MediaElement_MediaOpening;
                 VideoPlayer.MediaOpened -= MediaElement_MediaOpened;
                 VideoPlayer.MediaEnded -= MediaElement_MediaEnded;
                 VideoPlayer.PropertyChanged -= MediaElement_PropertyChanged;
@@ -551,6 +557,61 @@ public partial class MainWindow : Window
         catch
         {
             // Browser launch can fail on locked-down systems; swallow silently.
+        }
+    }
+
+    // Opt FFME into GPU-accelerated decoding before the stream is fully
+    // opened. Without this, FFME defaults to pure software FFmpeg decode,
+    // which can't keep up with high-bitrate 4K/60p sources (DJI drone clips
+    // are the canonical offender): the FrameDecodingWorker falls behind the
+    // audio clock so video drifts into slow motion, and the engine repeatedly
+    // toggles MediaState between Play and Manual/Pause to refill its block
+    // buffer — which our PropertyChanged → UpdatePlayPauseLabel pipeline
+    // surfaces as the play/pause button label flickering between "Play"
+    // and "Pause" several times per second.
+    //
+    // We hand FFME a priority-ordered list of hardware devices (D3D11VA and
+    // DXVA2 cover essentially every modern Windows GPU; CUDA is included as
+    // a fallthrough for systems where the NVIDIA driver exposes it cleanly
+    // ahead of the generic DX paths) and let it try each one until one
+    // succeeds. If none of them work, FFmpeg automatically falls back to
+    // software decoding, so this is a strict improvement on the previous
+    // software-only behaviour.
+    //
+    // Failures to enumerate / configure hardware devices are swallowed so
+    // a quirky GPU driver never blocks playback — worst case we land back
+    // on software decode, which is exactly what we had before.
+    private void MediaElement_MediaOpening(object? sender, Unosquare.FFME.Common.MediaOpeningEventArgs e)
+    {
+        try
+        {
+            if (e.Options.VideoStream is not Unosquare.FFME.Common.StreamInfo videoStream) return;
+            if (videoStream.HardwareDevices.Count == 0) return;
+
+            var preferred = new[]
+            {
+                FFmpeg.AutoGen.AVHWDeviceType.AV_HWDEVICE_TYPE_D3D11VA,
+                FFmpeg.AutoGen.AVHWDeviceType.AV_HWDEVICE_TYPE_DXVA2,
+                FFmpeg.AutoGen.AVHWDeviceType.AV_HWDEVICE_TYPE_CUDA,
+            };
+
+            var devices = new List<Unosquare.FFME.Common.HardwareDeviceInfo>(preferred.Length);
+            foreach (var type in preferred)
+            {
+                var device = videoStream.HardwareDevices.FirstOrDefault(d => d.DeviceType == type);
+                if (device != null) devices.Add(device);
+            }
+
+            if (devices.Count > 0)
+            {
+                e.Options.VideoHardwareDevices = devices.ToArray();
+            }
+        }
+        catch
+        {
+            // Defensive: any failure here just means we keep FFME's default
+            // software-only decode path. Never let a hardware-accel probe
+            // throw into the dispatcher during media open.
         }
     }
 

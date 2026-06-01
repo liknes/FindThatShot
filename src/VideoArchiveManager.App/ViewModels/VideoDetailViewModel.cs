@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.EntityFrameworkCore;
 using VideoArchiveManager.App.Helpers;
+using VideoArchiveManager.Core.Configuration;
 using VideoArchiveManager.Core.Models;
 using VideoArchiveManager.Core.Models.Enums;
 using VideoArchiveManager.Core.Services;
@@ -19,17 +20,23 @@ public partial class VideoDetailViewModel : ObservableObject
     private readonly ITagService _tagService;
     private readonly IFileSystemService _fileSystem;
     private readonly ISidecarService _sidecar;
+    private readonly IProxyResolver _proxyResolver;
+    private readonly ISettingsStore _settings;
 
     public VideoDetailViewModel(
         IDbContextFactory<VideoArchiveDbContext> contextFactory,
         ITagService tagService,
         IFileSystemService fileSystem,
-        ISidecarService sidecar)
+        ISidecarService sidecar,
+        IProxyResolver proxyResolver,
+        ISettingsStore settings)
     {
         _contextFactory = contextFactory;
         _tagService = tagService;
         _fileSystem = fileSystem;
         _sidecar = sidecar;
+        _proxyResolver = proxyResolver;
+        _settings = settings;
     }
 
     [ObservableProperty]
@@ -185,7 +192,22 @@ public partial class VideoDetailViewModel : ObservableObject
         if (!App.IsPlayerAvailable) return;
         if (!File.Exists(Current.FilePath)) return;
 
-        MediaSource = new Uri(Current.FilePath, UriKind.Absolute);
+        // Honour the user's "Prefer DaVinci Resolve proxies for in-app
+        // playback" setting (default off). When enabled and a proxy file
+        // is present in a sibling "Proxy" folder, swap to it — much faster
+        // decode on heavy 4K 60p sources. Falls back to the hero file
+        // unconditionally when no proxy exists, so this is always safe.
+        var sourcePath = Current.FilePath;
+        if (_settings.Current.PreferProxyForPlayback)
+        {
+            var proxyPath = _proxyResolver.TryResolveProxy(Current.FilePath);
+            if (!string.IsNullOrEmpty(proxyPath) && File.Exists(proxyPath))
+            {
+                sourcePath = proxyPath;
+            }
+        }
+
+        MediaSource = new Uri(sourcePath, UriKind.Absolute);
         IsPlayerVisible = true;
     }
 

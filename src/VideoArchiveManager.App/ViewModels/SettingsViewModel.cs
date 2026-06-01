@@ -32,6 +32,7 @@ public partial class SettingsViewModel : ObservableObject
         _autoBackupOnStartup = current.AutoBackupOnStartup;
         _backupRetentionCount = current.BackupRetentionCount;
         _writeSidecarFiles = current.WriteSidecarFiles;
+        _preferProxyForPlayback = current.PreferProxyForPlayback;
 
         _ = RefreshBackupsAsync();
     }
@@ -73,6 +74,9 @@ public partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _writeSidecarFiles;
+
+    [ObservableProperty]
+    private bool _preferProxyForPlayback;
 
     [ObservableProperty]
     private string _backupStatusMessage = string.Empty;
@@ -246,6 +250,7 @@ public partial class SettingsViewModel : ObservableObject
             AutoBackupOnStartup = AutoBackupOnStartup,
             BackupRetentionCount = BackupRetentionCount > 0 ? BackupRetentionCount : 7,
             WriteSidecarFiles = WriteSidecarFiles,
+            PreferProxyForPlayback = PreferProxyForPlayback,
             MaxScanParallelism = MaxScanParallelism > 0 ? MaxScanParallelism : 4,
             PageSize = _store.Current.PageSize,
             SupportedExtensions = _store.Current.SupportedExtensions,
