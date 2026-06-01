@@ -85,7 +85,14 @@
                     <Hyperlink NavigateUri="https://github.com/Ruslan-B/FFmpeg.AutoGen"
                                RequestNavigate="Hyperlink_RequestNavigate"
                                Foreground="{DynamicResource App.Accent}">FFmpeg.AutoGen</Hyperlink>
-                    (LGPLv3), and other open-source software.
+                    (LGPLv3),
+                    <Hyperlink NavigateUri="https://developer.microsoft.com/microsoft-edge/webview2/"
+                               RequestNavigate="Hyperlink_RequestNavigate"
+                               Foreground="{DynamicResource App.Accent}">Microsoft WebView2</Hyperlink>,
+                    <Hyperlink NavigateUri="https://leafletjs.com/"
+                               RequestNavigate="Hyperlink_RequestNavigate"
+                               Foreground="{DynamicResource App.Accent}">Leaflet</Hyperlink>
+                    (BSD-2), and other open-source software.
                 </TextBlock>
                 <TextBlock TextWrapping="Wrap" Margin="0,8,0,0" Style="{StaticResource App.Type.Body}">
                     Map data

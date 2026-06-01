@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+## [0.9.2] - 2026-06-01
+
 ### Added
 
 - **Sidebar map of the selected clip's GPS location.** The right-sidebar editor's old thumbnail image has been replaced with an interactive Leaflet map on OpenStreetMap tiles, hosted in a `WebView2` via the new `LocationMapView` user control (`Helpers/Controls/LocationMapView.cs`). When the selected clip has GPS coordinates (extracted by FFprobe from QuickTime location metadata, by `DjiSrtTelemetryReader` from a sibling `.SRT`, or by the new manual picker below) the map zooms in to z=13 with a marker; otherwise it falls back to Haugesund at a wider z=11 regional view and renders the tile pane grayscale + dimmed via a `body.no-location` CSS class so the panel reads as "no GPS data" without collapsing the layout. The map page is loaded once via `CoreWebView2.NavigateToString`; subsequent selection changes call `setLocation(lat, lon, hasLocation)` over `ExecuteScriptAsync` so the marker pans instead of the whole Leaflet stack reinitialising. Coordinate updates are coalesced on `DispatcherPriority.Background` so back-to-back Lat/Lon assignments from a `Current` switch land in a single Leaflet update (no transient pan to `(newLat, oldLon)`). WebView2 init failures degrade gracefully — the map area renders empty, the "Open in map" hyperlink in the clip-info popup still works as a fallback, and clicks on the OSM attribution route through `NewWindowRequested` → `ProcessStartInfo { UseShellExecute = true }` so they open in the default browser instead of hijacking the embedded view. Browser-y affordances (default context menus, dev tools, status bar, accelerator keys, zoom UI) are all switched off on `CoreWebView2.Settings` — this is a passive preview, not a navigable surface. Default `Microsoft.Web.WebView2` package (latest stable for Evergreen Runtime 148) is added to `VideoArchiveManager.App.csproj`.
@@ -232,7 +234,8 @@ First public release.
 
 - Responsive default window size; date pickers and the *Play externally* button are no longer clipped at common screen widths.
 
-[Unreleased]: https://github.com/liknes/FindThatShot/compare/v0.9.1...HEAD
+[Unreleased]: https://github.com/liknes/FindThatShot/compare/v0.9.2...HEAD
+[0.9.2]: https://github.com/liknes/FindThatShot/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/liknes/FindThatShot/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/liknes/FindThatShot/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/liknes/FindThatShot/compare/v0.7.0...v0.8.0

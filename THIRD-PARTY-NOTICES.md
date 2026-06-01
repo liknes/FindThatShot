@@ -67,11 +67,26 @@ The installed application bundles or links to several third-party components. Th
 - **Project home:** https://github.com/dotnet/runtime
 - **How it is used:** Configuration binding, dependency injection, logging, and the generic host.
 
+## Microsoft.Web.WebView2
+
+- **License:** Microsoft Software License Terms (proprietary, royalty-free for distribution), https://aka.ms/webview2/license
+- **Project home:** https://developer.microsoft.com/microsoft-edge/webview2/
+- **How it is used:** Embeds a Chromium-based browser surface inside the right-sidebar editor's `LocationMapView` user control to render the interactive GPS preview map. The `Microsoft.Web.WebView2` NuGet binaries (`WebView2Loader.dll` etc.) ship inside the installer; the underlying Chromium runtime is the **WebView2 Evergreen Runtime**, a Windows component pre-installed on Windows 10 21H1+ and Windows 11. On older systems the runtime can be installed for free from the project home above. Shipped unmodified as a NuGet binary dependency.
+
+## Leaflet
+
+- **Version:** 1.9.4 (loaded at runtime from `https://unpkg.com/leaflet@1.9.4/`)
+- **License:** BSD 2-Clause, https://github.com/Leaflet/Leaflet/blob/main/LICENSE
+- **Project home:** https://leafletjs.com/
+- **How it is used:** Open-source JavaScript map library used by the embedded `LocationMapView` to render the interactive OpenStreetMap tile pane and the GPS marker. Not bundled — the library's CSS and JS are fetched from the public `unpkg.com` CDN by the WebView2 page on first load. Offline behaviour is graceful: if the CDN is unreachable, the map area stays empty and the rest of the editor continues to work.
+
 ## OpenStreetMap / Nominatim
 
 - **License of data:** Open Database License (ODbL), https://www.openstreetmap.org/copyright
-- **Service:** Nominatim, https://nominatim.org/
-- **How it is used:** Reverse-geocoding GPS coordinates to place names. The application sends optional, user-initiated queries to the public Nominatim instance. Returned data is subject to the ODbL.
+- **Service home:** https://www.openstreetmap.org/, Nominatim at https://nominatim.org/
+- **How it is used:** Two ways, both subject to the ODbL:
+  - **Map tiles** for the right-sidebar `LocationMapView` preview are fetched from OpenStreetMap's public tile servers by the embedded Leaflet page. The "© OpenStreetMap contributors" attribution is rendered inline on the map per the OSM tile usage policy and is clickable (opens the upstream copyright page in the system default browser).
+  - **Reverse-geocoding** of GPS coordinates to place names. The application sends optional, user-initiated queries to the public Nominatim instance (the bulk *Fill missing locations from GPS…* command and the new in-sidebar manual GPS picker both route through this).
 
 ## Oxygen Icons
 
