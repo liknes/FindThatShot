@@ -95,4 +95,22 @@
           UseHardlinksIfPossible="true" />
   </Target>
 
+  <!-- EXPERIMENTAL: mirror a bundled libmpv (tools/mpv/libmpv-2.dll) into the
+       build output for local debug runs, same pattern as the FFmpeg copy
+       above. libmpv-2.dll is NOT committed to the repo (it's a large,
+       self-contained native build); drop it into tools/mpv/ to activate the
+       GPU-rendered mpv player path. When the folder is absent this target is a
+       no-op and the app falls back to FFME. -->
+  <Target Name="CopyBundledMpv"
+          AfterTargets="Build"
+          Condition="Exists('..\..\tools\mpv') AND '$(IsPublishing)' != 'true'">
+    <ItemGroup>
+      <BundledMpvFiles Include="..\..\tools\mpv\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(BundledMpvFiles)"
+          DestinationFolder="$(OutDir)tools\mpv"
+          SkipUnchangedFiles="true"
+          UseHardlinksIfPossible="true" />
+  </Target>
+
 </Project>

@@ -865,6 +865,16 @@
                                        ScrubbingEnabled="True"
                                        VerticalSyncEnabled="True" />
 
+                    <!-- EXPERIMENTAL GPU player. Collapsed by default; code-behind
+                         makes it Visible (and hides the FFME element above) when
+                         App.UseMpvPlayer is true (libmpv present in tools/mpv/).
+                         mpv renders GPU video into this child window and clears to
+                         black, so 4K60 plays at real-time with black letterbox bars
+                         instead of FFME's CPU-bound slow motion. -->
+                    <controls:MpvVideoView x:Name="MpvPlayer"
+                                           Grid.Row="0"
+                                           Visibility="Collapsed" />
+
                     <!-- Player toolbar. Visible only in review mode (IsPlayerVisible),
                          but we also hide it via column width=0 in normal mode so this
                          binding is mostly belt-and-braces.

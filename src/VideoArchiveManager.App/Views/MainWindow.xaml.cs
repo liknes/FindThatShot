@@ -67,7 +67,15 @@ public partial class MainWindow : Window
         _normalListWidth = VideoListColumn.Width;
         _normalEditorWidth = EditorColumn.Width;
 
-        if (App.IsPlayerAvailable)
+        if (App.UseMpvPlayer)
+        {
+            // EXPERIMENTAL GPU player: mpv renders into its own child window,
+            // so we hide the FFME element and don't subscribe its events. A
+            // poll timer drives the seek slider + time readout since mpv
+            // surfaces position via property queries rather than WPF events.
+            ConfigureMpvPlayer();
+        }
+        else if (App.IsPlayerAvailable)
         {
             // FFME's MediaElement is its own player — no separate MediaPlayer
             // object to wire up. Subscribe to MediaElement events directly.
@@ -97,6 +105,9 @@ public partial class MainWindow : Window
     {
         try
         {
+            _mpvTimer?.Stop();
+            _mpvTimer = null;
+
             _viewModel.Detail.ShowInfoRequested -= Detail_ShowInfoRequested;
 
             if (_infoWindow is not null)
@@ -130,6 +141,72 @@ public partial class MainWindow : Window
     // serializes the actual FFME commands. See Detail_PropertyChanged.
     private int _playerSyncRequest;
     private readonly SemaphoreSlim _playerSyncGate = new(1, 1);
+
+    // --- EXPERIMENTAL mpv player state (only used when App.UseMpvPlayer) ---
+    // mpv exposes position/duration via property polling, not WPF events, so we
+    // tick a timer to refresh the transport bar. _pendingMpvSource covers the
+    // race where a clip is selected before the HwndHost child window (and thus
+    // the mpv instance) has been created — we stash the path and load it the
+    // moment the player signals ready.
+    private System.Windows.Threading.DispatcherTimer? _mpvTimer;
+    private string? _pendingMpvSource;
+
+    private void ConfigureMpvPlayer()
+    {
+        VideoPlayer.Visibility = Visibility.Collapsed;
+        MpvPlayer.Visibility = Visibility.Visible;
+
+        MpvPlayer.PlayerReady += (_, _) =>
+        {
+            if (_pendingMpvSource is { } pending)
+            {
+                MpvPlayer.Player?.Load(pending);
+                _pendingMpvSource = null;
+            }
+            UpdatePlayPauseLabel();
+        };
+
+        MpvPlayer.PlayerFailed += (_, message) =>
+        {
+            PlayerCurrentTimeText.Text = "error";
+            PlayerDurationText.Text = message.Length > 20 ? message[..20] : message;
+        };
+
+        _mpvTimer = new System.Windows.Threading.DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(250)
+        };
+        _mpvTimer.Tick += (_, _) => UpdateMpvTime();
+        _mpvTimer.Start();
+    }
+
+    private void UpdateMpvTime()
+    {
+        var player = MpvPlayer.Player;
+        if (player is null) return;
+
+        var pos = player.GetTimePosition();
+        if (pos < 0) pos = 0;
+        var dur = player.GetDuration();
+
+        PlayerCurrentTimeText.Text = FormatTimecode(TimeSpan.FromSeconds(pos));
+        PlayerDurationText.Text = dur > 0 ? FormatTimecode(TimeSpan.FromSeconds(dur)) : "00:00";
+
+        if (!_isUserSeeking && dur > 0)
+        {
+            var fraction = Math.Clamp(pos / dur, 0.0, 1.0);
+            var newValue = fraction * PlayerSeekSlider.Maximum;
+            if (Math.Abs(PlayerSeekSlider.Value - newValue) > 0.5)
+                PlayerSeekSlider.Value = newValue;
+        }
+
+        UpdatePlayPauseLabel();
+    }
+
+    private static string FormatTimecode(TimeSpan t)
+        => t.TotalHours >= 1
+            ? $"{(int)t.TotalHours}:{t.Minutes:D2}:{t.Seconds:D2}"
+            : $"{t.Minutes:D2}:{t.Seconds:D2}";
 
     private void Detail_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
@@ -176,6 +253,12 @@ public partial class MainWindow : Window
             // queued while we waited, in which case let that one win.
             if (request != _playerSyncRequest) return;
 
+            if (App.UseMpvPlayer)
+            {
+                SyncMpvToDetail(detail);
+                return;
+            }
+
             if (detail.IsPlayerVisible && detail.MediaSource is not null)
             {
                 // Open() handles tear-down of any previously-loaded media
@@ -207,6 +290,45 @@ public partial class MainWindow : Window
         finally
         {
             _playerSyncGate.Release();
+        }
+    }
+
+    // mpv equivalent of the FFME open/close branch above. mpv commands are
+    // synchronous and cheap, so there's no async command queue to coalesce
+    // against — the request-ticket gate in SyncPlayerToDetailAsync already
+    // ensured only the latest desired state reaches us.
+    private void SyncMpvToDetail(VideoDetailViewModel detail)
+    {
+        if (detail.IsPlayerVisible && detail.MediaSource is not null)
+        {
+            var path = detail.MediaSource.IsFile
+                ? detail.MediaSource.LocalPath
+                : detail.MediaSource.ToString();
+
+            var player = MpvPlayer.Player;
+            if (player is null)
+            {
+                // Child window / mpv not built yet — load on PlayerReady.
+                _pendingMpvSource = path;
+            }
+            else
+            {
+                player.Load(path);
+            }
+            UpdatePlayPauseLabel();
+        }
+        else
+        {
+            _pendingMpvSource = null;
+            MpvPlayer.Player?.Stop();
+            PlayerCurrentTimeText.Text = "00:00";
+            PlayerDurationText.Text = "00:00";
+            PlayerSeekSlider.Value = 0;
+            PlayPauseButton.Content = "Play";
+            if (TryFindResource("Icon.Play") is string playGlyph)
+            {
+                Helpers.Controls.Theme.SetIcon(PlayPauseButton, playGlyph);
+            }
         }
     }
 
@@ -372,6 +494,12 @@ public partial class MainWindow : Window
 
     private async void PlayerPlayPause_Click(object sender, RoutedEventArgs e)
     {
+        if (App.UseMpvPlayer)
+        {
+            MpvTogglePlayPause();
+            return;
+        }
+
         if (!App.IsPlayerAvailable) return;
         try
         {
@@ -392,6 +520,15 @@ public partial class MainWindow : Window
         }
     }
 
+    private void MpvTogglePlayPause()
+    {
+        var player = MpvPlayer.Player;
+        if (player is null) return;
+        if (player.GetPaused()) player.Play();
+        else player.Pause();
+        UpdatePlayPauseLabel();
+    }
+
     // Pause + seek-to-0 instead of Stop() so the first frame stays on screen.
     // FFME's Stop() closes the underlying decoder, which would tear down
     // the WriteableBitmap and leave a momentary black gap until reopen —
@@ -399,6 +536,18 @@ public partial class MainWindow : Window
     // "freeze at first frame" UX is cleaner.
     private async void PlayerStop_Click(object sender, RoutedEventArgs e)
     {
+        if (App.UseMpvPlayer)
+        {
+            var player = MpvPlayer.Player;
+            if (player is not null)
+            {
+                player.Pause();
+                player.SeekAbsolute(0);
+                UpdatePlayPauseLabel();
+            }
+            return;
+        }
+
         if (!App.IsPlayerAvailable) return;
 
         try
@@ -430,6 +579,18 @@ public partial class MainWindow : Window
 
     private async Task SeekRelativeAsync(TimeSpan delta)
     {
+        if (App.UseMpvPlayer)
+        {
+            var player = MpvPlayer.Player;
+            if (player is not null)
+            {
+                var target = player.GetTimePosition() + delta.TotalSeconds;
+                if (target < 0) target = 0;
+                player.SeekAbsolute(target);
+            }
+            return;
+        }
+
         if (!App.IsPlayerAvailable) return;
         if (!VideoPlayer.IsSeekable) return;
         try
@@ -472,6 +633,21 @@ public partial class MainWindow : Window
 
     private async Task ApplySliderPositionAsync()
     {
+        if (App.UseMpvPlayer)
+        {
+            var player = MpvPlayer.Player;
+            if (player is not null)
+            {
+                var dur = player.GetDuration();
+                if (dur > 0)
+                {
+                    var f = Math.Clamp(PlayerSeekSlider.Value / PlayerSeekSlider.Maximum, 0.0, 1.0);
+                    player.SeekAbsolute(dur * f);
+                }
+            }
+            return;
+        }
+
         if (!App.IsPlayerAvailable) return;
         if (!VideoPlayer.IsSeekable) return;
         var duration = VideoPlayer.NaturalDuration ?? TimeSpan.Zero;
@@ -575,7 +751,7 @@ public partial class MainWindow : Window
     private async void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
         if (!_viewModel.Detail.IsPlayerVisible) return;
-        if (!App.IsPlayerAvailable) return;
+        if (!App.IsPlayerAvailable && !App.UseMpvPlayer) return;
         if (e.Key is not (Key.Space or Key.Left or Key.Right)) return;
 
         var focused = Keyboard.FocusedElement;
@@ -597,6 +773,13 @@ public partial class MainWindow : Window
             {
                 _viewModel.PlayNextCommand.Execute(null);
             }
+            e.Handled = true;
+            return;
+        }
+
+        if (App.UseMpvPlayer)
+        {
+            MpvTogglePlayPause();
             e.Handled = true;
             return;
         }
@@ -664,22 +847,10 @@ public partial class MainWindow : Window
         try
         {
             if (e.Options.VideoStream is not Unosquare.FFME.Common.StreamInfo videoStream)
-            {
-                LogPlayerDiagnostic(e, null, "NO VIDEO STREAM — nothing to accelerate");
                 return;
-            }
 
             if (videoStream.HardwareDevices.Count == 0)
-            {
-                // EARLY-RETURN PATH (the line we wanted to confirm): FFmpeg
-                // enumerated zero hardware devices for this stream, so the clip
-                // decodes on the CPU. This is the prime suspect for slow-motion
-                // HQ playback — typically a codec/profile the GPU can't decode
-                // (e.g. 10-bit HEVC on a GPU that only does 8-bit).
-                LogPlayerDiagnostic(e, videoStream,
-                    "SOFTWARE DECODE — FFmpeg enumerated 0 hardware devices for this stream (early-return path)");
-                return;
-            }
+                return; // No GPU devices for this stream → FFmpeg uses software decode.
 
             var preferred = new[]
             {
@@ -696,82 +867,26 @@ public partial class MainWindow : Window
             }
 
             if (devices.Count > 0)
-            {
                 e.Options.VideoHardwareDevices = devices.ToArray();
-                var assigned = string.Join(", ", devices.Select(d => d.DeviceTypeName));
-                LogPlayerDiagnostic(e, videoStream,
-                    $"GPU DECODE — assigned {devices.Count} hardware device(s): {assigned}");
-            }
 
-            // Downscale heavy sources for in-app preview. Even with working GPU
-            // decode, FFME presents every frame through a CPU-side WriteableBitmap
-            // (see docs/in-app-player.md), so a 3840x2160@60p stream means ~33MB
-            // per frame * 60 ≈ 2GB/s of color-convert + copy on the UI thread —
-            // which is what drags HQ 4K clips into slow motion while a 540p proxy
-            // plays fine. Capping the rendered height to 1080 cuts that cost ~4x
-            // and keeps aspect ratio (scale=-2 picks the nearest even width).
-            // Only sources taller than 1080 are touched, so 1080p and SD clips are
-            // rendered untouched. This is a preview-quality tradeoff, not a change
-            // to the underlying file.
+            // FFME-FALLBACK ONLY. This handler runs solely on the FFME path; the
+            // primary engine is now mpv (GPU-rendered, full-res). FFME presents
+            // every frame through a CPU-side WriteableBitmap (see
+            // docs/in-app-player.md), so a 3840x2160@60p stream means ~33MB per
+            // frame * 60 ≈ 2GB/s of color-convert + copy on the UI thread, which
+            // drags 4K60 into slow motion even with working GPU decode. Capping
+            // the rendered height to 1080 keeps the fallback usable; mpv (when
+            // libmpv is present) renders these sources at full resolution and
+            // never reaches this code. scale=-2 keeps aspect ratio at an even
+            // width. Preview-quality tradeoff only — the source file is untouched.
             if (videoStream.PixelHeight > 1080)
-            {
                 e.Options.VideoFilter = "scale=-2:1080";
-                LogPlayerDiagnostic(e, videoStream,
-                    $"DOWNSCALE — applied VideoFilter 'scale=-2:1080' (source height {videoStream.PixelHeight} > 1080)");
-            }
-            else
-            {
-                // FFmpeg exposed hardware devices, but none matched our preferred
-                // D3D11VA/DXVA2/CUDA list, so we leave FFME on software decode.
-                var available = string.Join(", ", videoStream.HardwareDevices.Select(d => d.DeviceTypeName));
-                LogPlayerDiagnostic(e, videoStream,
-                    $"SOFTWARE DECODE — {videoStream.HardwareDevices.Count} device(s) enumerated but none matched preferred list. Available: {available}");
-            }
         }
-        catch (Exception ex)
+        catch
         {
             // Defensive: any failure here just means we keep FFME's default
             // software-only decode path. Never let a hardware-accel probe
             // throw into the dispatcher during media open.
-            try { LogPlayerDiagnostic(e, null, "EXCEPTION during hardware probe: " + ex.Message); }
-            catch { /* logging must never throw into the dispatcher */ }
-        }
-    }
-
-    // Diagnostic-only: append a single line per opened clip describing the
-    // decode path FFME took (GPU vs software) plus the stream characteristics
-    // that decide it. Lands in %LOCALAPPDATA%\VideoArchiveManager\player-diagnostics.log
-    // so it can be read after reproducing slow HQ playback. Purely additive —
-    // remove this method and its call sites once the slow-motion cause is
-    // confirmed.
-    private static void LogPlayerDiagnostic(
-        Unosquare.FFME.Common.MediaOpeningEventArgs e,
-        Unosquare.FFME.Common.StreamInfo? videoStream,
-        string verdict)
-    {
-        try
-        {
-            var source = e.Info?.MediaSource ?? "(unknown source)";
-            var streamPart = videoStream is null
-                ? "stream=<none>"
-                : $"{videoStream.PixelWidth}x{videoStream.PixelHeight} @ {videoStream.FPS:0.###}fps, " +
-                  $"codec={videoStream.CodecName} profile={videoStream.CodecProfile}, " +
-                  $"pixfmt={videoStream.PixelFormat}, bitrate={videoStream.BitRate}";
-
-            var line = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} | {verdict} | {streamPart} | source={source}";
-
-            var dir = VideoArchiveManager.Core.Configuration.AppSettings.DefaultBaseDirectory;
-            System.IO.Directory.CreateDirectory(dir);
-            var path = System.IO.Path.Combine(dir, "player-diagnostics.log");
-            System.IO.File.AppendAllText(path, line + Environment.NewLine);
-
-            // Also emit to the debug sink so it shows in DebugView / VS output
-            // when running under a debugger.
-            System.Diagnostics.Debug.WriteLine("[PlayerDiag] " + line);
-        }
-        catch
-        {
-            // Diagnostics are best-effort; never let logging affect playback.
         }
     }
 
@@ -821,57 +936,12 @@ public partial class MainWindow : Window
     // FFME considers an error gets logged.
     private void MediaElement_MessageLogged(object? sender, Unosquare.FFME.Common.MediaLogMessageEventArgs e)
     {
-        // Diagnostic-only: capture FFmpeg's own hardware-acceleration chatter so
-        // we can tell whether the GPU decoder we ASSIGNED in MediaOpening
-        // actually engaged, or whether libav silently fell back to software at
-        // runtime (the assignment log alone can't tell us). Warnings/errors are
-        // always captured; info/debug only when the line mentions hwaccel so we
-        // don't flood the file. Mirrors into the same player-diagnostics.log.
-        // Remove alongside LogPlayerDiagnostic once the cause is confirmed.
-        var msg = e.Message ?? string.Empty;
-        var isElevated = e.MessageType is Unosquare.FFME.Common.MediaLogMessageType.Warning
-            or Unosquare.FFME.Common.MediaLogMessageType.Error;
-        var mentionsHwaccel =
-            msg.Contains("hwaccel", StringComparison.OrdinalIgnoreCase) ||
-            msg.Contains("hardware", StringComparison.OrdinalIgnoreCase) ||
-            msg.Contains("d3d11", StringComparison.OrdinalIgnoreCase) ||
-            msg.Contains("dxva", StringComparison.OrdinalIgnoreCase) ||
-            msg.Contains("cuda", StringComparison.OrdinalIgnoreCase) ||
-            msg.Contains("nvdec", StringComparison.OrdinalIgnoreCase) ||
-            msg.Contains("fallback", StringComparison.OrdinalIgnoreCase) ||
-            msg.Contains("software", StringComparison.OrdinalIgnoreCase);
-
-        if (isElevated || mentionsHwaccel)
-        {
-            LogFfmpegMessage(e.MessageType.ToString(), msg);
-        }
-
         if (e.MessageType != Unosquare.FFME.Common.MediaLogMessageType.Error) return;
         Dispatcher.BeginInvoke(() =>
         {
             PlayerCurrentTimeText.Text = "error";
             PlayerDurationText.Text = "--:--";
         });
-    }
-
-    // Diagnostic-only companion to LogPlayerDiagnostic: appends a raw FFmpeg log
-    // line (severity + text) to player-diagnostics.log. Used to confirm runtime
-    // hardware-decode engagement vs. software fallback.
-    private static void LogFfmpegMessage(string severity, string message)
-    {
-        try
-        {
-            var line = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} | FFMPEG/{severity} | {message}";
-            var dir = VideoArchiveManager.Core.Configuration.AppSettings.DefaultBaseDirectory;
-            System.IO.Directory.CreateDirectory(dir);
-            var path = System.IO.Path.Combine(dir, "player-diagnostics.log");
-            System.IO.File.AppendAllText(path, line + Environment.NewLine);
-            System.Diagnostics.Debug.WriteLine("[PlayerDiag] " + line);
-        }
-        catch
-        {
-            // Diagnostics are best-effort; never let logging affect playback.
-        }
     }
 
     private void UpdatePlayerTime()
@@ -906,6 +976,19 @@ public partial class MainWindow : Window
 
     private void UpdatePlayPauseLabel()
     {
+        if (App.UseMpvPlayer)
+        {
+            var player = MpvPlayer.Player;
+            var mpvPlaying = player is not null && !player.GetPaused();
+            PlayPauseButton.Content = mpvPlaying ? "Pause" : "Play";
+            var mpvGlyphKey = mpvPlaying ? "Icon.Pause" : "Icon.Play";
+            if (TryFindResource(mpvGlyphKey) is string mpvGlyph)
+            {
+                Helpers.Controls.Theme.SetIcon(PlayPauseButton, mpvGlyph);
+            }
+            return;
+        }
+
         if (!App.IsPlayerAvailable) return;
         // Derive the label from MediaState rather than the instantaneous
         // IsPlaying flag. During smooth playback FFME momentarily drops into

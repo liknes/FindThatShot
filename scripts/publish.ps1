@@ -7,7 +7,8 @@
     2. Reads the version from the App csproj (or -Version override).
     3. Self-contained publishes the WPF app for win-x64 to .\publish.
     4. Optionally bundles ffmpeg.exe/ffprobe.exe from .\tools\ffmpeg into the publish output.
-    5. Packs the publish folder into a Velopack release (installer, portable zip, delta nupkg).
+    5. Optionally bundles libmpv-2.dll from .\tools\mpv into the publish output (GPU player).
+    6. Packs the publish folder into a Velopack release (installer, portable zip, delta nupkg).
 
     Resulting artifacts are written to .\releases.
 
@@ -20,6 +21,9 @@
 .PARAMETER SkipBundleFfmpeg
     Do not copy bundled ffmpeg from .\tools\ffmpeg even if present.
 
+.PARAMETER SkipBundleMpv
+    Do not copy bundled libmpv from .\tools\mpv even if present.
+
 .EXAMPLE
     pwsh ./scripts/publish.ps1
     pwsh ./scripts/publish.ps1 -Version 0.2.0
@@ -28,7 +32,8 @@
 param(
     [string]$Version,
     [string]$Runtime = 'win-x64',
-    [switch]$SkipBundleFfmpeg
+    [switch]$SkipBundleFfmpeg,
+    [switch]$SkipBundleMpv
 )
 
 $ErrorActionPreference = 'Stop'
@@ -41,6 +46,7 @@ $AppProj    = Join-Path $RepoRoot 'src\VideoArchiveManager.App\VideoArchiveManag
 $PublishDir = Join-Path $RepoRoot 'publish'
 $ReleaseDir = Join-Path $RepoRoot 'releases'
 $ToolsDir   = Join-Path $RepoRoot 'tools\ffmpeg'
+$MpvDir     = Join-Path $RepoRoot 'tools\mpv'
 $AppIcon    = Join-Path $RepoRoot 'src\VideoArchiveManager.App\Assets\AppIcon.ico'
 
 if (-not (Test-Path $AppProj)) {
@@ -87,6 +93,18 @@ if (-not $SkipBundleFfmpeg -and (Test-Path $ToolsDir)) {
     Copy-Item -Path (Join-Path $ToolsDir '*') -Destination $destTools -Recurse -Force
 } else {
     Write-Host "[publish] No bundled ffmpeg (looked in $ToolsDir). End users will need ffmpeg/ffprobe on PATH." -ForegroundColor Yellow
+}
+
+# 5a. Optionally bundle libmpv into the publish output. This is what enables the
+#     GPU-rendered mpv player for end users who don't generate proxies; without
+#     it App.xaml.cs leaves UseMpvPlayer = false and the app falls back to FFME.
+if (-not $SkipBundleMpv -and (Test-Path $MpvDir)) {
+    $destMpv = Join-Path $PublishDir 'tools\mpv'
+    Write-Host "[publish] Bundling libmpv from $MpvDir" -ForegroundColor Cyan
+    New-Item -ItemType Directory -Path $destMpv -Force | Out-Null
+    Copy-Item -Path (Join-Path $MpvDir '*') -Destination $destMpv -Recurse -Force
+} else {
+    Write-Host "[publish] No bundled libmpv (looked in $MpvDir). The GPU player will be disabled; FFME is used instead." -ForegroundColor Yellow
 }
 
 # 5b. Ensure attribution files ship next to the executable, even if MSBuild Content copy

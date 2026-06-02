@@ -445,3 +445,9 @@ tools/ffmpeg/ffprobe.exe
 tools/ffmpeg/swresample-6.dll
 
 tools/ffmpeg/swscale-9.dll
+
+# libmpv (GPU player) — large self-contained native build, bundled at publish
+# time by scripts/publish.ps1 from whatever is in tools/mpv/. Never committed
+# (exceeds GitHub's 100MB file limit). Drop a shinchiro "mpv-dev" libmpv-2.dll
+# into tools/mpv/ to enable the GPU player locally. See docs/in-app-player.md.
+tools/mpv/libmpv-2.dll

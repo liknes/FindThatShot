@@ -35,6 +35,14 @@ public partial class App : Application
 
     public static string? PlayerInitError { get; private set; }
 
+    // EXPERIMENTAL mpv player path. Activates only when libmpv-2.dll is present
+    // in tools/mpv/. When on, MainWindow uses the GPU-rendered mpv child-window
+    // player instead of FFME (which can't sustain 4K60 through its CPU
+    // WriteableBitmap). FFME stays fully wired as the fallback.
+    public static bool UseMpvPlayer { get; private set; }
+
+    public static string? MpvDirectory { get; private set; }
+
     public static T GetService<T>() where T : class
     {
         if (Host == null) throw new InvalidOperationException("Host not initialized");
@@ -88,16 +96,6 @@ public partial class App : Application
             {
                 Unosquare.FFME.Library.FFmpegDirectory = ffmpegDir;
 
-                // DIAGNOSTIC-ONLY: raise FFmpeg's log verbosity so libav's
-                // hardware-decoder selection / fallback lines ("Using d3d11va
-                // hwaccel", "Failed setup for format ... reverting to sw")
-                // reach MediaElement.MessageLogged. Those messages are emitted
-                // at AV_LOG_VERBOSE, below FFME's default threshold, which is
-                // why our hwaccel capture came back empty. Revert to the
-                // default (remove this line) once the slow-4K cause is
-                // confirmed — VERBOSE is chatty.
-                Unosquare.FFME.Library.FFmpegLogLevel = FFmpeg.AutoGen.ffmpeg.AV_LOG_VERBOSE;
-
                 IsPlayerAvailable = true;
             }
             else
@@ -113,6 +111,25 @@ public partial class App : Application
         {
             IsPlayerAvailable = false;
             PlayerInitError = $"FFmpeg initialization failed: {ex.Message}";
+        }
+
+        // EXPERIMENTAL: detect a bundled libmpv and, if present, route the
+        // in-app player through the GPU-rendered mpv child-window instead of
+        // FFME. Drop a self-contained libmpv-2.dll into tools/mpv/ to enable.
+        try
+        {
+            var mpvDir = Path.Combine(AppContext.BaseDirectory, "tools", "mpv");
+            if (File.Exists(Path.Combine(mpvDir, "libmpv-2.dll")))
+            {
+                MpvDirectory = mpvDir;
+                Helpers.Player.MpvInterop.Register(mpvDir);
+                UseMpvPlayer = true;
+            }
+        }
+        catch
+        {
+            // Any failure here just leaves UseMpvPlayer false → FFME is used.
+            UseMpvPlayer = false;
         }
 
         Host = Microsoft.Extensions.Hosting.Host

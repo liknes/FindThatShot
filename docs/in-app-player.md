@@ -120,3 +120,84 @@ the engine surface here is small (`Open`/`Close`/`Play`/`Pause`/`Seek`,
 `Position`/`NaturalDuration`/`IsPlaying`/`IsSeekable`, `MediaOpened`/`MediaEnded`/
 `PropertyChanged`/`MessageLogged`), so swapping it out a third time would
 again be a focused change rather than a rewrite.
+
+## Experimental: mpv GPU player path
+
+**Why it exists.** FFME's only video output is a CPU-side `WriteableBitmap` /
+`InteropBitmap` (`RendererOptions.VideoImageType` — there is no GPU-composited
+mode). For high-bitrate **4K60** sources that means ~33 MB/frame is color-
+converted and copied on the UI thread (~2 GB/s), which can't sustain real-time
+even when the GPU *decode* is working fine — playback runs in slow motion. We
+mitigated it with a 1080p downscale `VideoFilter` for >1080p sources (see the
+`MediaElement_MediaOpening` handler in `MainWindow.xaml.cs`), but that trades
+away resolution and still doesn't match the old LibVLCSharp build, which
+rendered natively on the GPU and played 4K60 flawlessly (its only sin was the
+unfixable white letterbox bars — the reason it was dropped).
+
+The mpv path is the attempt to get **both**: native GPU 4K60 *and* clean black
+letterboxing.
+
+**How it's wired.**
+
+- **Native dep:** a self-contained `libmpv-2.dll` (statically links FFmpeg).
+  **Not committed** — it's large. Drop it into `tools/mpv/` next to
+  `tools/ffmpeg/`. A shinchiro "mpv-dev" Windows build provides it.
+- **Activation gate:** `App.xaml.cs` sets `App.UseMpvPlayer = true` *only* when
+  `tools/mpv/libmpv-2.dll` exists, and registers a `DllImportResolver` pointing
+  the loader at that folder. Absent the DLL, everything falls back to FFME —
+  the mpv code is dormant.
+- **Code:** `Helpers/Player/MpvInterop.cs` (P/Invoke, UTF-8 marshalled so
+  non-ASCII clip paths work), `Helpers/Player/MpvPlayer.cs` (managed transport
+  wrapper + background event pump so mpv's queue never stalls), and
+  `Helpers/Controls/MpvVideoView.cs` (an `HwndHost` child window mpv renders
+  into with `vo=gpu`, `hwdec=auto`, `background=#000000`).
+- **Render tuning (see `MpvPlayer.Initialize`):** `profile=fast` +
+  `gpu-api=d3d11`/`gpu-context=d3d11` + `video-sync=display-resample`
+  (`interpolation=no`). This combination is what makes 4K60 play in real time on
+  a weak GPU (validated on a GeForce GT 1030): GPU *decode* via `d3d11va` was
+  never the bottleneck — mpv's *default* `vo=gpu` shader passes (HQ polyphase
+  scaler + dither + the D-Log tone curve DJI footage needs) were too heavy for
+  the card's ALUs, so playback ran ~2x slow. `profile=fast` swaps to cheap
+  bilinear scaling and drops the heavy passes; `display-resample` then vsync-
+  paces presentation to kill judder. `interpolation` stays off so we add no
+  per-frame GPU cost.
+- **MainWindow:** when the flag is on, the `<ffme:MediaElement>` is hidden, the
+  `<controls:MpvVideoView>` is shown, and the transport handlers
+  (play/pause/stop/skip/seek/Space) are routed to mpv. mpv reports position via
+  property polling rather than WPF events, so a 250 ms `DispatcherTimer`
+  (`UpdateMpvTime`) drives the seek slider + time readout.
+
+**Why mpv and not VLC-into-`D3DImage`.** Both would give GPU 4K60 without white
+bars, but WPF `D3DImage` only accepts Direct3D **9Ex** surfaces while VLC
+renders in **D3D11** — bridging them needs hand-rolled DXGI surface-sharing with
+manual per-frame sync, which is heavy, runtime-GPU-debugged interop. mpv clears
+its own framebuffer to black, so a plain child window gets us the black-bars
+result with a fraction of the code. The trade-off is the child window is opaque
+to WPF (no compositing/overlay on the video surface, no opacity fade on the
+picture). That's acceptable here because the transport bar lives in its own row
+*below* the video, never overlaid.
+
+**Status.**
+
+- **Bundling — done.** `publish.ps1` now copies `tools/mpv/` into the publish
+  output (step "5a", mirroring the ffmpeg step; suppress with `-SkipBundleMpv`),
+  alongside the local-debug `CopyBundledMpv` csproj target. End users who drop in
+  / ship the DLL get the GPU player; the `libmpv-2.dll` is still **not committed**
+  (large). `THIRD-PARTY-NOTICES.md` carries the mpv/GPL attribution now that we
+  redistribute it.
+- **Diagnostics — removed.** The temporary `player-diagnostics.log` logging
+  (`LogPlayerDiagnostic`/`LogFfmpegMessage`) and `AV_LOG_VERBOSE` are gone;
+  `MediaElement_MediaOpening` keeps only the real work (GPU device assignment).
+  The mpv log is now quiet (`all=warn`).
+- **FFME — kept as the fallback** (no native dep, always works). The 1080p
+  downscale `VideoFilter` is deliberately retained but is now **FFME-fallback
+  only**: this handler never runs on the mpv path, and the cap is what keeps the
+  CPU-`WriteableBitmap` FFME path usable for 4K60 when libmpv is absent.
+
+**Remaining TODO.**
+
+- No user-facing setting yet — activation is purely DLL-presence. Optional:
+  promote to an `appsettings.json` override (`mpv` / `ffme` / `auto`) for
+  support + testing without recompiling.
+- Rapid prev/next clip switching is less battle-tested on the mpv path than on
+  FFME.

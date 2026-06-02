@@ -31,6 +31,14 @@ The installed application bundles or links to several third-party components. Th
 - **Project home:** https://github.com/Ruslan-B/FFmpeg.AutoGen
 - **How it is used:** Auto-generated C# bindings to FFmpeg's C API. FFME uses these bindings to load and call the bundled FFmpeg shared libraries (`avcodec-*.dll`, `avformat-*.dll`, etc.) for in-app video playback. Shipped unmodified as a NuGet binary dependency.
 
+## mpv / libmpv
+
+- **Component:** `libmpv-2.dll` (mpv client library), shinchiro "mpv-dev" Windows build (statically links its own copy of FFmpeg)
+- **License:** GNU General Public License v2 or later (the bundled build enables GPL features — its reported feature list includes `gpl` — so the combined work is distributed under the GPL)
+- **Project home:** https://mpv.io/ (source: https://github.com/mpv-player/mpv; Windows build scripts: https://github.com/shinchiro/mpv-winbuild-cmake)
+- **Source code:** https://github.com/mpv-player/mpv plus the matching FFmpeg sources at https://ffmpeg.org/download.html#get-sources; you may also request the corresponding source through this project's GitHub repository.
+- **How it is used:** Loaded in-process via P/Invoke (`Helpers/Player/MpvInterop.cs`) as the GPU-rendered in-app video player. When `tools/mpv/libmpv-2.dll` is present the app renders video on the GPU through mpv (`vo=gpu`) into a child window; absent it, the app falls back to the FFME player. Shipped unmodified.
+
 ## Velopack
 
 - **License:** MIT
