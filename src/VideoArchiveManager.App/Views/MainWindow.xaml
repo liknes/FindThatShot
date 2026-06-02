@@ -1112,11 +1112,12 @@
                                     Background="#1E1E1E"
                                     BorderBrush="{DynamicResource App.Border.Subtle}"
                                     BorderThickness="1"
-                                    Visibility="{Binding IsPlayerVisible, Converter={StaticResource BoolToVisibilityInverted}}">
+                                    Visibility="{Binding IsMapVisible, Converter={StaticResource BoolToVisibility}}">
                                 <controls:LocationMapView x:Name="LocationMap"
                                                           Latitude="{Binding Current.GpsLatitude}"
                                                           Longitude="{Binding Current.GpsLongitude}"
                                                           FlightPath="{Binding FlightPath}"
+                                                          DronePosition="{Binding DronePosition}"
                                                           IsPickingMode="{Binding IsPickingLocation}"
                                                           LocationPicked="LocationMap_OnLocationPicked" />
                             </Border>

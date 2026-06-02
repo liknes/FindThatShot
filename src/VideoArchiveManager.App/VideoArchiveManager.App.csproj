@@ -41,6 +41,7 @@
     <Resource Include="Assets\AppIcon.png" />
     <Resource Include="Assets\AppIcon.ico" />
     <Resource Include="Assets\LogoWordmark.png" />
+    <Resource Include="Resources\Images\Splash-Screen-0.9.2.png" />
   </ItemGroup>
 
   <!-- Leaflet 1.9.4 is bundled (not loaded from a CDN) so the sidebar GPS

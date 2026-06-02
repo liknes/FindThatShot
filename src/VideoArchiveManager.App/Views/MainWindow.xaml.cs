@@ -22,6 +22,17 @@ public partial class MainWindow : Window
     // user's input.
     private bool _isUserSeeking;
 
+    // Our own source of truth for whether the FFME video is meant to be
+    // playing, used to drive BOTH the play/pause toggle decision and the
+    // button label. FFME's own signals are ambiguous here: during playback
+    // the engine drops into the transient `Manual` state to refill its block
+    // buffer, and a paused clip also settles into `Manual` — so neither
+    // `MediaState` nor `IsPlaying` reliably distinguishes "playing" from
+    // "paused". Tracking intent at every deliberate transition (open/play,
+    // pause, stop, end-of-media) makes the button deterministic and flicker
+    // free. (mpv has a reliable GetPaused(), so this flag is FFME-only.)
+    private bool _playerPlaying;
+
     // Cached so we can restore the original 3-column layout when leaving review mode.
     private GridLength _normalLeftWidth;
     private GridLength _normalSplitterWidth;
@@ -273,10 +284,13 @@ public partial class MainWindow : Window
                 // already fired by the time await returns.
                 await VideoPlayer.Open(detail.MediaSource);
                 await VideoPlayer.Play();
+                _playerPlaying = true;
+                UpdatePlayPauseLabel();
             }
             else
             {
                 await VideoPlayer.Close();
+                _playerPlaying = false;
                 PlayerCurrentTimeText.Text = "00:00";
                 PlayerDurationText.Text = "00:00";
                 PlayerSeekSlider.Value = 0;
@@ -518,16 +532,27 @@ public partial class MainWindow : Window
             return;
         }
 
+        await ToggleFfmePlayPauseAsync();
+    }
+
+    // Single FFME play/pause toggle shared by the transport button and the
+    // Space shortcut. The decision is driven by our own `_playerPlaying`
+    // intent flag (not FFME's ambiguous IsPlaying/MediaState — see the field
+    // comment), so the action and the label can never disagree.
+    private async Task ToggleFfmePlayPauseAsync()
+    {
         if (!App.IsPlayerAvailable) return;
         try
         {
-            if (VideoPlayer.IsPlaying)
+            if (_playerPlaying)
             {
                 await VideoPlayer.Pause();
+                _playerPlaying = false;
             }
             else
             {
                 await VideoPlayer.Play();
+                _playerPlaying = true;
             }
         }
         catch
@@ -536,6 +561,7 @@ public partial class MainWindow : Window
             // open/close; never let a play/pause click throw into the
             // dispatcher.
         }
+        UpdatePlayPauseLabel();
     }
 
     private void MpvTogglePlayPause()
@@ -570,10 +596,8 @@ public partial class MainWindow : Window
 
         try
         {
-            if (VideoPlayer.IsPlaying)
-            {
-                await VideoPlayer.Pause();
-            }
+            await VideoPlayer.Pause();
+            _playerPlaying = false;
             if (VideoPlayer.IsSeekable)
             {
                 await VideoPlayer.Seek(TimeSpan.Zero);
@@ -583,6 +607,7 @@ public partial class MainWindow : Window
         {
             // see PlayerPlayPause_Click rationale.
         }
+        UpdatePlayPauseLabel();
     }
 
     private void PlayerSkipBack_Click(object sender, RoutedEventArgs e)
@@ -817,21 +842,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        try
-        {
-            if (VideoPlayer.IsPlaying)
-            {
-                await VideoPlayer.Pause();
-            }
-            else
-            {
-                await VideoPlayer.Play();
-            }
-        }
-        catch
-        {
-            // see PlayerPlayPause_Click rationale.
-        }
+        await ToggleFfmePlayPauseAsync();
         e.Handled = true;
     }
 
@@ -934,31 +945,29 @@ public partial class MainWindow : Window
 
     private void MediaElement_MediaEnded(object? sender, EventArgs e)
     {
+        // Playback reached the natural end — the clip is no longer playing, so
+        // reset intent to flip the button back to "Play".
+        _playerPlaying = false;
         UpdatePlayerTime();
         UpdatePlayPauseLabel();
     }
 
     // FFME surfaces playback state and position changes via standard
-    // INotifyPropertyChanged on the MediaElement. We only act on the
-    // properties we actually render in the toolbar — Position drives the
-    // seek slider + current-time readout, MediaState drives the Play/Pause
-    // button label. Filtering by name keeps this off the hot path for the
-    // dozens of other properties FFME notifies on.
+    // INotifyPropertyChanged on the MediaElement. We only react to Position
+    // here, to drive the seek slider + current-time readout. The Play/Pause
+    // label is NOT driven from here: FFME's MediaState toggles through the
+    // transient `Manual` refill state several times a second during playback
+    // (and also reports `Manual` while paused), so reacting to it both
+    // flickered the label and got it stuck after a pause. The label is now
+    // driven by the explicit `_playerPlaying` intent flag, updated at each
+    // deliberate transition. Filtering by name keeps this off the hot path
+    // for the dozens of other properties FFME notifies on.
     private void MediaElement_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         switch (e.PropertyName)
         {
             case nameof(Unosquare.FFME.MediaElement.Position):
                 Dispatcher.BeginInvoke(UpdatePlayerTime);
-                break;
-            case nameof(Unosquare.FFME.MediaElement.MediaState):
-                // Only MediaState drives the label now. IsPlaying / IsPaused
-                // flip transiently during the engine's buffer-refill `Manual`
-                // blips, so reacting to them re-introduced the Play<->Pause
-                // label flicker even though UpdatePlayPauseLabel reads from
-                // MediaState. Listening to MediaState alone is both correct
-                // and cheaper.
-                Dispatcher.BeginInvoke(UpdatePlayPauseLabel);
                 break;
         }
     }
@@ -1024,17 +1033,13 @@ public partial class MainWindow : Window
         }
 
         if (!App.IsPlayerAvailable) return;
-        // Derive the label from MediaState rather than the instantaneous
-        // IsPlaying flag. During smooth playback FFME momentarily drops into
-        // its transient `Manual` state to refill the block buffer; IsPlaying
-        // reads false for those few milliseconds, which made the button label
-        // rapidly flip Play<->Pause even though the video never actually
-        // paused. Treating both `Play` and `Manual` as "playing" keeps the
-        // label stable through those refill blips. Pause/Stop/Close are the
-        // only states that genuinely mean "not playing".
-        var playing = VideoPlayer.MediaState
-            is Unosquare.FFME.Common.MediaPlaybackState.Play
-            or Unosquare.FFME.Common.MediaPlaybackState.Manual;
+        // Drive the label from our own intent flag, NOT from FFME's MediaState
+        // or IsPlaying. During playback FFME drops into the transient `Manual`
+        // state to refill its block buffer, and a paused clip also settles into
+        // `Manual` — so reading either signal made the label both flicker
+        // (during refills) and get stuck on "Pause" after a real pause. The
+        // intent flag is set at every deliberate transition and is unambiguous.
+        var playing = _playerPlaying;
         PlayPauseButton.Content = playing ? "Pause" : "Play";
         // Swap the Segoe Fluent glyph carried via the Theme.Icon attached
         // property so the button shows the *next* action visually instead

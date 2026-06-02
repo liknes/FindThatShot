@@ -60,6 +60,7 @@ public partial class VideoDetailViewModel : ObservableObject
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsTelemetryStripVisible))]
+    [NotifyPropertyChangedFor(nameof(IsMapVisible))]
     private bool _isPlayerVisible;
 
     // DJI flight track for the selected clip, read lazily from a sibling
@@ -69,7 +70,15 @@ public partial class VideoDetailViewModel : ObservableObject
     // on demand from the file on disk, so a multi-thousand-point track never
     // touches the catalog DB.
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsMapVisible))]
     private IReadOnlyList<GeoPoint>? _flightPath;
+
+    // Live drone position for the sidebar map, updated every player tick from
+    // the time-indexed telemetry track (see UpdateTelemetryForPosition) so a
+    // marker tracks the drone along its flight path as the video plays. Null
+    // when there's no current sample (before the first cue, or no telemetry).
+    [ObservableProperty]
+    private GeoPoint? _dronePosition;
 
     // Cancels the in-flight SRT read when the selection changes again before
     // the previous parse finished, so a slow read for an earlier clip can't
@@ -112,6 +121,13 @@ public partial class VideoDetailViewModel : ObservableObject
     private bool _showTelemetryOverlay;
 
     public bool IsTelemetryStripVisible => IsPlayerVisible && HasTelemetry && ShowTelemetryOverlay;
+
+    // The sidebar map shows in normal mode (as always), and ALSO stays visible
+    // during review when there's a flight path to animate the drone marker
+    // along — that's the whole point of the playback-synced map. With no
+    // track, review mode keeps the map hidden so the editor focuses on
+    // tags / notes (the original behaviour).
+    public bool IsMapVisible => !IsPlayerVisible || FlightPath is not null;
 
     public string? TelemetryIso =>
         CurrentTelemetry?.Iso is { } iso ? iso.ToString(CultureInfo.InvariantCulture) : null;
@@ -375,6 +391,7 @@ public partial class VideoDetailViewModel : ObservableObject
         _telemetryTrack = null;
         HasTelemetry = false;
         CurrentTelemetry = null;
+        DronePosition = null;
     }
 
     // Picks the telemetry sample whose [Start, End) window contains the given
@@ -409,11 +426,19 @@ public partial class VideoDetailViewModel : ObservableObject
         if (position < match.Start)
         {
             if (CurrentTelemetry is not null) CurrentTelemetry = null;
+            if (DronePosition is not null) DronePosition = null;
             return;
         }
 
         if (CurrentTelemetry is { } cur && cur.Start == match.Start) return;
         CurrentTelemetry = match;
+
+        // Mirror the matched sample's GPS into the live map marker. Samples
+        // without coordinates (rare gaps in the SRT) clear the marker rather
+        // than freezing it at a stale spot.
+        DronePosition = match is { Latitude: { } mlat, Longitude: { } mlon }
+            ? new GeoPoint(mlat, mlon, match.RelativeAltitude)
+            : null;
     }
 
     // Persist the live toggle to settings (fire-and-forget) so the player's

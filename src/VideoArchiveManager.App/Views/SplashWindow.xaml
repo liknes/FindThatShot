@@ -8,54 +8,46 @@
         ShowInTaskbar="False"
         Topmost="True"
         WindowStartupLocation="CenterScreen"
-        Width="480" Height="320"
+        Width="600" Height="450"
         Icon="pack://application:,,,/Assets/AppIcon.png"
         ResizeMode="NoResize">
     <!-- Splash window. Shown immediately at app startup while DI / DB / FFmpeg
          init runs in OnStartup. Fades out over ~400ms once MainWindow.Loaded
-         fires. The accent strip on the left is the visual anchor for the
-         brand; rest is centered icon + name + version + spinner. -->
+         fires. It's a full-bleed branded splash image (logo + tagline are baked
+         into the artwork); the version label and loading spinner sit in a
+         bottom scrim so they stay legible over the photo. -->
     <Border CornerRadius="10"
-            Background="{DynamicResource App.Background.Elevated}"
-            BorderBrush="{DynamicResource App.Border.Subtle}"
-            BorderThickness="1"
             ClipToBounds="True">
         <Border.Effect>
             <DropShadowEffect Color="Black" BlurRadius="20" ShadowDepth="4" Opacity="0.4" />
         </Border.Effect>
         <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="6" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
+            <!-- Branded artwork fills the window (4:3, matches the source PNG). -->
+            <Image Source="pack://application:,,,/Resources/Images/Splash-Screen-0.9.2.png"
+                   Stretch="UniformToFill"
+                   RenderOptions.BitmapScalingMode="HighQuality" />
 
-            <!-- Vertical accent strip on the left edge -->
-            <Border Grid.Column="0"
-                    Background="{DynamicResource App.Accent}" />
+            <!-- Bottom-to-top dark scrim so the overlay text reads on any frame. -->
+            <Border VerticalAlignment="Bottom" Height="96">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,1" EndPoint="0,0">
+                        <GradientStop Offset="0" Color="#B0000000" />
+                        <GradientStop Offset="1" Color="#00000000" />
+                    </LinearGradientBrush>
+                </Border.Background>
+            </Border>
 
-            <Grid Grid.Column="1" Margin="32">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
+            <!-- Version (left) + loading spinner (right) along the bottom edge. -->
+            <Grid VerticalAlignment="Bottom" Margin="20,0,20,16">
+                <TextBlock x:Name="VersionText"
+                           HorizontalAlignment="Left"
+                           VerticalAlignment="Center"
+                           FontSize="12"
+                           Foreground="#D0FFFFFF" />
 
-                <StackPanel Grid.Row="0"
-                            HorizontalAlignment="Center"
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Right"
                             VerticalAlignment="Center">
-                    <Image Source="pack://application:,,,/Assets/LogoWordmark.png"
-                           Width="320"
-                           HorizontalAlignment="Center"
-                           RenderOptions.BitmapScalingMode="HighQuality" />
-                    <TextBlock x:Name="VersionText"
-                               Style="{StaticResource App.Type.Caption}"
-                               HorizontalAlignment="Center"
-                               Margin="0,12,0,0" />
-                </StackPanel>
-
-                <StackPanel Grid.Row="1"
-                            Orientation="Horizontal"
-                            HorizontalAlignment="Center"
-                            Margin="0,0,0,4">
                     <TextBlock x:Name="SpinnerGlyph"
                                FontFamily="{StaticResource App.Icon.FontFamily}"
                                FontSize="12"
@@ -80,7 +72,8 @@
                         </TextBlock.Triggers>
                     </TextBlock>
                     <TextBlock Text="Loading"
-                               Style="{StaticResource App.Type.Caption}"
+                               FontSize="12"
+                               Foreground="#D0FFFFFF"
                                VerticalAlignment="Center" />
                 </StackPanel>
             </Grid>

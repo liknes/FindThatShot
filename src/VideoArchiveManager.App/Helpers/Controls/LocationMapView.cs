@@ -93,6 +93,10 @@ public class LocationMapView : UserControl
   body.no-location .leaflet-tile-pane { filter: grayscale(1) brightness(0.55); }
   body.no-location .leaflet-control-attribution { opacity: 0.55; }
   body.pick-mode .leaflet-container { cursor: crosshair !important; }
+  /* Live drone marker pulses its ring so it reads as "current position"
+     against the static start/end dots while the video plays. */
+  @keyframes dronePulse { 0% { stroke-opacity: 1; } 50% { stroke-opacity: 0.2; } 100% { stroke-opacity: 1; } }
+  path.drone-marker { animation: dronePulse 1.2s ease-in-out infinite; }
 </style>
 </head>
 <body>
@@ -116,6 +120,9 @@ public class LocationMapView : UserControl
   // module scope so a later setFlightPath call can tear the old one down
   // before drawing the next clip's track.
   var pathLine = null, startDot = null, endDot = null, hasPath = false;
+  // Live "where the drone is right now" marker, moved in sync with video
+  // playback via setDronePosition. Null until the first position tick.
+  var drone = null;
   function setLocation(lat, lon, hasLocation) {
     var zoom = hasLocation ? 13 : 11;
     if (!map) {
@@ -164,9 +171,38 @@ public class LocationMapView : UserControl
   // points: array of [lat, lon] pairs (already downsampled by the host), or
   // null/short array to clear. Draws an amber polyline with a green start
   // dot and a red end dot, then fits the viewport to the whole track.
+  // Moves (or creates) the live drone marker to lat/lon and keeps it in
+  // view. A distinct cyan dot so it stands apart from the green start /
+  // red end dots; non-interactive so it never steals map clicks (pick mode).
+  function setDronePosition(lat, lon) {
+    if (!map) return;
+    var ll = [lat, lon];
+    if (!drone) {
+      drone = L.circleMarker(ll, {
+        radius: 7, color: '#ffffff', weight: 2,
+        fillColor: '#28c8ff', fillOpacity: 1,
+        className: 'drone-marker', interactive: false
+      }).addTo(map);
+    } else {
+      if (!map.hasLayer(drone)) drone.addTo(map);
+      drone.setLatLng(ll);
+    }
+    drone.bringToFront();
+    // Nudge the viewport only if the drone drifts out of the current bounds
+    // (e.g. the user zoomed in past the fitted track); no-op otherwise so we
+    // don't fight the path's fitBounds on every tick.
+    map.panInside(ll, { padding: [24, 24] });
+  }
+  function clearDronePosition() {
+    if (drone && map) { map.removeLayer(drone); }
+    drone = null;
+  }
   function setFlightPath(points) {
     hasPath = !!(points && points.length >= 2);
     if (!map) return;
+    // A new track means a new clip — drop the previous clip's drone marker;
+    // the next position tick re-creates it at the right spot.
+    clearDronePosition();
     clearFlightPath();
     if (!hasPath) {
       // No track for this clip — hand the viewport back to the single fix.
@@ -273,6 +309,13 @@ public class LocationMapView : UserControl
             typeof(LocationMapView),
             new PropertyMetadata(false, OnIsPickingModeChanged));
 
+    public static readonly DependencyProperty DronePositionProperty =
+        DependencyProperty.Register(
+            nameof(DronePosition),
+            typeof(GeoPoint?),
+            typeof(LocationMapView),
+            new PropertyMetadata(null, OnDronePositionChanged));
+
     public double? Latitude
     {
         get => (double?)GetValue(LatitudeProperty);
@@ -310,6 +353,19 @@ public class LocationMapView : UserControl
     {
         get => (bool)GetValue(IsPickingModeProperty);
         set => SetValue(IsPickingModeProperty, value);
+    }
+
+    /// <summary>
+    /// Live drone position, moved in sync with in-app video playback so a
+    /// marker tracks where the drone was at the current frame. Driven by the
+    /// VM from the time-indexed DJI telemetry track; null clears the marker.
+    /// Pushed to the page via a throttled <c>setDronePosition</c> JS call so
+    /// frequent player ticks don't flood WebView2.
+    /// </summary>
+    public GeoPoint? DronePosition
+    {
+        get => (GeoPoint?)GetValue(DronePositionProperty);
+        set => SetValue(DronePositionProperty, value);
     }
 
     /// <summary>
@@ -351,6 +407,76 @@ public class LocationMapView : UserControl
         if (d is LocationMapView self)
         {
             self.ApplyPickMode((bool)e.NewValue);
+        }
+    }
+
+    private static void OnDronePositionChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is LocationMapView self)
+        {
+            self.QueueDroneUpdate((GeoPoint?)e.NewValue);
+        }
+    }
+
+    // Push the drone marker to the page, but no more than once per
+    // DroneThrottleMs. Playback ticks (especially FFME's per-frame Position
+    // notifications) can fire far faster than the map needs to move; we send
+    // the latest position immediately when enough time has passed, otherwise
+    // schedule a single trailing flush so the final spot always lands.
+    private const double DroneThrottleMs = 120;
+    private GeoPoint? _pendingDrone;
+    private long _lastDroneSentTicks;
+    private DispatcherTimer? _droneThrottleTimer;
+
+    private void QueueDroneUpdate(GeoPoint? value)
+    {
+        _pendingDrone = value;
+        var elapsed = Environment.TickCount64 - _lastDroneSentTicks;
+        if (elapsed >= DroneThrottleMs)
+        {
+            SendDrone();
+            return;
+        }
+
+        _droneThrottleTimer ??= new DispatcherTimer();
+        if (!_droneThrottleTimer.IsEnabled)
+        {
+            _droneThrottleTimer.Interval = TimeSpan.FromMilliseconds(Math.Max(1, DroneThrottleMs - elapsed));
+            _droneThrottleTimer.Tick -= OnDroneThrottleTick;
+            _droneThrottleTimer.Tick += OnDroneThrottleTick;
+            _droneThrottleTimer.Start();
+        }
+    }
+
+    private void OnDroneThrottleTick(object? sender, EventArgs e)
+    {
+        _droneThrottleTimer?.Stop();
+        SendDrone();
+    }
+
+    private async void SendDrone()
+    {
+        _lastDroneSentTicks = Environment.TickCount64;
+        if (!_coreInitialized || !_firstNavigationDone) return;
+        try
+        {
+            string script;
+            if (_pendingDrone is { } p)
+            {
+                var latText = p.Latitude.ToString("R", CultureInfo.InvariantCulture);
+                var lonText = p.Longitude.ToString("R", CultureInfo.InvariantCulture);
+                script = $"setDronePosition({latText},{lonText});";
+            }
+            else
+            {
+                script = "clearDronePosition();";
+            }
+
+            await _webView.CoreWebView2.ExecuteScriptAsync(script);
+        }
+        catch
+        {
+            // CoreWebView2 torn down mid-update (control unloaded); ignore.
         }
     }
 
@@ -525,6 +651,13 @@ public class LocationMapView : UserControl
                 if (_pickModePending)
                 {
                     ApplyPickMode(true);
+                }
+
+                // Apply any drone position that arrived before the page was
+                // navigated so the marker shows on the first frame too.
+                if (_pendingDrone is not null)
+                {
+                    SendDrone();
                 }
             }
             else
