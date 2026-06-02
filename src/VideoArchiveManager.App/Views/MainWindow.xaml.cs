@@ -663,8 +663,23 @@ public partial class MainWindow : Window
     {
         try
         {
-            if (e.Options.VideoStream is not Unosquare.FFME.Common.StreamInfo videoStream) return;
-            if (videoStream.HardwareDevices.Count == 0) return;
+            if (e.Options.VideoStream is not Unosquare.FFME.Common.StreamInfo videoStream)
+            {
+                LogPlayerDiagnostic(e, null, "NO VIDEO STREAM — nothing to accelerate");
+                return;
+            }
+
+            if (videoStream.HardwareDevices.Count == 0)
+            {
+                // EARLY-RETURN PATH (the line we wanted to confirm): FFmpeg
+                // enumerated zero hardware devices for this stream, so the clip
+                // decodes on the CPU. This is the prime suspect for slow-motion
+                // HQ playback — typically a codec/profile the GPU can't decode
+                // (e.g. 10-bit HEVC on a GPU that only does 8-bit).
+                LogPlayerDiagnostic(e, videoStream,
+                    "SOFTWARE DECODE — FFmpeg enumerated 0 hardware devices for this stream (early-return path)");
+                return;
+            }
 
             var preferred = new[]
             {
@@ -683,13 +698,80 @@ public partial class MainWindow : Window
             if (devices.Count > 0)
             {
                 e.Options.VideoHardwareDevices = devices.ToArray();
+                var assigned = string.Join(", ", devices.Select(d => d.DeviceTypeName));
+                LogPlayerDiagnostic(e, videoStream,
+                    $"GPU DECODE — assigned {devices.Count} hardware device(s): {assigned}");
+            }
+
+            // Downscale heavy sources for in-app preview. Even with working GPU
+            // decode, FFME presents every frame through a CPU-side WriteableBitmap
+            // (see docs/in-app-player.md), so a 3840x2160@60p stream means ~33MB
+            // per frame * 60 ≈ 2GB/s of color-convert + copy on the UI thread —
+            // which is what drags HQ 4K clips into slow motion while a 540p proxy
+            // plays fine. Capping the rendered height to 1080 cuts that cost ~4x
+            // and keeps aspect ratio (scale=-2 picks the nearest even width).
+            // Only sources taller than 1080 are touched, so 1080p and SD clips are
+            // rendered untouched. This is a preview-quality tradeoff, not a change
+            // to the underlying file.
+            if (videoStream.PixelHeight > 1080)
+            {
+                e.Options.VideoFilter = "scale=-2:1080";
+                LogPlayerDiagnostic(e, videoStream,
+                    $"DOWNSCALE — applied VideoFilter 'scale=-2:1080' (source height {videoStream.PixelHeight} > 1080)");
+            }
+            else
+            {
+                // FFmpeg exposed hardware devices, but none matched our preferred
+                // D3D11VA/DXVA2/CUDA list, so we leave FFME on software decode.
+                var available = string.Join(", ", videoStream.HardwareDevices.Select(d => d.DeviceTypeName));
+                LogPlayerDiagnostic(e, videoStream,
+                    $"SOFTWARE DECODE — {videoStream.HardwareDevices.Count} device(s) enumerated but none matched preferred list. Available: {available}");
             }
         }
-        catch
+        catch (Exception ex)
         {
             // Defensive: any failure here just means we keep FFME's default
             // software-only decode path. Never let a hardware-accel probe
             // throw into the dispatcher during media open.
+            try { LogPlayerDiagnostic(e, null, "EXCEPTION during hardware probe: " + ex.Message); }
+            catch { /* logging must never throw into the dispatcher */ }
+        }
+    }
+
+    // Diagnostic-only: append a single line per opened clip describing the
+    // decode path FFME took (GPU vs software) plus the stream characteristics
+    // that decide it. Lands in %LOCALAPPDATA%\VideoArchiveManager\player-diagnostics.log
+    // so it can be read after reproducing slow HQ playback. Purely additive —
+    // remove this method and its call sites once the slow-motion cause is
+    // confirmed.
+    private static void LogPlayerDiagnostic(
+        Unosquare.FFME.Common.MediaOpeningEventArgs e,
+        Unosquare.FFME.Common.StreamInfo? videoStream,
+        string verdict)
+    {
+        try
+        {
+            var source = e.Info?.MediaSource ?? "(unknown source)";
+            var streamPart = videoStream is null
+                ? "stream=<none>"
+                : $"{videoStream.PixelWidth}x{videoStream.PixelHeight} @ {videoStream.FPS:0.###}fps, " +
+                  $"codec={videoStream.CodecName} profile={videoStream.CodecProfile}, " +
+                  $"pixfmt={videoStream.PixelFormat}, bitrate={videoStream.BitRate}";
+
+            var line = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} | {verdict} | {streamPart} | source={source}";
+
+            var dir = VideoArchiveManager.Core.Configuration.AppSettings.DefaultBaseDirectory;
+            System.IO.Directory.CreateDirectory(dir);
+            var path = System.IO.Path.Combine(dir, "player-diagnostics.log");
+            System.IO.File.AppendAllText(path, line + Environment.NewLine);
+
+            // Also emit to the debug sink so it shows in DebugView / VS output
+            // when running under a debugger.
+            System.Diagnostics.Debug.WriteLine("[PlayerDiag] " + line);
+        }
+        catch
+        {
+            // Diagnostics are best-effort; never let logging affect playback.
         }
     }
 
@@ -722,8 +804,12 @@ public partial class MainWindow : Window
                 Dispatcher.BeginInvoke(UpdatePlayerTime);
                 break;
             case nameof(Unosquare.FFME.MediaElement.MediaState):
-            case nameof(Unosquare.FFME.MediaElement.IsPlaying):
-            case nameof(Unosquare.FFME.MediaElement.IsPaused):
+                // Only MediaState drives the label now. IsPlaying / IsPaused
+                // flip transiently during the engine's buffer-refill `Manual`
+                // blips, so reacting to them re-introduced the Play<->Pause
+                // label flicker even though UpdatePlayPauseLabel reads from
+                // MediaState. Listening to MediaState alone is both correct
+                // and cheaper.
                 Dispatcher.BeginInvoke(UpdatePlayPauseLabel);
                 break;
         }
@@ -735,12 +821,57 @@ public partial class MainWindow : Window
     // FFME considers an error gets logged.
     private void MediaElement_MessageLogged(object? sender, Unosquare.FFME.Common.MediaLogMessageEventArgs e)
     {
+        // Diagnostic-only: capture FFmpeg's own hardware-acceleration chatter so
+        // we can tell whether the GPU decoder we ASSIGNED in MediaOpening
+        // actually engaged, or whether libav silently fell back to software at
+        // runtime (the assignment log alone can't tell us). Warnings/errors are
+        // always captured; info/debug only when the line mentions hwaccel so we
+        // don't flood the file. Mirrors into the same player-diagnostics.log.
+        // Remove alongside LogPlayerDiagnostic once the cause is confirmed.
+        var msg = e.Message ?? string.Empty;
+        var isElevated = e.MessageType is Unosquare.FFME.Common.MediaLogMessageType.Warning
+            or Unosquare.FFME.Common.MediaLogMessageType.Error;
+        var mentionsHwaccel =
+            msg.Contains("hwaccel", StringComparison.OrdinalIgnoreCase) ||
+            msg.Contains("hardware", StringComparison.OrdinalIgnoreCase) ||
+            msg.Contains("d3d11", StringComparison.OrdinalIgnoreCase) ||
+            msg.Contains("dxva", StringComparison.OrdinalIgnoreCase) ||
+            msg.Contains("cuda", StringComparison.OrdinalIgnoreCase) ||
+            msg.Contains("nvdec", StringComparison.OrdinalIgnoreCase) ||
+            msg.Contains("fallback", StringComparison.OrdinalIgnoreCase) ||
+            msg.Contains("software", StringComparison.OrdinalIgnoreCase);
+
+        if (isElevated || mentionsHwaccel)
+        {
+            LogFfmpegMessage(e.MessageType.ToString(), msg);
+        }
+
         if (e.MessageType != Unosquare.FFME.Common.MediaLogMessageType.Error) return;
         Dispatcher.BeginInvoke(() =>
         {
             PlayerCurrentTimeText.Text = "error";
             PlayerDurationText.Text = "--:--";
         });
+    }
+
+    // Diagnostic-only companion to LogPlayerDiagnostic: appends a raw FFmpeg log
+    // line (severity + text) to player-diagnostics.log. Used to confirm runtime
+    // hardware-decode engagement vs. software fallback.
+    private static void LogFfmpegMessage(string severity, string message)
+    {
+        try
+        {
+            var line = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} | FFMPEG/{severity} | {message}";
+            var dir = VideoArchiveManager.Core.Configuration.AppSettings.DefaultBaseDirectory;
+            System.IO.Directory.CreateDirectory(dir);
+            var path = System.IO.Path.Combine(dir, "player-diagnostics.log");
+            System.IO.File.AppendAllText(path, line + Environment.NewLine);
+            System.Diagnostics.Debug.WriteLine("[PlayerDiag] " + line);
+        }
+        catch
+        {
+            // Diagnostics are best-effort; never let logging affect playback.
+        }
     }
 
     private void UpdatePlayerTime()
@@ -776,7 +907,17 @@ public partial class MainWindow : Window
     private void UpdatePlayPauseLabel()
     {
         if (!App.IsPlayerAvailable) return;
-        var playing = VideoPlayer.IsPlaying;
+        // Derive the label from MediaState rather than the instantaneous
+        // IsPlaying flag. During smooth playback FFME momentarily drops into
+        // its transient `Manual` state to refill the block buffer; IsPlaying
+        // reads false for those few milliseconds, which made the button label
+        // rapidly flip Play<->Pause even though the video never actually
+        // paused. Treating both `Play` and `Manual` as "playing" keeps the
+        // label stable through those refill blips. Pause/Stop/Close are the
+        // only states that genuinely mean "not playing".
+        var playing = VideoPlayer.MediaState
+            is Unosquare.FFME.Common.MediaPlaybackState.Play
+            or Unosquare.FFME.Common.MediaPlaybackState.Manual;
         PlayPauseButton.Content = playing ? "Pause" : "Play";
         // Swap the Segoe Fluent glyph carried via the Theme.Icon attached
         // property so the button shows the *next* action visually instead

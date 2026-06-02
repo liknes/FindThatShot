@@ -87,6 +87,17 @@ public partial class App : Application
             if (Directory.Exists(ffmpegDir) && File.Exists(Path.Combine(ffmpegDir, "avcodec-62.dll")))
             {
                 Unosquare.FFME.Library.FFmpegDirectory = ffmpegDir;
+
+                // DIAGNOSTIC-ONLY: raise FFmpeg's log verbosity so libav's
+                // hardware-decoder selection / fallback lines ("Using d3d11va
+                // hwaccel", "Failed setup for format ... reverting to sw")
+                // reach MediaElement.MessageLogged. Those messages are emitted
+                // at AV_LOG_VERBOSE, below FFME's default threshold, which is
+                // why our hwaccel capture came back empty. Revert to the
+                // default (remove this line) once the slow-4K cause is
+                // confirmed — VERBOSE is chatty.
+                Unosquare.FFME.Library.FFmpegLogLevel = FFmpeg.AutoGen.ffmpeg.AV_LOG_VERBOSE;
+
                 IsPlayerAvailable = true;
             }
             else
