@@ -157,7 +157,12 @@ public sealed class MpvPlayer : IDisposable
     public bool GetPaused()
     {
         if (_ctx == IntPtr.Zero) return true;
-        return MpvInterop.mpv_get_property(_ctx, "pause", MpvInterop.MPV_FORMAT_DOUBLE, out var d) >= 0 && d != 0;
+        // "pause" is a flag property. It MUST be read as MPV_FORMAT_FLAG (a C
+        // int): mpv won't coerce a flag to MPV_FORMAT_DOUBLE, so a double read
+        // always errors and made GetPaused() permanently report "not paused" —
+        // which left the play/pause button stuck on "Pause" and turned the
+        // toggle into a pause-only no-op after the first click.
+        return MpvInterop.mpv_get_property_flag(_ctx, "pause", MpvInterop.MPV_FORMAT_FLAG, out var flag) >= 0 && flag != 0;
     }
 
     private double GetDouble(string name)

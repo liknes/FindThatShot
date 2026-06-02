@@ -88,6 +88,14 @@ internal static class MpvInterop
     public static extern int mpv_get_property(
         IntPtr ctx, [MarshalAs(UnmanagedType.LPUTF8Str)] string name, int format, out double data);
 
+    // Flag-typed read (MPV_FORMAT_FLAG marshals as a C int, 0/1). Needed for
+    // boolean properties like "pause": mpv refuses to convert a flag to a
+    // double, so the double overload above returns an error for them and the
+    // value can never be read. Same native entry point, different out type.
+    [DllImport(Lib, CallingConvention = CallingConvention.Cdecl, EntryPoint = "mpv_get_property")]
+    public static extern int mpv_get_property_flag(
+        IntPtr ctx, [MarshalAs(UnmanagedType.LPUTF8Str)] string name, int format, out int data);
+
     // char** args, NULL-terminated. Marshalled by hand in MpvPlayer.Command.
     [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
     public static extern int mpv_command(IntPtr ctx, IntPtr args);
