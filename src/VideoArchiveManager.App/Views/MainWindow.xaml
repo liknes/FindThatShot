@@ -1155,7 +1155,7 @@
                                                         helpers:Theme.Icon="{StaticResource Icon.Cancel}"
                                                         Margin="6,0,-2,0"
                                                         ToolTip="Remove this tag from the clip."
-                                                        Command="{Binding DataContext.RemoveTagCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        Command="{Binding DataContext.RemoveTagCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                         CommandParameter="{Binding}" />
                                             </StackPanel>
                                         </Border>

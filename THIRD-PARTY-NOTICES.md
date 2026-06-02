@@ -75,10 +75,10 @@ The installed application bundles or links to several third-party components. Th
 
 ## Leaflet
 
-- **Version:** 1.9.4 (loaded at runtime from `https://unpkg.com/leaflet@1.9.4/`)
+- **Version:** 1.9.4
 - **License:** BSD 2-Clause, https://github.com/Leaflet/Leaflet/blob/main/LICENSE
 - **Project home:** https://leafletjs.com/
-- **How it is used:** Open-source JavaScript map library used by the embedded `LocationMapView` to render the interactive OpenStreetMap tile pane and the GPS marker. Not bundled — the library's CSS and JS are fetched from the public `unpkg.com` CDN by the WebView2 page on first load. Offline behaviour is graceful: if the CDN is unreachable, the map area stays empty and the rest of the editor continues to work.
+- **How it is used:** Open-source JavaScript map library used by the embedded `LocationMapView` to render the interactive OpenStreetMap tile pane and the GPS marker. **Bundled, not fetched from a CDN:** the library's CSS and JS (and the default marker PNG images) are embedded in the application assembly and inlined into the WebView2 page at runtime, so the map library works fully offline. Only the OpenStreetMap *tiles* require network access. Shipped unmodified from the upstream 1.9.4 `dist/` distribution.
 
 ## OpenStreetMap / Nominatim
 

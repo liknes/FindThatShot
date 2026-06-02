@@ -36,22 +36,45 @@ public class JsonSidecarService : ISidecarService
 
     public string GetSidecarPathFor(string videoPath) => videoPath + SidecarSuffix;
 
+    public bool SidecarExistsFor(string videoPath)
+    {
+        if (string.IsNullOrWhiteSpace(videoPath)) return false;
+        try
+        {
+            return File.Exists(GetSidecarPathFor(videoPath));
+        }
+        catch
+        {
+            // Malformed/over-long paths or an offline drive can throw on the
+            // existence probe — treat as "no sidecar" rather than surfacing.
+            return false;
+        }
+    }
+
+    public bool ShouldWriteFor(string videoPath) =>
+        IsEnabled || SidecarExistsFor(videoPath);
+
     public async Task<SidecarWriteResult> WriteAsync(
         VideoItem video,
         IEnumerable<Tag> tags,
         CancellationToken cancellationToken = default)
     {
-        if (!IsEnabled)
-        {
-            return SidecarWriteResult.DisabledOrSkipped();
-        }
-
         if (video is null || string.IsNullOrWhiteSpace(video.FilePath))
         {
             return SidecarWriteResult.Failure("Video has no file path.");
         }
 
         var sidecarPath = GetSidecarPathFor(video.FilePath);
+
+        // Write when enabled, OR when a sidecar already exists — an existing
+        // file is the user's opt-in, so we keep it in sync with the catalog
+        // (e.g. a tag removed while "write new sidecars" is off) instead of
+        // letting it silently go stale. Brand-new files are only created when
+        // the setting is on.
+        if (!IsEnabled && !File.Exists(sidecarPath))
+        {
+            return SidecarWriteResult.DisabledOrSkipped();
+        }
 
         var folder = Path.GetDirectoryName(sidecarPath);
         if (string.IsNullOrEmpty(folder) || !Directory.Exists(folder))
@@ -114,11 +137,14 @@ public class JsonSidecarService : ISidecarService
         IEnumerable<(VideoItem Video, IReadOnlyList<Tag> Tags)> items,
         CancellationToken cancellationToken = default)
     {
-        if (!IsEnabled)
+        if (items is null)
         {
-            return new SidecarBatchResult { Skipped = items?.Count() ?? 0 };
+            return new SidecarBatchResult();
         }
 
+        // No blanket skip when disabled: each item is decided individually by
+        // WriteAsync, so existing sidecars among the batch are kept in sync
+        // while clips without a sidecar are left untouched.
         var attempted = 0;
         var written = 0;
         var failed = 0;

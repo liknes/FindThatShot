@@ -16,6 +16,15 @@ public interface ISidecarService
         CancellationToken cancellationToken = default);
 
     string GetSidecarPathFor(string videoPath);
+
+    // True when a sidecar file already exists on disk for this video. Used to
+    // keep an existing sidecar in sync with the catalog even when writing NEW
+    // sidecars is disabled — the presence of the file is itself the opt-in.
+    bool SidecarExistsFor(string videoPath);
+
+    // True when this video should be written: either new-sidecar writing is
+    // enabled, or a sidecar already exists and must be kept current.
+    bool ShouldWriteFor(string videoPath);
 }
 
 public class SidecarWriteResult

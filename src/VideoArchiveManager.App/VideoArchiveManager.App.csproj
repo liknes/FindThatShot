@@ -42,6 +42,20 @@
     <Resource Include="Assets\AppIcon.ico" />
   </ItemGroup>
 
+  <!-- Leaflet 1.9.4 is bundled (not loaded from a CDN) so the sidebar GPS
+       map works fully offline. The CSS / JS / marker PNGs are embedded into
+       the assembly and inlined into the WebView2 page by LocationMapView at
+       runtime (CSS + JS inline, marker images as base64 data URIs). Explicit
+       LogicalName keeps the manifest resource names stable and folder-layout
+       independent. -->
+  <ItemGroup>
+    <EmbeddedResource Include="Helpers\Controls\Leaflet\leaflet.css" LogicalName="Leaflet.leaflet.css" />
+    <EmbeddedResource Include="Helpers\Controls\Leaflet\leaflet.js" LogicalName="Leaflet.leaflet.js" />
+    <EmbeddedResource Include="Helpers\Controls\Leaflet\images\marker-icon.png" LogicalName="Leaflet.marker-icon.png" />
+    <EmbeddedResource Include="Helpers\Controls\Leaflet\images\marker-icon-2x.png" LogicalName="Leaflet.marker-icon-2x.png" />
+    <EmbeddedResource Include="Helpers\Controls\Leaflet\images\marker-shadow.png" LogicalName="Leaflet.marker-shadow.png" />
+  </ItemGroup>
+
   <ItemGroup>
     <ApplicationDefinition Remove="App.xaml" />
     <Page Include="App.xaml" />

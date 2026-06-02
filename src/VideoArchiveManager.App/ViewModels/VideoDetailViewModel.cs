@@ -453,18 +453,20 @@ public partial class VideoDetailViewModel : ObservableObject
         LastSaveStatus = $"Tag removed · {sidecarStatus}";
     }
 
-    // Writes a sidecar (if enabled) and returns a short human-readable
-    // status of what happened. NEVER throws; the caller is responsible for
-    // user-visible labelling around the returned text.
+    // Writes a sidecar and returns a short human-readable status of what
+    // happened. A sidecar is written when the setting is on OR when one
+    // already exists for the clip (so an existing file stays in sync even
+    // when "write new sidecars" is off). NEVER throws; the caller is
+    // responsible for user-visible labelling around the returned text.
     private async Task<string> WriteSidecarStatusAsync(VideoItem? entity = null)
     {
-        if (!_sidecar.IsEnabled)
-        {
-            return "sidecar disabled";
-        }
         if (Current is null)
         {
             return "sidecar skipped (no video selected)";
+        }
+        if (!_sidecar.ShouldWriteFor(Current.FilePath))
+        {
+            return "sidecar disabled";
         }
 
         if (entity is null)

@@ -152,7 +152,10 @@ public partial class BulkEditViewModel : ObservableObject
 
     private async Task TryWriteSidecarsAsync()
     {
-        if (!_sidecar.IsEnabled || TargetIds.Count == 0) return;
+        // Don't gate on IsEnabled: even when writing new sidecars is off, any
+        // target that already has a sidecar must be kept in sync. WriteManyAsync
+        // decides per item (writes existing files, skips clips without one).
+        if (TargetIds.Count == 0) return;
 
         List<VideoItem> entities;
         await using (var ctx = await _contextFactory.CreateDbContextAsync())

@@ -1,4 +1,6 @@
 using System.Globalization;
+using System.IO;
+using System.Reflection;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
@@ -34,11 +36,18 @@ namespace VideoArchiveManager.App.Helpers.Controls;
 /// clips that have no embedded location data.
 /// </para>
 /// <para>
+/// Leaflet 1.9.4 (CSS + JS) and the marker PNGs are embedded in the
+/// assembly and inlined into the page at runtime, so the map library
+/// itself needs no network access. Only the OSM <em>tiles</em> are
+/// fetched online: offline users get the Leaflet chrome + marker over
+/// the dark body background, and the manual GPS picker still works
+/// (clicks resolve to coordinates without any tiles loaded).
+/// </para>
+/// <para>
 /// WebView2 init failures (older runtime missing, sandboxed environment)
 /// are swallowed silently — the control simply renders empty, and the
 /// "Open in map" hyperlink in the clip-info popup still works as a
-/// fallback. Tile fetches need internet; offline users see the dark
-/// body background only.
+/// fallback.
 /// </para>
 /// </summary>
 public class LocationMapView : UserControl
@@ -55,11 +64,13 @@ public class LocationMapView : UserControl
     private const double FallbackLatitude = 59.4138;
     private const double FallbackLongitude = 5.2680;
 
-    // Leaflet + OSM page template. __LAT__ / __LON__ / __HAS__ are
-    // replaced with invariant-culture-formatted values before the first
-    // navigation. Attribution is included inline per OSM's tile usage
-    // policy. The dark body background matches the app's dark theme so
-    // the panel doesn't flash white while tiles load.
+    // Leaflet + OSM page template. The bundled Leaflet 1.9.4 CSS and JS are
+    // injected inline (no CDN) via the __LEAFLET_CSS__ / __LEAFLET_JS__ tokens
+    // and the marker PNGs via __MARKER_*__ data URIs — see BuildResolvedTemplate.
+    // __LAT__ / __LON__ / __HAS__ are then replaced with invariant-culture-
+    // formatted values before each navigation. Tile attribution is included
+    // inline per OSM's tile usage policy. The dark body background matches the
+    // app's dark theme so the panel doesn't flash white while tiles load.
     //
     // When `hasLocation` is false the page (a) drops to a regional zoom,
     // (b) removes the marker, and (c) toggles a `no-location` class on
@@ -73,8 +84,7 @@ public class LocationMapView : UserControl
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>__LEAFLET_CSS__</style>
 <style>
   html, body, #m { height: 100%; margin: 0; padding: 0; }
   body { background: #1e1e1e; }
@@ -86,7 +96,18 @@ public class LocationMapView : UserControl
 </head>
 <body>
 <div id="m"></div>
+<script>__LEAFLET_JS__</script>
 <script>
+  // Point Leaflet's default marker at the bundled base64 images so the
+  // pin renders with zero network access. Deleting _getIconUrl disables
+  // Leaflet's relative-path auto-detection (which has no base URL under
+  // NavigateToString and would otherwise produce a broken icon request).
+  delete L.Icon.Default.prototype._getIconUrl;
+  L.Icon.Default.mergeOptions({
+    iconUrl: '__MARKER_ICON__',
+    iconRetinaUrl: '__MARKER_ICON_2X__',
+    shadowUrl: '__MARKER_SHADOW__'
+  });
   var map = null, marker = null;
   var pickHandler = null;
   var pickModeRequested = false;
@@ -139,6 +160,42 @@ public class LocationMapView : UserControl
 </body>
 </html>
 """;
+
+    // MapHtmlTemplate with the bundled Leaflet CSS / JS / marker images
+    // baked in, leaving only the per-navigation __LAT__ / __LON__ / __HAS__
+    // tokens. Built once on first use (the assets are constant) and reused
+    // for every navigation; failure to load a resource is fatal at dev time
+    // (the resource names are wrong) rather than a silent runtime fallback.
+    private static string? _resolvedTemplate;
+
+    private static string ResolvedTemplate =>
+        _resolvedTemplate ??= MapHtmlTemplate
+            .Replace("__LEAFLET_CSS__", LoadTextResource("Leaflet.leaflet.css"))
+            .Replace("__LEAFLET_JS__", LoadTextResource("Leaflet.leaflet.js"))
+            .Replace("__MARKER_ICON_2X__", LoadImageDataUri("Leaflet.marker-icon-2x.png"))
+            .Replace("__MARKER_ICON__", LoadImageDataUri("Leaflet.marker-icon.png"))
+            .Replace("__MARKER_SHADOW__", LoadImageDataUri("Leaflet.marker-shadow.png"));
+
+    private static string LoadTextResource(string logicalName)
+    {
+        using var stream = ResourceStream(logicalName);
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd();
+    }
+
+    private static string LoadImageDataUri(string logicalName)
+    {
+        using var stream = ResourceStream(logicalName);
+        using var ms = new MemoryStream();
+        stream.CopyTo(ms);
+        return "data:image/png;base64," + Convert.ToBase64String(ms.ToArray());
+    }
+
+    private static Stream ResourceStream(string logicalName) =>
+        typeof(LocationMapView).Assembly.GetManifestResourceStream(logicalName)
+            ?? throw new InvalidOperationException(
+                $"Embedded Leaflet resource '{logicalName}' not found. " +
+                "Check the <EmbeddedResource LogicalName=...> entries in VideoArchiveManager.App.csproj.");
 
     public static readonly DependencyProperty LatitudeProperty =
         DependencyProperty.Register(
@@ -375,7 +432,7 @@ public class LocationMapView : UserControl
         {
             if (!_firstNavigationDone)
             {
-                var html = MapHtmlTemplate
+                var html = ResolvedTemplate
                     .Replace("__LAT__", latText)
                     .Replace("__LON__", lonText)
                     .Replace("__HAS__", hasText);
