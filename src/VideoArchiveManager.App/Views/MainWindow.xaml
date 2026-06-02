@@ -854,6 +854,7 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
                     <ffme:MediaElement x:Name="VideoPlayer"
@@ -875,6 +876,74 @@
                                            Grid.Row="0"
                                            Visibility="Collapsed" />
 
+                    <!-- DJI telemetry strip. Sits in its OWN row directly under
+                         the picture (NOT painted over the video) on purpose:
+                         the mpv player draws into a Win32 child window whose
+                         HWND composites above all WPF content in its rectangle
+                         (the same "airspace" rule that keeps the map's chrome
+                         below the map, see the LocationMapView note above), so a
+                         readout overlaid on the frame would be invisible on the
+                         GPU path. Bound fields come from VideoDetailViewModel,
+                         refreshed every player tick via UpdateTelemetryForPosition;
+                         each chip hides itself when its value is null so the strip
+                         adapts to whatever the clip's SRT actually carries.
+                         IsTelemetryStripVisible gates the whole row (player open
+                         + telemetry present + user toggle on). -->
+                    <Border Grid.Row="1"
+                            Background="#0FFFFFFF"
+                            BorderBrush="{DynamicResource App.Border.Subtle}"
+                            BorderThickness="0,1,0,0"
+                            Padding="12,7"
+                            Visibility="{Binding IsTelemetryStripVisible, Converter={StaticResource BoolToVisibility}}">
+                        <WrapPanel Orientation="Horizontal">
+                            <WrapPanel.Resources>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Orientation" Value="Horizontal" />
+                                    <Setter Property="Margin" Value="0,2,20,2" />
+                                    <Setter Property="VerticalAlignment" Value="Center" />
+                                </Style>
+                                <Style x:Key="TelemetryLabel" TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{DynamicResource App.Foreground.Secondary}" />
+                                    <Setter Property="FontSize" Value="10" />
+                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                    <Setter Property="VerticalAlignment" Value="Center" />
+                                    <Setter Property="Margin" Value="0,0,6,0" />
+                                </Style>
+                                <Style x:Key="TelemetryValue" TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White" />
+                                    <Setter Property="FontFamily" Value="Consolas" />
+                                    <Setter Property="FontSize" Value="13" />
+                                    <Setter Property="VerticalAlignment" Value="Center" />
+                                </Style>
+                            </WrapPanel.Resources>
+
+                            <StackPanel Visibility="{Binding TelemetryIso, Converter={StaticResource NullToVisibility}}">
+                                <TextBlock Text="ISO" Style="{StaticResource TelemetryLabel}" />
+                                <TextBlock Text="{Binding TelemetryIso}" Style="{StaticResource TelemetryValue}" />
+                            </StackPanel>
+                            <StackPanel Visibility="{Binding TelemetryShutter, Converter={StaticResource NullToVisibility}}">
+                                <TextBlock Text="SHUTTER" Style="{StaticResource TelemetryLabel}" />
+                                <TextBlock Text="{Binding TelemetryShutter}" Style="{StaticResource TelemetryValue}" />
+                            </StackPanel>
+                            <StackPanel Visibility="{Binding TelemetryAperture, Converter={StaticResource NullToVisibility}}">
+                                <TextBlock Text="APERTURE" Style="{StaticResource TelemetryLabel}" />
+                                <TextBlock Text="{Binding TelemetryAperture}" Style="{StaticResource TelemetryValue}" />
+                            </StackPanel>
+                            <StackPanel Visibility="{Binding TelemetryFocalLength, Converter={StaticResource NullToVisibility}}">
+                                <TextBlock Text="FOCAL" Style="{StaticResource TelemetryLabel}" />
+                                <TextBlock Text="{Binding TelemetryFocalLength}" Style="{StaticResource TelemetryValue}" />
+                            </StackPanel>
+                            <StackPanel Visibility="{Binding TelemetryAltitude, Converter={StaticResource NullToVisibility}}">
+                                <TextBlock Text="ALT" Style="{StaticResource TelemetryLabel}" />
+                                <TextBlock Text="{Binding TelemetryAltitude}" Style="{StaticResource TelemetryValue}" />
+                            </StackPanel>
+                            <StackPanel Visibility="{Binding TelemetryGps, Converter={StaticResource NullToVisibility}}">
+                                <TextBlock Text="GPS" Style="{StaticResource TelemetryLabel}" />
+                                <TextBlock Text="{Binding TelemetryGps}" Style="{StaticResource TelemetryValue}" />
+                            </StackPanel>
+                        </WrapPanel>
+                    </Border>
+
                     <!-- Player toolbar. Visible only in review mode (IsPlayerVisible),
                          but we also hide it via column width=0 in normal mode so this
                          binding is mostly belt-and-braces.
@@ -882,7 +951,7 @@
                          visually flows into the video frame instead of dropping a bright
                          chrome panel under the picture; time-readout text is explicitly
                          white so it stays legible on the dark backdrop. -->
-                    <Border Grid.Row="1"
+                    <Border Grid.Row="2"
                             Background="Black"
                             Padding="10,8"
                             Visibility="{Binding IsPlayerVisible, Converter={StaticResource BoolToVisibility}}">
@@ -979,6 +1048,14 @@
                                             Style="{StaticResource App.Button.Secondary}"
                                             helpers:Theme.Icon="{StaticResource Icon.Stop}"
                                             ToolTip="Stop playback (resets position)" />
+                                    <!-- Telemetry show/hide. Only present for DJI clips that
+                                         actually carried a parseable SRT track (HasTelemetry);
+                                         toggles the strip above and persists the choice. -->
+                                    <Button Content="Telemetry" MinWidth="100" Margin="16,4,0,4"
+                                            Command="{Binding ToggleTelemetryOverlayCommand}"
+                                            Visibility="{Binding HasTelemetry, Converter={StaticResource BoolToVisibility}}"
+                                            Style="{StaticResource App.Button.Ghost}"
+                                            ToolTip="Show / hide the drone telemetry overlay (ISO, shutter, aperture, focal length, altitude, GPS)" />
                                     <Button Content="Close" MinWidth="100" Margin="16,4,0,4"
                                             Command="{Binding ClosePlayerCommand}"
                                             Style="{StaticResource App.Button.Ghost}"

@@ -42,16 +42,14 @@
                 <StackPanel Grid.Row="0"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center">
-                    <Image Source="pack://application:,,,/Assets/AppIcon.png"
-                           Width="64" Height="64"
-                           HorizontalAlignment="Center" />
-                    <TextBlock Text="Find That Shot"
-                               Style="{StaticResource App.Type.Display}"
-                               HorizontalAlignment="Center"
-                               Margin="0,16,0,4" />
+                    <Image Source="pack://application:,,,/Assets/LogoWordmark.png"
+                           Width="320"
+                           HorizontalAlignment="Center"
+                           RenderOptions.BitmapScalingMode="HighQuality" />
                     <TextBlock x:Name="VersionText"
                                Style="{StaticResource App.Type.Caption}"
-                               HorizontalAlignment="Center" />
+                               HorizontalAlignment="Center"
+                               Margin="0,12,0,0" />
                 </StackPanel>
 
                 <StackPanel Grid.Row="1"

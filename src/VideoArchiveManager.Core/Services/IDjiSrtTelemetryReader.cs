@@ -23,6 +23,28 @@ public sealed class DjiTelemetrySummary
 /// </summary>
 public readonly record struct GeoPoint(double Latitude, double Longitude, double? RelativeAltitude = null);
 
+/// <summary>
+/// One telemetry frame lifted from a DJI flight-data SRT cue, tagged with the
+/// cue's playback time window so the in-app player can show the live readout
+/// that matches the current position. Every camera / GPS field is nullable
+/// because DJI's SRT layout varies by drone / firmware — a missing bracket
+/// simply leaves that field <c>null</c> and the UI hides that chip.
+/// </summary>
+/// <param name="Start">Cue start time, relative to the clip's start.</param>
+/// <param name="End">Cue end time; the sample is "current" for [Start, End).</param>
+public readonly record struct DjiTelemetrySample(
+    TimeSpan Start,
+    TimeSpan End,
+    int? Iso = null,
+    string? Shutter = null,
+    double? FNumber = null,
+    double? Ev = null,
+    double? FocalLength = null,
+    double? RelativeAltitude = null,
+    double? AbsoluteAltitude = null,
+    double? Latitude = null,
+    double? Longitude = null);
+
 public interface IDjiSrtTelemetryReader
 {
     /// <summary>
@@ -47,5 +69,22 @@ public interface IDjiSrtTelemetryReader
     Task<IReadOnlyList<GeoPoint>?> TryReadFlightPathAsync(
         string videoPath,
         int maxPoints = 600,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// If a sibling <c>.SRT</c> companion file exists next to the given video,
+    /// parse every cue into a time-ordered telemetry track (camera + GPS fields
+    /// tagged with each cue's playback window) for the in-app player's live
+    /// readout overlay. Unlike <see cref="TryReadFlightPathAsync"/> this keeps
+    /// every cue (no downsampling) so the readout can track the exact frame, but
+    /// it caps the total to <paramref name="maxSamples"/> as a guard against a
+    /// pathologically long file. Returns <c>null</c> when no companion exists,
+    /// the file can't be read, or it carried no parseable telemetry.
+    /// </summary>
+    /// <param name="videoPath">Absolute path to the video file (e.g. <c>...\DJI_..._D.MP4</c>).</param>
+    /// <param name="maxSamples">Upper bound on the number of retained samples.</param>
+    Task<IReadOnlyList<DjiTelemetrySample>?> TryReadTelemetryTrackAsync(
+        string videoPath,
+        int maxSamples = 200_000,
         CancellationToken cancellationToken = default);
 }

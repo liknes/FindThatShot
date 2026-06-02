@@ -26,11 +26,13 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0">
-            <TextBlock Text="Find That Shot"
-                       Style="{StaticResource App.Type.Display}" />
+            <Image Source="pack://application:,,,/Assets/LogoWordmark.png"
+                   Width="300"
+                   HorizontalAlignment="Left"
+                   RenderOptions.BitmapScalingMode="HighQuality" />
             <TextBlock x:Name="VersionText"
                        Style="{StaticResource App.Type.Caption}"
-                       Margin="0,4,0,0" />
+                       Margin="0,8,0,0" />
         </StackPanel>
 
         <TextBlock Grid.Row="1" Margin="0,16,0,0" TextWrapping="Wrap"

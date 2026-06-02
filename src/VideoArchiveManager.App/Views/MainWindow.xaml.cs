@@ -192,6 +192,10 @@ public partial class MainWindow : Window
         PlayerCurrentTimeText.Text = FormatTimecode(TimeSpan.FromSeconds(pos));
         PlayerDurationText.Text = dur > 0 ? FormatTimecode(TimeSpan.FromSeconds(dur)) : "00:00";
 
+        // Refresh the DJI telemetry readout for the new position (no-op when the
+        // clip has no telemetry track or the matched sample hasn't changed).
+        _viewModel.Detail.UpdateTelemetryForPosition(TimeSpan.FromSeconds(pos));
+
         if (!_isUserSeeking && dur > 0)
         {
             var fraction = Math.Clamp(pos / dur, 0.0, 1.0);
@@ -953,6 +957,7 @@ public partial class MainWindow : Window
         PlayerCurrentTimeText.Text = Format(pos);
         PlayerDurationText.Text = Format(dur);
         SyncSliderFromPlayer();
+        _viewModel.Detail.UpdateTelemetryForPosition(pos);
 
         static string Format(TimeSpan t)
             => t.TotalHours >= 1

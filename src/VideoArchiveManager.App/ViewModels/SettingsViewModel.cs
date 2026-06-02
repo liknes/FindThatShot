@@ -34,6 +34,7 @@ public partial class SettingsViewModel : ObservableObject
         _writeSidecarFiles = current.WriteSidecarFiles;
         _preferProxyForPlayback = current.PreferProxyForPlayback;
         _showDroneFlightPaths = current.ShowDroneFlightPaths;
+        _showPlayerTelemetry = current.ShowPlayerTelemetry;
 
         _ = RefreshBackupsAsync();
     }
@@ -81,6 +82,9 @@ public partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _showDroneFlightPaths;
+
+    [ObservableProperty]
+    private bool _showPlayerTelemetry;
 
     [ObservableProperty]
     private string _backupStatusMessage = string.Empty;
@@ -256,6 +260,7 @@ public partial class SettingsViewModel : ObservableObject
             WriteSidecarFiles = WriteSidecarFiles,
             PreferProxyForPlayback = PreferProxyForPlayback,
             ShowDroneFlightPaths = ShowDroneFlightPaths,
+            ShowPlayerTelemetry = ShowPlayerTelemetry,
             MaxScanParallelism = MaxScanParallelism > 0 ? MaxScanParallelism : 4,
             PageSize = _store.Current.PageSize,
             SupportedExtensions = _store.Current.SupportedExtensions,

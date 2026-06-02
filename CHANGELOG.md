@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+### Changed
+
+- **New "Find That Shot" logo and app icon.** Replaced the old placeholder branding with a custom logo: a search-lens over a video frame, a drone flight path leading to a map pin, and a play triangle. The square mark (transparent background, monochrome amber so it reads on both light and dark surfaces) is now the Windows app icon — `Assets/AppIcon.ico` (16/32/48/256 px) and `Assets/AppIcon.png` — driving the title bars, taskbar, and `<ApplicationIcon>`. A horizontal lockup of the mark plus the "Find That Shot" wordmark and the *Find. Tag. Review. Anywhere.* tagline was added as `Assets/LogoWordmark.png` and now heads the **splash screen** (replacing the small icon + text) and the **About window** (replacing the plain display heading). Assets were rasterized from the source SVG via WPF's own renderer so the Segoe UI wordmark stays pixel-accurate, with no new runtime dependency.
+
 ## [0.9.3] - 2026-06-02
 
 ### Added

@@ -37,6 +37,15 @@ public class AppSettings
     // (e.g. while screen-sharing) can switch it off without losing geotags.
     public bool ShowDroneFlightPaths { get; set; } = true;
 
+    // When true, the in-app player shows a formatted telemetry strip under the
+    // video for DJI clips (ISO / shutter / aperture / focal length / altitude /
+    // GPS, read live from the sibling ".SRT" companion and synced to the current
+    // playback position). Purely a display toggle — the underlying SRT is still
+    // used for the flight-path map regardless. Defaults to on; the player has an
+    // inline toggle that round-trips to this value, so the choice survives a
+    // restart.
+    public bool ShowPlayerTelemetry { get; set; } = true;
+
     // GitHub repo (https://github.com/owner/repo) that hosts Velopack
     // release artifacts. The app's "Check for updates" command reads this
     // value at runtime. Empty / null disables the check.

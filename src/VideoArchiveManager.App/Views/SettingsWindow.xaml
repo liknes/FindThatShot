@@ -180,6 +180,11 @@
                            Text="When enabled, the in-app player prefers a DaVinci Resolve-style proxy when one exists. For each clip we look for a sibling &quot;Proxy&quot; folder containing a file with the same base name (any extension) and play that instead — much faster on high-bitrate 4K 60p sources. Falls back to the original clip silently when no proxy is found. The catalog, thumbnails, metadata and the &quot;Play externally&quot; command always continue to point at the original file." />
                 <CheckBox IsChecked="{Binding PreferProxyForPlayback}"
                           Content="Prefer DaVinci Resolve proxies for in-app playback"
+                          Margin="0,0,0,12" />
+                <TextBlock TextWrapping="Wrap" Style="{StaticResource App.Type.BodyMuted}" Margin="0,0,0,12"
+                           Text="When enabled, the in-app player shows a telemetry strip under the video for DJI clips that have a sibling &quot;.SRT&quot; file — ISO, shutter, aperture, focal length, altitude and GPS, synced to the current frame. Display-only and read live from the file; the player also has its own inline toggle." />
+                <CheckBox IsChecked="{Binding ShowPlayerTelemetry}"
+                          Content="Show drone telemetry overlay in the player"
                           Margin="0,0,0,16" />
 
                 <TextBlock Text="SCANNING" Style="{StaticResource App.Type.Section}" />

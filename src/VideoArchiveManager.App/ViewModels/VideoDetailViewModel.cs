@@ -44,6 +44,12 @@ public partial class VideoDetailViewModel : ObservableObject
         _settings = settings;
         _reverseGeocoder = reverseGeocoder;
         _srtReader = srtReader;
+
+        // Seed the live toggle from the persisted setting so the strip starts
+        // in the user's last-chosen state. Assigning the backing field directly
+        // (rather than the property) avoids the change handler firing a
+        // redundant save during construction.
+        _showTelemetryOverlay = settings.Current.ShowPlayerTelemetry;
     }
 
     [ObservableProperty]
@@ -53,6 +59,7 @@ public partial class VideoDetailViewModel : ObservableObject
     private Uri? _mediaSource;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsTelemetryStripVisible))]
     private bool _isPlayerVisible;
 
     // DJI flight track for the selected clip, read lazily from a sibling
@@ -68,6 +75,63 @@ public partial class VideoDetailViewModel : ObservableObject
     // the previous parse finished, so a slow read for an earlier clip can't
     // land its track on the clip the user has since moved to.
     private CancellationTokenSource? _flightPathCts;
+
+    // Time-indexed DJI telemetry for the clip being played, parsed from the
+    // sibling ".SRT" companion when playback starts. The player's 250ms tick
+    // calls UpdateTelemetryForPosition to pick the sample matching the current
+    // position and surface it through CurrentTelemetry. Held as an array so the
+    // per-tick binary search over it is allocation-free.
+    private DjiTelemetrySample[]? _telemetryTrack;
+
+    private CancellationTokenSource? _telemetryCts;
+
+    // True once a non-empty telemetry track has been loaded for the current
+    // clip; gates both the strip and its inline toggle so neither appears for
+    // clips without DJI telemetry.
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsTelemetryStripVisible))]
+    private bool _hasTelemetry;
+
+    // The telemetry frame matching the current playback position. All the
+    // formatted chip strings below derive from it, so changing it refreshes the
+    // whole strip in one notification batch.
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(TelemetryIso))]
+    [NotifyPropertyChangedFor(nameof(TelemetryShutter))]
+    [NotifyPropertyChangedFor(nameof(TelemetryAperture))]
+    [NotifyPropertyChangedFor(nameof(TelemetryFocalLength))]
+    [NotifyPropertyChangedFor(nameof(TelemetryAltitude))]
+    [NotifyPropertyChangedFor(nameof(TelemetryGps))]
+    private DjiTelemetrySample? _currentTelemetry;
+
+    // User toggle for the strip, mirrored to AppSettings.ShowPlayerTelemetry so
+    // the choice persists across restarts (see OnShowTelemetryOverlayChanged).
+    // Initialised from settings in the constructor.
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsTelemetryStripVisible))]
+    private bool _showTelemetryOverlay;
+
+    public bool IsTelemetryStripVisible => IsPlayerVisible && HasTelemetry && ShowTelemetryOverlay;
+
+    public string? TelemetryIso =>
+        CurrentTelemetry?.Iso is { } iso ? iso.ToString(CultureInfo.InvariantCulture) : null;
+
+    public string? TelemetryShutter =>
+        string.IsNullOrWhiteSpace(CurrentTelemetry?.Shutter) ? null : CurrentTelemetry!.Value.Shutter;
+
+    public string? TelemetryAperture =>
+        CurrentTelemetry?.FNumber is { } f ? $"f/{f.ToString("0.0", CultureInfo.InvariantCulture)}" : null;
+
+    public string? TelemetryFocalLength =>
+        CurrentTelemetry?.FocalLength is { } fl ? $"{fl.ToString("0.#", CultureInfo.InvariantCulture)} mm" : null;
+
+    public string? TelemetryAltitude =>
+        CurrentTelemetry?.RelativeAltitude is { } alt ? $"{alt.ToString("0.0", CultureInfo.InvariantCulture)} m" : null;
+
+    public string? TelemetryGps =>
+        CurrentTelemetry is { Latitude: { } lat, Longitude: { } lon }
+            ? $"{lat.ToString("0.00000", CultureInfo.InvariantCulture)}, {lon.ToString("0.00000", CultureInfo.InvariantCulture)}"
+            : null;
 
     // True when PlayInApp substituted a DaVinci-style proxy for the hero
     // clip's MediaSource. Surfaces a "PROXY" badge in the player toolbar
@@ -190,6 +254,10 @@ public partial class VideoDetailViewModel : ObservableObject
         _flightPathCts = null;
         FlightPath = null;
 
+        // Drop any telemetry track from the previous clip immediately (the
+        // fresh one is loaded lazily on PlayInApp, not here).
+        ResetTelemetry();
+
         if (item is null)
         {
             Notes = null;
@@ -257,6 +325,108 @@ public partial class VideoDetailViewModel : ObservableObject
             // Defensive: never let a telemetry-read failure surface to the UI.
         }
     }
+
+    // Parses the clip's sibling DJI ".SRT" into a time-indexed telemetry track
+    // for the player overlay. Kicked off from PlayInApp (not selection) so we
+    // only pay the full-file parse when the user actually opens the player, and
+    // guarded against a since-changed selection the same way LoadFlightPathAsync
+    // is. Reads from the *original* clip path (Current.FilePath) because the
+    // SRT sits next to the source, not next to any proxy we may be playing.
+    private async Task LoadTelemetryTrackAsync(VideoItemViewModel item)
+    {
+        var cts = new CancellationTokenSource();
+        _telemetryCts = cts;
+        try
+        {
+            var track = await _srtReader
+                .TryReadTelemetryTrackAsync(item.FilePath, cancellationToken: cts.Token)
+                .ConfigureAwait(true);
+
+            if (cts.IsCancellationRequested) return;
+            if (!ReferenceEquals(Current, item)) return;
+            if (track is null || track.Count == 0) return;
+
+            _telemetryTrack = track as DjiTelemetrySample[] ?? track.ToArray();
+            HasTelemetry = true;
+
+            // Prime the readout with the first frame so the strip shows content
+            // immediately instead of a blank bar until the first position tick.
+            CurrentTelemetry = _telemetryTrack[0];
+        }
+        catch (OperationCanceledException)
+        {
+            // Superseded by a newer selection; nothing to do.
+        }
+        catch
+        {
+            // Defensive: a missing / unreadable / non-DJI SRT just leaves the
+            // overlay hidden.
+        }
+    }
+
+    // Cancels any in-flight telemetry read and clears the loaded track + live
+    // sample. Called whenever the played clip changes or the player closes so a
+    // stale readout can't linger over a different clip.
+    private void ResetTelemetry()
+    {
+        _telemetryCts?.Cancel();
+        _telemetryCts?.Dispose();
+        _telemetryCts = null;
+        _telemetryTrack = null;
+        HasTelemetry = false;
+        CurrentTelemetry = null;
+    }
+
+    // Picks the telemetry sample whose [Start, End) window contains the given
+    // playback position and publishes it through CurrentTelemetry. Called from
+    // the player's position tick (both the mpv and FFME paths). Cheap: a binary
+    // search over the sorted track, and a no-op when the matched sample hasn't
+    // changed since the last tick.
+    public void UpdateTelemetryForPosition(TimeSpan position)
+    {
+        var track = _telemetryTrack;
+        if (track is null || track.Length == 0) return;
+
+        // Find the last cue whose Start is <= position.
+        int lo = 0, hi = track.Length - 1, idx = 0;
+        while (lo <= hi)
+        {
+            int mid = (lo + hi) >> 1;
+            if (track[mid].Start <= position)
+            {
+                idx = mid;
+                lo = mid + 1;
+            }
+            else
+            {
+                hi = mid - 1;
+            }
+        }
+
+        var match = track[idx];
+
+        // Before the first cue starts there's no valid sample yet.
+        if (position < match.Start)
+        {
+            if (CurrentTelemetry is not null) CurrentTelemetry = null;
+            return;
+        }
+
+        if (CurrentTelemetry is { } cur && cur.Start == match.Start) return;
+        CurrentTelemetry = match;
+    }
+
+    // Persist the live toggle to settings (fire-and-forget) so the player's
+    // inline show/hide choice survives a restart and stays in sync with the
+    // Settings-window checkbox.
+    partial void OnShowTelemetryOverlayChanged(bool value)
+    {
+        _settings.Current.ShowPlayerTelemetry = value;
+        _ = _settings.SaveAsync(_settings.Current);
+    }
+
+    [RelayCommand]
+    private void ToggleTelemetryOverlay() => ShowTelemetryOverlay = !ShowTelemetryOverlay;
 
     // Reloads the in-memory tag catalog used by the AutoSuggestBox.
     // Public so the host (MainViewModel) can call it after BulkEdit,
@@ -412,6 +582,12 @@ public partial class VideoDetailViewModel : ObservableObject
         IsPlayingProxy = activeProxy is not null;
         MediaSource = new Uri(sourcePath, UriKind.Absolute);
         IsPlayerVisible = true;
+
+        // Lazily parse the DJI telemetry track for the player overlay now that
+        // we're actually opening the player. Fire-and-forget against the
+        // original clip path (the SRT lives next to the source, not the proxy).
+        ResetTelemetry();
+        _ = LoadTelemetryTrackAsync(Current);
     }
 
     [RelayCommand]
@@ -421,6 +597,7 @@ public partial class VideoDetailViewModel : ObservableObject
         ActiveProxyPath = null;
         IsPlayingProxy = false;
         IsPlayerVisible = false;
+        ResetTelemetry();
     }
 
     [RelayCommand]

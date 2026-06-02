@@ -30,6 +30,48 @@ public sealed class DjiSrtTelemetryReader : IDjiSrtTelemetryReader
         @"\[rel_alt:\s*(?<alt>-?\d+(?:\.\d+)?)",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
+    // Matches the absolute-altitude half of the same DJI bracket
+    // ("… abs_alt: 47.605]"), surfaced alongside rel_alt in the player readout.
+    private static readonly Regex AbsAltPattern = new(
+        @"abs_alt:\s*(?<alt>-?\d+(?:\.\d+)?)",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+    // Camera-exposure brackets DJI writes per frame, e.g.
+    // "[iso: 100] [shutter: 1/2000.0] [fnum: 1.7] [ev: 0] [focal_len: 24.00]".
+    // Brackets are optional / labels are case-insensitive so we still parse the
+    // handful of older firmware layouts that drop the surrounding "[ ]".
+    private static readonly Regex IsoPattern = new(
+        @"iso:\s*(?<v>\d+)",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+
+    private static readonly Regex ShutterPattern = new(
+        @"shutter:\s*(?<v>[\d./]+)",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+
+    private static readonly Regex FnumPattern = new(
+        @"fnum:\s*(?<v>\d+(?:\.\d+)?)",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+
+    private static readonly Regex EvPattern = new(
+        @"ev:\s*(?<v>-?\d+(?:\.\d+)?)",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+
+    private static readonly Regex FocalPattern = new(
+        @"focal_len:\s*(?<v>\d+(?:\.\d+)?)",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+
+    // SubRip cue timing line: "00:00:01,033 --> 00:00:01,066" (comma or dot
+    // decimal separator). Only the start / end are captured.
+    private static readonly Regex CueTimePattern = new(
+        @"(?<sh>\d+):(?<sm>\d+):(?<ss>\d+)[,.](?<sms>\d+)\s*-->\s*(?<eh>\d+):(?<em>\d+):(?<es>\d+)[,.](?<ems>\d+)",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+    // Strips the "<font …>" / "</font>" wrappers DJI sometimes puts around the
+    // telemetry text so the field regexes see clean content.
+    private static readonly Regex FontTagPattern = new(
+        @"</?font[^>]*>",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+
     // 1e-6 ≈ 0.1 m at the equator — anything smaller is "still at zero".
     private const double NearZero = 1e-6;
 
@@ -143,6 +185,173 @@ public sealed class DjiSrtTelemetryReader : IDjiSrtTelemetryReader
         }
 
         return Downsample(raw, maxPoints);
+    }
+
+    public async Task<IReadOnlyList<DjiTelemetrySample>?> TryReadTelemetryTrackAsync(
+        string videoPath,
+        int maxSamples = 200_000,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(videoPath)) return null;
+        if (maxSamples < 1) maxSamples = 1;
+
+        var srtPath = TryResolveCompanion(videoPath);
+        if (srtPath is null) return null;
+
+        var samples = new List<DjiTelemetrySample>();
+        try
+        {
+            using var stream = new FileStream(
+                srtPath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read,
+                bufferSize: 8192,
+                options: FileOptions.SequentialScan | FileOptions.Asynchronous);
+            using var reader = new StreamReader(stream);
+
+            // Parse the SRT one cue at a time. A cue is "<index>\n<time -->
+            // time>\n<text…>\n\n"; we treat any line carrying "-->" as the cue
+            // boundary, then accumulate following non-blank lines as the text
+            // payload until the blank-line separator (or EOF). This is tolerant
+            // of the index line being absent / reordered, which some exporters do.
+            TimeSpan? start = null;
+            TimeSpan? end = null;
+            var text = new System.Text.StringBuilder();
+
+            string? line;
+            while ((line = await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false)) is not null)
+            {
+                var timeMatch = CueTimePattern.Match(line);
+                if (timeMatch.Success)
+                {
+                    // A new timing line starts a new cue — flush the one we were
+                    // building (if it had both a window and some text).
+                    FlushCue(samples, start, end, text);
+                    start = ParseCueTime(timeMatch, "sh", "sm", "ss", "sms");
+                    end = ParseCueTime(timeMatch, "eh", "em", "es", "ems");
+                    text.Clear();
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(line))
+                {
+                    FlushCue(samples, start, end, text);
+                    start = end = null;
+                    text.Clear();
+                    continue;
+                }
+
+                // Anything that isn't a timing line, a blank separator, or a
+                // bare numeric index line is telemetry text for the open cue.
+                if (start is not null && !IsIndexLine(line))
+                {
+                    if (text.Length > 0) text.Append(' ');
+                    text.Append(line);
+                }
+
+                if (samples.Count >= maxSamples) break;
+            }
+
+            // Flush a trailing cue with no terminating blank line (EOF).
+            FlushCue(samples, start, end, text);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogDebug(ex, "DJI SRT telemetry parse failed for {Path}", srtPath);
+            return null;
+        }
+
+        return samples.Count > 0 ? samples : null;
+    }
+
+    // Builds a DjiTelemetrySample from an accumulated cue and appends it when it
+    // carries a valid time window and at least one parseable telemetry field.
+    private static void FlushCue(
+        List<DjiTelemetrySample> samples,
+        TimeSpan? start,
+        TimeSpan? end,
+        System.Text.StringBuilder text)
+    {
+        if (start is null || end is null || text.Length == 0) return;
+
+        var payload = FontTagPattern.Replace(text.ToString(), string.Empty);
+
+        var sample = new DjiTelemetrySample(
+            Start: start.Value,
+            End: end.Value,
+            Iso: TryParseInt(IsoPattern, payload),
+            Shutter: TryParseString(ShutterPattern, payload),
+            FNumber: TryParseDouble(FnumPattern, payload),
+            Ev: TryParseDouble(EvPattern, payload),
+            FocalLength: TryParseDouble(FocalPattern, payload),
+            RelativeAltitude: TryParseRelAlt(payload),
+            AbsoluteAltitude: TryParseDouble(AbsAltPattern, payload),
+            Latitude: TryParseLatLon(payload, out var lat, out _) ? lat : null,
+            Longitude: TryParseLatLon(payload, out _, out var lon) ? lon : null);
+
+        // Skip cues that parsed nothing useful (e.g. a stray text block).
+        if (sample is { Iso: null, Shutter: null, FNumber: null, Ev: null,
+                FocalLength: null, RelativeAltitude: null, AbsoluteAltitude: null,
+                Latitude: null, Longitude: null })
+        {
+            return;
+        }
+
+        samples.Add(sample);
+    }
+
+    private static bool IsIndexLine(string line)
+    {
+        var trimmed = line.Trim();
+        if (trimmed.Length == 0) return false;
+        foreach (var c in trimmed)
+        {
+            if (!char.IsDigit(c)) return false;
+        }
+        return true;
+    }
+
+    private static TimeSpan ParseCueTime(Match m, string h, string min, string s, string ms)
+    {
+        var hours = int.Parse(m.Groups[h].Value, CultureInfo.InvariantCulture);
+        var minutes = int.Parse(m.Groups[min].Value, CultureInfo.InvariantCulture);
+        var seconds = int.Parse(m.Groups[s].Value, CultureInfo.InvariantCulture);
+        // SubRip uses 3-digit milliseconds; be defensive about other widths.
+        var millisRaw = m.Groups[ms].Value;
+        var millis = int.Parse(millisRaw, CultureInfo.InvariantCulture);
+        if (millisRaw.Length == 2) millis *= 10;
+        else if (millisRaw.Length == 1) millis *= 100;
+        else if (millisRaw.Length > 3) millis /= (int)Math.Pow(10, millisRaw.Length - 3);
+        return new TimeSpan(0, hours, minutes, seconds, millis);
+    }
+
+    private static int? TryParseInt(Regex pattern, string text)
+    {
+        var m = pattern.Match(text);
+        return m.Success && int.TryParse(m.Groups["v"].Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var v)
+            ? v
+            : null;
+    }
+
+    private static double? TryParseDouble(Regex pattern, string text)
+    {
+        var m = pattern.Match(text);
+        return m.Success && double.TryParse(m.Groups[m.Groups["v"].Success ? "v" : "alt"].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var v)
+            ? v
+            : null;
+    }
+
+    private static string? TryParseString(Regex pattern, string text)
+    {
+        var m = pattern.Match(text);
+        if (!m.Success) return null;
+        var value = m.Groups["v"].Value.Trim();
+        return value.Length > 0 ? value : null;
     }
 
     // Uniformly thins the points down to <= maxPoints while always preserving
