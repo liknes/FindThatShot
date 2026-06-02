@@ -126,7 +126,12 @@ public partial class MainWindow : Window
         }
     }
 
-    private async void Detail_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    // Monotonic ticket for coalescing player-sync requests, plus a gate that
+    // serializes the actual FFME commands. See Detail_PropertyChanged.
+    private int _playerSyncRequest;
+    private readonly SemaphoreSlim _playerSyncGate = new(1, 1);
+
+    private void Detail_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (sender is not VideoDetailViewModel detail) return;
 
@@ -142,8 +147,35 @@ public partial class MainWindow : Window
             return;
         }
 
+        // Prev/next navigation fires a burst of these in one synchronous beat:
+        // ClosePlayer nulls MediaSource + clears IsPlayerVisible, then PlayInApp
+        // sets the new MediaSource + IsPlayerVisible. Acting on each one
+        // immediately races a "close" against the following "open" on FFME's
+        // async command queue and the player can settle closed on a black
+        // frame. Instead we stamp each change with a ticket and defer the work
+        // to Background priority, so the whole synchronous burst lands first
+        // and only the final ticket actually drives the player to its
+        // now-current desired state.
+        var request = ++_playerSyncRequest;
+        _ = Dispatcher.BeginInvoke(
+            System.Windows.Threading.DispatcherPriority.Background,
+            new Action(() => _ = SyncPlayerToDetailAsync(detail, request)));
+    }
+
+    private async Task SyncPlayerToDetailAsync(VideoDetailViewModel detail, int request)
+    {
+        // Superseded by a newer change that arrived in the same burst — skip.
+        if (request != _playerSyncRequest) return;
+
+        // Serialize media commands so a still-running Open/Close from a prior
+        // (rapid) navigation can't interleave with this one.
+        await _playerSyncGate.WaitAsync();
         try
         {
+            // Re-check after acquiring the gate: a newer request may have
+            // queued while we waited, in which case let that one win.
+            if (request != _playerSyncRequest) return;
+
             if (detail.IsPlayerVisible && detail.MediaSource is not null)
             {
                 // Open() handles tear-down of any previously-loaded media
@@ -171,6 +203,10 @@ public partial class MainWindow : Window
         {
             PlayerCurrentTimeText.Text = "error";
             PlayerDurationText.Text = ex.Message.Length > 20 ? ex.Message[..20] : ex.Message;
+        }
+        finally
+        {
+            _playerSyncGate.Release();
         }
     }
 
@@ -532,16 +568,38 @@ public partial class MainWindow : Window
         SearchBox.SelectAll();
     }
 
-    // Window-level shortcut: Space toggles play/pause when review mode is open
-    // AND focus is not inside a text input (so typing tag names / notes still works).
+    // Window-level shortcuts active only while review mode is open AND focus is
+    // not inside a text input (so typing tag names / notes still works):
+    //   Space        toggle play / pause
+    //   Left / Right  jump to the previous / next clip and keep playing
     private async void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
         if (!_viewModel.Detail.IsPlayerVisible) return;
         if (!App.IsPlayerAvailable) return;
-        if (e.Key != Key.Space) return;
+        if (e.Key is not (Key.Space or Key.Left or Key.Right)) return;
 
         var focused = Keyboard.FocusedElement;
         if (focused is TextBoxBase or PasswordBox or ComboBox) return;
+
+        if (e.Key == Key.Left)
+        {
+            if (_viewModel.PlayPreviousCommand.CanExecute(null))
+            {
+                _viewModel.PlayPreviousCommand.Execute(null);
+            }
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.Right)
+        {
+            if (_viewModel.PlayNextCommand.CanExecute(null))
+            {
+                _viewModel.PlayNextCommand.Execute(null);
+            }
+            e.Handled = true;
+            return;
+        }
 
         try
         {

@@ -936,24 +936,34 @@
                                                Foreground="{DynamicResource App.Accent}" />
                                 </Border>
                                 <WrapPanel HorizontalAlignment="Center" ItemHeight="40">
-                                    <Button x:Name="PlayPauseButton"
-                                            Content="Pause"
-                                            MinWidth="110"
-                                            Margin="0,4,0,4"
-                                            Click="PlayerPlayPause_Click"
-                                            Style="{StaticResource App.Button.Primary}"
-                                            helpers:Theme.Icon="{StaticResource Icon.Pause}"
-                                            ToolTip="Toggle play / pause (Space)" />
+                                    <Button Margin="0,4,0,4"
+                                            Command="{Binding DataContext.PlayPreviousCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            Style="{StaticResource App.Button.IconOnly}"
+                                            helpers:Theme.Icon="{StaticResource Icon.Previous}"
+                                            ToolTip="Play previous clip" />
                                     <Button Margin="6,4,0,4"
                                             Click="PlayerSkipBack_Click"
                                             Style="{StaticResource App.Button.IconOnly}"
                                             helpers:Theme.Icon="{StaticResource Icon.SkipBack}"
                                             ToolTip="Skip back 5 seconds" />
+                                    <Button x:Name="PlayPauseButton"
+                                            Content="Pause"
+                                            MinWidth="110"
+                                            Margin="6,4,0,4"
+                                            Click="PlayerPlayPause_Click"
+                                            Style="{StaticResource App.Button.Primary}"
+                                            helpers:Theme.Icon="{StaticResource Icon.Pause}"
+                                            ToolTip="Toggle play / pause (Space)" />
                                     <Button Margin="6,4,0,4"
                                             Click="PlayerSkipForward_Click"
                                             Style="{StaticResource App.Button.IconOnly}"
                                             helpers:Theme.Icon="{StaticResource Icon.SkipForward}"
                                             ToolTip="Skip forward 5 seconds" />
+                                    <Button Margin="6,4,0,4"
+                                            Command="{Binding DataContext.PlayNextCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            Style="{StaticResource App.Button.IconOnly}"
+                                            helpers:Theme.Icon="{StaticResource Icon.Next}"
+                                            ToolTip="Play next clip" />
                                     <Button Content="Stop" MinWidth="80" Margin="6,4,0,4"
                                             Click="PlayerStop_Click"
                                             Style="{StaticResource App.Button.Secondary}"

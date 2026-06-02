@@ -19,6 +19,8 @@
     <sys:String x:Key="Icon.Stop">&#xE71A;</sys:String>
     <sys:String x:Key="Icon.SkipBack">&#xEB9E;</sys:String>
     <sys:String x:Key="Icon.SkipForward">&#xEB9D;</sys:String>
+    <sys:String x:Key="Icon.Previous">&#xE892;</sys:String>
+    <sys:String x:Key="Icon.Next">&#xE893;</sys:String>
 
     <!-- Catalog / files -->
     <sys:String x:Key="Icon.Folder">&#xE8B7;</sys:String>

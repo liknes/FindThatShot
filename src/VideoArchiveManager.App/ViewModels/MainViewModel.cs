@@ -93,6 +93,15 @@ public partial class MainViewModel : ObservableObject
         // up after an app restart or a re-scan because AllTags was only
         // populated by ReloadFiltersAsync.
         Detail.TagCatalogChanged += Detail_TagCatalogChanged;
+
+        // The previous/next clip buttons enable/disable based on where the
+        // current clip sits in the catalog list, so re-evaluate them whenever
+        // the list is rebuilt (search / filter / scan).
+        Videos.CollectionChanged += (_, _) =>
+        {
+            PlayPreviousCommand.NotifyCanExecuteChanged();
+            PlayNextCommand.NotifyCanExecuteChanged();
+        };
     }
 
     // Live indicator for the bottom status bar; reflects the current
@@ -199,6 +208,8 @@ public partial class MainViewModel : ObservableObject
     private int _totalCount;
 
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(PlayPreviousCommand))]
+    [NotifyCanExecuteChangedFor(nameof(PlayNextCommand))]
     private VideoItemViewModel? _selectedVideo;
 
     // Sidebar panel collapse state (Lightroom-style). Initialised from the
@@ -291,6 +302,48 @@ public partial class MainViewModel : ObservableObject
     partial void OnSelectedVideoChanged(VideoItemViewModel? value)
     {
         _ = Detail.LoadAsync(value);
+    }
+
+    // In-app player "previous / next clip" navigation. Steps the catalog
+    // selection one card in the requested direction and immediately starts
+    // in-app playback on it — the same action as the sidebar "Play in app"
+    // button, so the player simply swaps to the adjacent clip. Bounds are
+    // gated by the Can* predicates so the buttons disable at the list edges.
+    private bool CanPlayPrevious()
+    {
+        if (!App.IsPlayerAvailable || SelectedVideo is null) return false;
+        return Videos.IndexOf(SelectedVideo) > 0;
+    }
+
+    private bool CanPlayNext()
+    {
+        if (!App.IsPlayerAvailable || SelectedVideo is null) return false;
+        var index = Videos.IndexOf(SelectedVideo);
+        return index >= 0 && index < Videos.Count - 1;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanPlayPrevious))]
+    private void PlayPrevious() => PlayRelative(-1);
+
+    [RelayCommand(CanExecute = nameof(CanPlayNext))]
+    private void PlayNext() => PlayRelative(1);
+
+    private void PlayRelative(int delta)
+    {
+        if (SelectedVideo is null) return;
+
+        var index = Videos.IndexOf(SelectedVideo);
+        if (index < 0) return;
+
+        var target = index + delta;
+        if (target < 0 || target >= Videos.Count) return;
+
+        // Selecting the clip runs Detail.LoadAsync, whose synchronous prologue
+        // closes the player and sets Detail.Current to the new clip before the
+        // first await — so PlayInApp below sees the right Current and the
+        // player swaps cleanly to the adjacent source.
+        SelectedVideo = Videos[target];
+        Detail.PlayInAppCommand.Execute(null);
     }
 
     // When true, filter setters that would normally trigger a re-search stay
