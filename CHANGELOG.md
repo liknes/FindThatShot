@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+## [0.9.4] - 2026-06-02
+
 ### Added
 
 - **New "Find That Shot" logo and app icon.** Replaced the old placeholder branding with a custom logo built around a search-lens with a play triangle and a dashed drone flight path to a waypoint. The Windows app icon — `Assets/AppIcon.ico` (16/32/48/256 px) and `Assets/AppIcon.png` — is a bold, dark rounded-square badge (amber lens + white play/waypoint) tuned to stay legible down to 16 px in the taskbar and title bars (`<ApplicationIcon>`). A transparent horizontal lockup of the mark plus the "Find That Shot" wordmark and the *Find. Tag. Review. Anywhere.* tagline was added as `Assets/LogoWordmark.png` and now heads the **splash screen** (replacing the small icon + text) and the **About window** (replacing the plain display heading). Assets were rasterized from the source SVGs via WPF's own renderer so the Segoe UI wordmark stays pixel-accurate, with no new runtime dependency.
@@ -275,7 +277,8 @@ First public release.
 
 - Responsive default window size; date pickers and the *Play externally* button are no longer clipped at common screen widths.
 
-[Unreleased]: https://github.com/liknes/FindThatShot/compare/v0.9.3...HEAD
+[Unreleased]: https://github.com/liknes/FindThatShot/compare/v0.9.4...HEAD
+[0.9.4]: https://github.com/liknes/FindThatShot/compare/v0.9.3...v0.9.4
 [0.9.3]: https://github.com/liknes/FindThatShot/compare/v0.9.2...v0.9.3
 [0.9.2]: https://github.com/liknes/FindThatShot/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/liknes/FindThatShot/compare/v0.9.0...v0.9.1
