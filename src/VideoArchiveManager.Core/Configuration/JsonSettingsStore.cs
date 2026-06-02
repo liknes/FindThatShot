@@ -89,6 +89,7 @@ public class JsonSettingsStore : ISettingsStore
                 SidebarFoldersExpanded = loaded.SidebarFoldersExpanded,
                 SidebarTagsExpanded = loaded.SidebarTagsExpanded,
                 SidebarCamerasExpanded = loaded.SidebarCamerasExpanded,
+                SidebarDateExpanded = loaded.SidebarDateExpanded,
                 SupportedExtensions = DedupePreserveOrder(
                     loaded.SupportedExtensions is { Count: > 0 } ? loaded.SupportedExtensions : baseline.SupportedExtensions),
                 ExcludedFolderNames = DedupePreserveOrder(

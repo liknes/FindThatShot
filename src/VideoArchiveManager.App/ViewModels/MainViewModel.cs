@@ -226,9 +226,13 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private bool _isCamerasPanelExpanded = true;
 
+    [ObservableProperty]
+    private bool _isDatePanelExpanded = true;
+
     partial void OnIsFoldersPanelExpandedChanged(bool value) => PersistSidebarPanelState();
     partial void OnIsTagsPanelExpandedChanged(bool value) => PersistSidebarPanelState();
     partial void OnIsCamerasPanelExpandedChanged(bool value) => PersistSidebarPanelState();
+    partial void OnIsDatePanelExpandedChanged(bool value) => PersistSidebarPanelState();
 
     private void PersistSidebarPanelState()
     {
@@ -241,6 +245,7 @@ public partial class MainViewModel : ObservableObject
         s.SidebarFoldersExpanded = IsFoldersPanelExpanded;
         s.SidebarTagsExpanded = IsTagsPanelExpanded;
         s.SidebarCamerasExpanded = IsCamerasPanelExpanded;
+        s.SidebarDateExpanded = IsDatePanelExpanded;
         _ = SaveSettingsSilentlyAsync(s);
     }
 
@@ -258,6 +263,7 @@ public partial class MainViewModel : ObservableObject
             IsFoldersPanelExpanded = s.SidebarFoldersExpanded;
             IsTagsPanelExpanded = s.SidebarTagsExpanded;
             IsCamerasPanelExpanded = s.SidebarCamerasExpanded;
+            IsDatePanelExpanded = s.SidebarDateExpanded;
         }
         finally
         {

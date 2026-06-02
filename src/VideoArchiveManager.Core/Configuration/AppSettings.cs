@@ -68,6 +68,8 @@ public class AppSettings
 
     public bool SidebarCamerasExpanded { get; set; } = true;
 
+    public bool SidebarDateExpanded { get; set; } = true;
+
     public IReadOnlyList<string> SupportedExtensions { get; set; } = new[]
     {
         ".mp4", ".mov", ".mxf", ".avi", ".mkv"

@@ -21,12 +21,18 @@
     <Color x:Key="App.Background.Highest.Color">#FF26262C</Color>
     <Color x:Key="App.Background.Inset.Color">#FF101013</Color>
     <Color x:Key="App.Background.Hover.Color">#FF2A2A30</Color>
+    <!-- Near-black chrome for the top toolbar and bottom status bar. Deliberately
+         DARKER than the inset input fill (#11151B) so inputs read as the lighter,
+         distinct element sitting on the chrome (matches the reference mockup,
+         whose search bar sat on a near-black band). -->
+    <Color x:Key="App.Chrome.Background.Color">#FF0A0D11</Color>
 
     <SolidColorBrush x:Key="App.Background.Base" Color="{StaticResource App.Background.Base.Color}" />
     <SolidColorBrush x:Key="App.Background.Elevated" Color="{StaticResource App.Background.Elevated.Color}" />
     <SolidColorBrush x:Key="App.Background.Highest" Color="{StaticResource App.Background.Highest.Color}" />
     <SolidColorBrush x:Key="App.Background.Inset" Color="{StaticResource App.Background.Inset.Color}" />
     <SolidColorBrush x:Key="App.Background.Hover" Color="{StaticResource App.Background.Hover.Color}" />
+    <SolidColorBrush x:Key="App.Chrome.Background" Color="{StaticResource App.Chrome.Background.Color}" />
 
     <!-- Borders -->
     <Color x:Key="App.Border.Subtle.Color">#FF2E2E36</Color>
@@ -79,7 +85,10 @@
         references in MainWindow.xaml keep working. Must be merged AFTER
         XamlControlsResources in App.xaml or these get overwritten.
     -->
-    <SolidColorBrush x:Key="SystemControlBackgroundChromeMediumLowBrush" Color="{StaticResource App.Background.Elevated.Color}" />
+    <!-- Top toolbar background. Repointed to near-black chrome so the inset
+         input fields stand out as the lighter element (was Elevated, which
+         was lighter than the fields and made them disappear). -->
+    <SolidColorBrush x:Key="SystemControlBackgroundChromeMediumLowBrush" Color="{StaticResource App.Chrome.Background.Color}" />
     <SolidColorBrush x:Key="SystemControlBackgroundChromeMediumBrush" Color="{StaticResource App.Background.Highest.Color}" />
     <SolidColorBrush x:Key="SystemControlBackgroundChromeBlackHighBrush" Color="{StaticResource App.Background.Base.Color}" />
     <SolidColorBrush x:Key="SystemControlBackgroundBaseLowBrush" Color="{StaticResource App.Background.Highest.Color}" />
@@ -108,5 +117,71 @@
 
     <SolidColorBrush x:Key="SystemControlHighlightAccentBrush" Color="{StaticResource App.Accent.Color}" />
     <SolidColorBrush x:Key="SystemControlBackgroundAccentBrush" Color="{StaticResource App.Accent.Color}" />
+
+    <!--
+        Input fields (TextBox / ComboBox / DatePicker / AutoSuggest).
+
+        Sampled from the reference mockup: inputs read as an INSET surface —
+        a dark, slightly cool-tinted fill that sits BELOW the surrounding
+        chrome rather than ModernWpfUI's default raised/warm fill. Focus
+        keeps the warm-amber accent so it stays on-brand. The override keys
+        below are ModernWpfUI's standard TextControl* / ComboBox* theme
+        brushes; defining them here (after XamlControlsResources) recolours
+        every input app-wide without restyling each control.
+    -->
+    <!--
+        Visibility note: the field fill (#11151B) is darker than the app's
+        chrome (~#1A1A1E+), so on its own it reads as a black hole. The border
+        is therefore LIGHTER than both the fill and the surrounding chrome so
+        the input is outlined as a distinct pill on every surface (toolbar,
+        sidebar, dialogs). In the reference mockup the field stood out only
+        because its bar was near-black; we get the same legibility here via
+        the border instead of darkening all the chrome.
+    -->
+    <Color x:Key="App.Input.Background.Color">#FF11151B</Color>
+    <Color x:Key="App.Input.Background.Hover.Color">#FF161B22</Color>
+    <Color x:Key="App.Input.Background.Focused.Color">#FF11151B</Color>
+    <Color x:Key="App.Input.Border.Color">#FF2E343D</Color>
+    <Color x:Key="App.Input.Border.Hover.Color">#FF3C4450</Color>
+    <Color x:Key="App.Input.Foreground.Color">#FFA4A7AB</Color>
+
+    <SolidColorBrush x:Key="App.Input.Background" Color="{StaticResource App.Input.Background.Color}" />
+    <SolidColorBrush x:Key="App.Input.Background.Hover" Color="{StaticResource App.Input.Background.Hover.Color}" />
+    <SolidColorBrush x:Key="App.Input.Background.Focused" Color="{StaticResource App.Input.Background.Focused.Color}" />
+    <SolidColorBrush x:Key="App.Input.Border" Color="{StaticResource App.Input.Border.Color}" />
+    <SolidColorBrush x:Key="App.Input.Border.Hover" Color="{StaticResource App.Input.Border.Hover.Color}" />
+    <SolidColorBrush x:Key="App.Input.Foreground" Color="{StaticResource App.Input.Foreground.Color}" />
+
+    <!-- TextBox / DatePicker (DatePickerTextBox derives from TextBox) -->
+    <SolidColorBrush x:Key="TextControlBackground" Color="{StaticResource App.Input.Background.Color}" />
+    <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="{StaticResource App.Input.Background.Hover.Color}" />
+    <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="{StaticResource App.Input.Background.Focused.Color}" />
+    <SolidColorBrush x:Key="TextControlBackgroundDisabled" Color="{StaticResource App.Background.Inset.Color}" />
+    <SolidColorBrush x:Key="TextControlBorderBrush" Color="{StaticResource App.Input.Border.Color}" />
+    <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="{StaticResource App.Input.Border.Hover.Color}" />
+    <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="{StaticResource App.Accent.Color}" />
+    <SolidColorBrush x:Key="TextControlBorderBrushDisabled" Color="{StaticResource App.Border.Subtle.Color}" />
+    <SolidColorBrush x:Key="TextControlForeground" Color="{StaticResource App.Input.Foreground.Color}" />
+    <SolidColorBrush x:Key="TextControlForegroundPointerOver" Color="{StaticResource App.Input.Foreground.Color}" />
+    <SolidColorBrush x:Key="TextControlForegroundFocused" Color="{StaticResource App.Input.Foreground.Color}" />
+    <SolidColorBrush x:Key="TextControlPlaceholderForeground" Color="{StaticResource App.Input.Foreground.Color}" />
+    <SolidColorBrush x:Key="TextControlPlaceholderForegroundPointerOver" Color="{StaticResource App.Input.Foreground.Color}" />
+    <SolidColorBrush x:Key="TextControlPlaceholderForegroundFocused" Color="{StaticResource App.Input.Foreground.Color}" />
+
+    <!-- ComboBox -->
+    <SolidColorBrush x:Key="ComboBoxBackground" Color="{StaticResource App.Input.Background.Color}" />
+    <SolidColorBrush x:Key="ComboBoxBackgroundPointerOver" Color="{StaticResource App.Input.Background.Hover.Color}" />
+    <SolidColorBrush x:Key="ComboBoxBackgroundPressed" Color="{StaticResource App.Input.Background.Focused.Color}" />
+    <SolidColorBrush x:Key="ComboBoxBackgroundDisabled" Color="{StaticResource App.Background.Inset.Color}" />
+    <SolidColorBrush x:Key="ComboBoxBackgroundFocused" Color="{StaticResource App.Input.Background.Focused.Color}" />
+    <SolidColorBrush x:Key="ComboBoxBorderBrush" Color="{StaticResource App.Input.Border.Color}" />
+    <SolidColorBrush x:Key="ComboBoxBorderBrushPointerOver" Color="{StaticResource App.Input.Border.Hover.Color}" />
+    <SolidColorBrush x:Key="ComboBoxBorderBrushPressed" Color="{StaticResource App.Input.Border.Hover.Color}" />
+    <SolidColorBrush x:Key="ComboBoxBorderBrushDisabled" Color="{StaticResource App.Border.Subtle.Color}" />
+    <SolidColorBrush x:Key="ComboBoxForeground" Color="{StaticResource App.Input.Foreground.Color}" />
+    <SolidColorBrush x:Key="ComboBoxForegroundPointerOver" Color="{StaticResource App.Input.Foreground.Color}" />
+    <SolidColorBrush x:Key="ComboBoxForegroundPressed" Color="{StaticResource App.Input.Foreground.Color}" />
+    <SolidColorBrush x:Key="ComboBoxForegroundFocused" Color="{StaticResource App.Input.Foreground.Color}" />
+    <SolidColorBrush x:Key="ComboBoxPlaceHolderForeground" Color="{StaticResource App.Input.Foreground.Color}" />
 
 </ResourceDictionary>

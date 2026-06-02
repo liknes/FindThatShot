@@ -20,7 +20,9 @@
         ui:TitleBar.Foreground="{DynamicResource App.Foreground.Primary}"
         ui:TitleBar.InactiveForeground="{DynamicResource App.Foreground.Tertiary}"
         ui:TitleBar.IsIconVisible="True"
-        PreviewKeyDown="Window_PreviewKeyDown">
+        PreviewKeyDown="Window_PreviewKeyDown"
+        Activated="Window_ActivationChanged"
+        Deactivated="Window_ActivationChanged">
     <Window.Resources>
         <ObjectDataProvider x:Key="StatusValues" MethodName="GetValues"
                             ObjectType="{x:Type sys:Enum}">
@@ -159,11 +161,17 @@
                     </MenuItem>
                 </Menu>
 
+                <!-- Top row is now "find" only: a single search box. The catalog
+                     ACTIONS (Scan, Start review session) live in the Catalog / View
+                     menus (and F5 / Ctrl+Shift+R), and the FILTERS (camera, date
+                     range, clear) live in the left sidebar — keeping this row
+                     uncluttered. The camera filter is the sidebar CAMERAS panel,
+                     so the old top-bar camera combo was redundant and dropped. -->
                 <WrapPanel Orientation="Horizontal"
                            VerticalAlignment="Center"
                            Margin="12,4,12,4">
                     <TextBox x:Name="SearchBox"
-                             Width="260"
+                             Width="360"
                              Margin="0,2,0,2"
                              FontSize="13"
                              Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
@@ -173,81 +181,6 @@
                             <KeyBinding Key="Enter" Command="{Binding SearchCommand}" />
                         </TextBox.InputBindings>
                     </TextBox>
-                    <Button Content="Search"
-                            Margin="6,2,0,2"
-                            Command="{Binding SearchCommand}"
-                            Style="{StaticResource App.Button.Primary}"
-                            helpers:Theme.Icon="{StaticResource Icon.Search}" />
-                    <Separator Margin="10,4" />
-                    <Button Content="Scan"
-                            Margin="0,2,0,2"
-                            Command="{Binding ScanCommand}"
-                            IsEnabled="{Binding IsScanning, Converter={StaticResource InverseBool}}"
-                            Style="{StaticResource App.Button.Secondary}"
-                            helpers:Theme.Icon="{StaticResource Icon.Sync}"
-                            ToolTip="Scan all root folders for new or changed videos (F5)" />
-                    <Button Content="Cancel scan"
-                            Margin="6,2,0,2"
-                            Command="{Binding CancelScanCommand}"
-                            Style="{StaticResource App.Button.Ghost}"
-                            helpers:Theme.Icon="{StaticResource Icon.Cancel}"
-                            Visibility="{Binding IsScanning, Converter={StaticResource BoolToVisibility}}" />
-                    <Separator Margin="10,4" />
-                    <!--
-                        HIDDEN: Status filter. The ViewModel property StatusFilter
-                        is still wired up; uncomment to bring it back.
-                    <ComboBox Width="150" Margin="0,2,0,2"
-                              ItemsSource="{Binding AvailableStatuses}"
-                              SelectedItem="{Binding StatusFilter}"
-                              ui:ControlHelper.PlaceholderText="Status" />
-                    -->
-                    <ComboBox Width="140"
-                              Margin="0,2,0,2"
-                              FontSize="13"
-                              ItemsSource="{Binding Cameras}"
-                              SelectedItem="{Binding CameraFilter}"
-                              ui:ControlHelper.PlaceholderText="Camera"
-                              IsEditable="True" />
-                    <!--
-                        HIDDEN: Tag dropdown. The left sidebar's Tags list serves
-                        this purpose and scales better. Uncomment to restore.
-                    <ComboBox Width="120" Margin="6,2,0,2"
-                              ItemsSource="{Binding AllTags}"
-                              SelectedItem="{Binding SelectedTagFilter}"
-                              DisplayMemberPath="Name"
-                              ui:ControlHelper.PlaceholderText="Tag" />
-                    -->
-                    <!--
-                        HIDDEN: Min rating filter (rating is usually managed in
-                        DaVinci / Lightroom / Bridge). Uncomment to restore.
-                    <StackPanel Orientation="Horizontal" Margin="10,2,0,2">
-                        <TextBlock Text="Min ★" VerticalAlignment="Center" Margin="0,0,4,0" />
-                        <ui:NumberBox Width="80" Minimum="0" Maximum="5"
-                                      Value="{Binding MinRatingFilter}" />
-                    </StackPanel>
-                    -->
-                    <DatePicker Margin="6,2,0,2"
-                                FontSize="13"
-                                CalendarStyle="{StaticResource App.Calendar}"
-                                SelectedDate="{Binding DateFrom}"
-                                ui:ControlHelper.PlaceholderText="From" />
-                    <DatePicker Margin="6,2,0,2"
-                                FontSize="13"
-                                CalendarStyle="{StaticResource App.Calendar}"
-                                SelectedDate="{Binding DateTo}"
-                                ui:ControlHelper.PlaceholderText="To" />
-                    <Button Margin="10,2,0,2"
-                            Content="Start review session"
-                            Command="{Binding StartReviewSessionCommand}"
-                            Style="{StaticResource App.Button.Primary}"
-                            helpers:Theme.Icon="{StaticResource Icon.Eye}"
-                            ToolTip="Clear all filters and show only unreviewed clips (no status set or no tags). Selects the first clip so you can start reviewing right away. (Ctrl+Shift+R)" />
-                    <Button Margin="6,2,0,2"
-                            Content="Clear filters"
-                            Command="{Binding ClearFiltersCommand}"
-                            Style="{StaticResource App.Button.Ghost}"
-                            helpers:Theme.Icon="{StaticResource Icon.Filter}"
-                            ToolTip="Reset search box, all filters, and date range (Ctrl+Shift+L)" />
                 </WrapPanel>
             </DockPanel>
         </Border>
@@ -291,9 +224,10 @@
                          maximize"). 
                        * All three collapsed → just headers stack at the
                          top, rest of the rail sits empty.
-                     The bottom row (Auto) holds the two general-view
-                     CheckBoxes; they always render at natural height
-                     regardless of what's expanded above.
+                     The two general view-mode toggles (Show only available
+                     files / Show only unreviewed) live in the View menu
+                     rather than the rail, to keep this surface purely the
+                     FOLDERS / TAGS / CAMERAS filter stack.
                      There's no outer ScrollViewer here on purpose —
                      star sizing inside a ScrollViewer is meaningless
                      (the ScrollViewer offers infinite vertical space, so
@@ -305,6 +239,11 @@
                         <RowDefinition Height="{Binding IsFoldersPanelExpanded, Converter={StaticResource BoolToStarOrAuto}}" />
                         <RowDefinition Height="{Binding IsTagsPanelExpanded, Converter={StaticResource BoolToStarOrAuto}}" />
                         <RowDefinition Height="{Binding IsCamerasPanelExpanded, Converter={StaticResource BoolToStarOrAuto}}" />
+                        <!-- DATE: Auto, not star — its content is just two pickers,
+                             so it sizes to fit and lets the list panels above keep
+                             the leftover height. -->
+                        <RowDefinition Height="Auto" />
+                        <!-- Clear filters action, pinned at the rail bottom. -->
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                         <!-- FOLDERS expander.
@@ -583,12 +522,7 @@
                         </Expander>
 
                         <!-- CAMERAS expander. Last sidebar panel; matches
-                             the FOLDERS / TAGS chrome. The two
-                             rail-bottom CheckBoxes (Show only available
-                             files / Show only unreviewed) are deliberately
-                             OUTSIDE every expander so they remain visible
-                             whatever the user has collapsed — they're
-                             general view modes, not section content. -->
+                             the FOLDERS / TAGS chrome. -->
                         <Expander Grid.Row="2"
                                   Style="{StaticResource App.Expander}"
                                   IsExpanded="{Binding IsCamerasPanelExpanded, Mode=TwoWay}">
@@ -618,22 +552,48 @@
                                      VerticalAlignment="Stretch" />
                         </Expander>
 
-                        <!-- General view-mode toggles. Always visible
-                             regardless of which sections are collapsed —
-                             they're orthogonal to the FOLDERS / TAGS /
-                             CAMERAS filters above. -->
-                        <StackPanel Grid.Row="3">
-                            <CheckBox Content="Show only available files"
-                                      IsChecked="{Binding ShowOnlyAvailable}"
-                                      FontSize="12"
-                                      Margin="0,12,0,0" />
+                        <!-- DATE expander. The From / To date-range filter moved
+                             here from the top toolbar — dates are a refining
+                             filter and belong with the other sidebar filters.
+                             Content is two stacked pickers, so this row is Auto
+                             (sizes to fit) rather than star. -->
+                        <Expander Grid.Row="3"
+                                  Style="{StaticResource App.Expander}"
+                                  IsExpanded="{Binding IsDatePanelExpanded, Mode=TwoWay}">
+                            <Expander.Header>
+                                <TextBlock Text="DATE"
+                                           Style="{StaticResource App.Type.Section}"
+                                           Margin="0" />
+                            </Expander.Header>
+                            <StackPanel>
+                                <DatePicker Margin="0,0,0,6"
+                                            FontSize="13"
+                                            HorizontalAlignment="Stretch"
+                                            HorizontalContentAlignment="Stretch"
+                                            CalendarStyle="{StaticResource App.Calendar}"
+                                            SelectedDate="{Binding DateFrom}"
+                                            ui:ControlHelper.PlaceholderText="From" />
+                                <DatePicker FontSize="13"
+                                            HorizontalAlignment="Stretch"
+                                            HorizontalContentAlignment="Stretch"
+                                            CalendarStyle="{StaticResource App.Calendar}"
+                                            SelectedDate="{Binding DateTo}"
+                                            ui:ControlHelper.PlaceholderText="To" />
+                            </StackPanel>
+                        </Expander>
 
-                            <CheckBox Content="Show only unreviewed"
-                                      IsChecked="{Binding OnlyUnreviewed}"
-                                      FontSize="12"
-                                      Margin="0,4,0,0"
-                                      ToolTip="Limit the catalog to clips that look untouched: still marked Unreviewed OR have no tags yet. Same signal used by the &quot;Start review session&quot; button." />
-                        </StackPanel>
+                        <!-- Clear filters: resets the search box, folder/tag/camera
+                             selection, and the date range. Pinned at the rail
+                             bottom beneath the filter stack it resets. Mirrors
+                             View → Clear all filters (Ctrl+Shift+L). -->
+                        <Button Grid.Row="4"
+                                Content="Clear filters"
+                                Margin="0,10,0,0"
+                                HorizontalAlignment="Stretch"
+                                Command="{Binding ClearFiltersCommand}"
+                                Style="{StaticResource App.Button.Ghost}"
+                                helpers:Theme.Icon="{StaticResource Icon.Filter}"
+                                ToolTip="Reset search box, all filters, and date range (Ctrl+Shift+L)" />
                     </Grid>
             </Border>
 
@@ -780,25 +740,11 @@
                                     </Border>
                                 </Grid>
                             </Border>
-                            <!-- Compact card metadata. Filename, status and rating
-                                 are intentionally omitted: filename is long and
-                                 decorative on a visual grid, while status and
-                                 rating live in the editor pane / are managed
-                                 externally (DaVinci, Lightroom, Bridge). -->
-                            <TextBlock Text="{Binding Resolution}"
-                                       Style="{StaticResource App.Type.BodySmall}"
-                                       Foreground="{DynamicResource App.Foreground.Primary}"
-                                       FontWeight="Medium"
-                                       Margin="2,8,2,0" />
-                            <TextBlock Text="{Binding Camera}"
-                                       Style="{StaticResource App.Type.BodySmall}"
-                                       Foreground="{DynamicResource App.Foreground.Secondary}"
-                                       TextTrimming="CharacterEllipsis"
-                                       Margin="2,2,2,0" />
-                            <TextBlock Text="{Binding TagSummary}"
-                                       Style="{StaticResource App.Type.Caption}"
-                                       TextTrimming="CharacterEllipsis"
-                                       Margin="2,4,2,2" />
+                            <!-- Card is intentionally just the thumbnail + duration
+                                 badge: a clean visual grid with no text. Filename,
+                                 resolution, camera, tags, status and rating all live
+                                 in the editor pane / clip-info popup (Alt+Enter) and
+                                 are managed externally (DaVinci, Lightroom, Bridge). -->
                         </StackPanel>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
@@ -875,6 +821,58 @@
                     <controls:MpvVideoView x:Name="MpvPlayer"
                                            Grid.Row="0"
                                            Visibility="Collapsed" />
+
+                    <!-- Floating close (X) anchored to the video's top-right
+                         corner. Reviewers instinctively reach for the corner to
+                         dismiss the player, so the affordance lives there.
+
+                         It is hosted in a Popup (its own top-level HWND) rather
+                         than as an in-grid overlay so it is GUARANTEED to render
+                         above the picture on BOTH engines — the default FFME
+                         WriteableBitmap path AND the experimental mpv child-window
+                         (airspace) path, where in-grid WPF content is hidden.
+
+                         The zero-size CloseAnchor pins the Popup to the corner;
+                         the Popup's IsOpen is driven from code-behind so it only
+                         shows while the player is visible AND the window is active
+                         (so it never floats over other apps when you alt-tab). -->
+                    <Border x:Name="CloseAnchor"
+                            Grid.Row="0"
+                            Width="0" Height="0"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Top"
+                            Margin="0,14,14,0" />
+                    <Popup x:Name="ClosePlayerPopup"
+                           PlacementTarget="{Binding ElementName=CloseAnchor}"
+                           Placement="Left"
+                           AllowsTransparency="True"
+                           PopupAnimation="Fade"
+                           StaysOpen="True">
+                        <Button Width="34" Height="34"
+                                Cursor="Hand"
+                                Command="{Binding ClosePlayerCommand}"
+                                ToolTip="Close player and return to the catalog (Esc)">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="bg"
+                                            CornerRadius="17"
+                                            Background="#99000000">
+                                        <TextBlock Text="{StaticResource Icon.Close}"
+                                                   FontFamily="{StaticResource App.Icon.FontFamily}"
+                                                   FontSize="15"
+                                                   Foreground="White"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center" />
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="bg" Property="Background" Value="#E6E15050" />
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                    </Popup>
 
                     <!-- DJI telemetry strip. Sits in its OWN row directly under
                          the picture (NOT painted over the video) on purpose:
@@ -1048,19 +1046,12 @@
                                             Style="{StaticResource App.Button.Secondary}"
                                             helpers:Theme.Icon="{StaticResource Icon.Stop}"
                                             ToolTip="Stop playback (resets position)" />
-                                    <!-- Telemetry show/hide. Only present for DJI clips that
-                                         actually carried a parseable SRT track (HasTelemetry);
-                                         toggles the strip above and persists the choice. -->
-                                    <Button Content="Telemetry" MinWidth="100" Margin="16,4,0,4"
-                                            Command="{Binding ToggleTelemetryOverlayCommand}"
-                                            Visibility="{Binding HasTelemetry, Converter={StaticResource BoolToVisibility}}"
-                                            Style="{StaticResource App.Button.Ghost}"
-                                            ToolTip="Show / hide the drone telemetry overlay (ISO, shutter, aperture, focal length, altitude, GPS)" />
-                                    <Button Content="Close" MinWidth="100" Margin="16,4,0,4"
-                                            Command="{Binding ClosePlayerCommand}"
-                                            Style="{StaticResource App.Button.Ghost}"
-                                            helpers:Theme.Icon="{StaticResource Icon.Close}"
-                                            ToolTip="Close the player and return to the catalog" />
+                                    <!-- Telemetry visibility is now controlled by the
+                                         "Show drone telemetry overlay" setting (on by
+                                         default) instead of a transport-bar toggle, and
+                                         closing is handled by the corner X / Esc, so the
+                                         old Telemetry and Close buttons were removed to
+                                         keep the transport bar focused on playback. -->
                                 </WrapPanel>
                             </Grid>
                         </Grid>
@@ -1208,36 +1199,12 @@
                                 </Border>
                             </Grid>
 
-                            <!-- Filename / path header intentionally omitted: the
-                                 catalog card the user clicked already shows the
-                                 filename, the clip-info popup (Alt+Enter) carries
-                                 the full path, and the *Open location* button
-                                 below reveals the file in Explorer. Keeping the
-                                 sidebar focused on actions / tags / notes / status
-                                 reads cleaner than a wrapping path header. -->
-
-                            <!-- "Play externally" intentionally lives on the catalog
-                                 right-click menu now, not in the sidebar — the
-                                 sidebar row is the in-editor primary actions only
-                                 (start review, reveal in Explorer). -->
-                            <WrapPanel ItemHeight="40">
-                                <Button Content="Play in app" Margin="0,4,0,4"
-                                        Command="{Binding PlayInAppCommand}"
-                                        IsEnabled="{Binding CanPlayInApp}"
-                                        Style="{StaticResource App.Button.Primary}"
-                                        helpers:Theme.Icon="{StaticResource Icon.Play}"
-                                        Visibility="{Binding IsPlayerVisible, Converter={StaticResource BoolToVisibilityInverted}}" />
-                                <Button Content="Open location" Margin="6,4,0,4"
-                                        Command="{Binding OpenFileLocationCommand}"
-                                        Style="{StaticResource App.Button.Secondary}"
-                                        helpers:Theme.Icon="{StaticResource Icon.FolderOpen}" />
-                            </WrapPanel>
-                            <TextBlock Text="{Binding PlayerUnavailableMessage}"
-                                       Foreground="{DynamicResource App.Warning}"
-                                       TextWrapping="Wrap"
-                                       FontSize="11"
-                                       Margin="0,4,0,0"
-                                       Visibility="{Binding CanPlayInApp, Converter={StaticResource BoolToVisibilityInverted}}" />
+                            <!-- The editor opens straight into TAGS / NOTES / STATUS /
+                                 RATING. The old sidebar action row (Play in app /
+                                 Open location) was removed: in-app playback is on
+                                 double-click of a catalog thumbnail, and the catalog
+                                 right-click menu carries *Play externally* and
+                                 *Open file location*. -->
 
                             <TextBlock Text="TAGS" Style="{StaticResource App.Type.Section}" />
                             <ItemsControl ItemsSource="{Binding Tags}">
@@ -1317,7 +1284,7 @@
 
         <Border Grid.Row="2"
                 Padding="12,6"
-                Background="{DynamicResource App.Background.Elevated}"
+                Background="{DynamicResource App.Chrome.Background}"
                 BorderBrush="{DynamicResource App.Border.Subtle}"
                 BorderThickness="0,1,0,0">
             <Grid>

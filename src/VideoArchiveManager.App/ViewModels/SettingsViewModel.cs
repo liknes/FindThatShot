@@ -272,7 +272,8 @@ public partial class SettingsViewModel : ObservableObject
             SidebarWidth = _store.Current.SidebarWidth,
             SidebarFoldersExpanded = _store.Current.SidebarFoldersExpanded,
             SidebarTagsExpanded = _store.Current.SidebarTagsExpanded,
-            SidebarCamerasExpanded = _store.Current.SidebarCamerasExpanded
+            SidebarCamerasExpanded = _store.Current.SidebarCamerasExpanded,
+            SidebarDateExpanded = _store.Current.SidebarDateExpanded
         };
     }
 

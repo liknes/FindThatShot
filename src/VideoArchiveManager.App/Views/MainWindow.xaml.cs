@@ -219,6 +219,7 @@ public partial class MainWindow : Window
         if (e.PropertyName == nameof(VideoDetailViewModel.IsPlayerVisible))
         {
             ApplyReviewModeLayout(detail.IsPlayerVisible);
+            UpdateClosePlayerOverlay();
         }
 
         if (!App.IsPlayerAvailable) return;
@@ -339,6 +340,19 @@ public partial class MainWindow : Window
     // Swap the main row's column widths so the sidebar + list collapse and the
     // player takes the central area when review mode opens. Restores the cached
     // original widths when leaving. Cheap (just sets four GridLength values).
+    // The corner close (X) lives in a Popup (its own top-level HWND) so it
+    // always composites above the video surface — including the experimental
+    // mpv child window, which would hide any in-grid WPF overlay (airspace).
+    // We open it only while the player is visible AND this window is active, so
+    // the floating button never lingers on top of other apps after an alt-tab.
+    private void Window_ActivationChanged(object? sender, EventArgs e) => UpdateClosePlayerOverlay();
+
+    private void UpdateClosePlayerOverlay()
+    {
+        if (ClosePlayerPopup is null) return;
+        ClosePlayerPopup.IsOpen = _viewModel.Detail.IsPlayerVisible && IsActive;
+    }
+
     private void ApplyReviewModeLayout(bool reviewMode)
     {
         if (reviewMode)
@@ -750,11 +764,26 @@ public partial class MainWindow : Window
 
     // Window-level shortcuts active only while review mode is open AND focus is
     // not inside a text input (so typing tag names / notes still works):
+    //   Esc          close the player and return to the gallery
     //   Space        toggle play / pause
     //   Left / Right  jump to the previous / next clip and keep playing
     private async void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
         if (!_viewModel.Detail.IsPlayerVisible) return;
+
+        // Esc closes the player regardless of which engine is active or where
+        // focus is — it's the natural "get me out of here" key, and unlike the
+        // play controls below it doesn't interfere with typing notes/tags.
+        if (e.Key == Key.Escape)
+        {
+            if (_viewModel.Detail.ClosePlayerCommand.CanExecute(null))
+            {
+                _viewModel.Detail.ClosePlayerCommand.Execute(null);
+            }
+            e.Handled = true;
+            return;
+        }
+
         if (!App.IsPlayerAvailable && !App.UseMpvPlayer) return;
         if (e.Key is not (Key.Space or Key.Left or Key.Right)) return;
 
