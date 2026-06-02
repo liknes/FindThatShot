@@ -524,7 +524,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private async void PlayerPlayPause_Click(object sender, RoutedEventArgs e)
+    private void PlayerPlayPause_Click(object sender, RoutedEventArgs e)
     {
         if (App.UseMpvPlayer)
         {
@@ -532,36 +532,44 @@ public partial class MainWindow : Window
             return;
         }
 
-        await ToggleFfmePlayPauseAsync();
+        ToggleFfmePlayPause();
     }
 
     // Single FFME play/pause toggle shared by the transport button and the
-    // Space shortcut. The decision is driven by our own `_playerPlaying`
-    // intent flag (not FFME's ambiguous IsPlaying/MediaState — see the field
-    // comment), so the action and the label can never disagree.
-    private async Task ToggleFfmePlayPauseAsync()
+    // Space shortcut. CRITICAL ordering: we flip our `_playerPlaying` intent
+    // flag and repaint the button label *synchronously, up front*, THEN fire
+    // the FFME command. FFME's async Play()/Pause() can fault or stall while
+    // the engine is mid-transition (the slow 4K refill churn is the usual
+    // culprit); doing the flag/label update only *after* awaiting it meant a
+    // faulting Pause() skipped the flip and left the button stuck on "Pause"
+    // and unresponsive. Driving the UI from intent makes the button
+    // deterministic regardless of how the engine command settles.
+    private void ToggleFfmePlayPause()
     {
         if (!App.IsPlayerAvailable) return;
+        _playerPlaying = !_playerPlaying;
+        UpdatePlayPauseLabel();
+        _ = ApplyFfmePlayingStateAsync();
+    }
+
+    private async Task ApplyFfmePlayingStateAsync()
+    {
         try
         {
             if (_playerPlaying)
             {
-                await VideoPlayer.Pause();
-                _playerPlaying = false;
+                await VideoPlayer.Play();
             }
             else
             {
-                await VideoPlayer.Play();
-                _playerPlaying = true;
+                await VideoPlayer.Pause();
             }
         }
         catch
         {
-            // FFME state machine can be in a transient state during media
-            // open/close; never let a play/pause click throw into the
-            // dispatcher.
+            // FFME can be in a transient state during media open/close; the
+            // button label already reflects intent, so just swallow.
         }
-        UpdatePlayPauseLabel();
     }
 
     private void MpvTogglePlayPause()
@@ -594,10 +602,13 @@ public partial class MainWindow : Window
 
         if (!App.IsPlayerAvailable) return;
 
+        // Update intent + label first (see ToggleFfmePlayPause), then drive the
+        // engine — so a faulting Pause() can't leave the button mislabelled.
+        _playerPlaying = false;
+        UpdatePlayPauseLabel();
         try
         {
             await VideoPlayer.Pause();
-            _playerPlaying = false;
             if (VideoPlayer.IsSeekable)
             {
                 await VideoPlayer.Seek(TimeSpan.Zero);
@@ -607,7 +618,6 @@ public partial class MainWindow : Window
         {
             // see PlayerPlayPause_Click rationale.
         }
-        UpdatePlayPauseLabel();
     }
 
     private void PlayerSkipBack_Click(object sender, RoutedEventArgs e)
@@ -792,7 +802,7 @@ public partial class MainWindow : Window
     //   Esc          close the player and return to the gallery
     //   Space        toggle play / pause
     //   Left / Right  jump to the previous / next clip and keep playing
-    private async void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+    private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
         if (!_viewModel.Detail.IsPlayerVisible) return;
 
@@ -842,7 +852,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        await ToggleFfmePlayPauseAsync();
+        ToggleFfmePlayPause();
         e.Handled = true;
     }
 

@@ -997,6 +997,12 @@
                                  reservation) and pops in only when a substitution
                                  actually happened. -->
                             <Grid Grid.Row="1">
+                                <!-- Source badge. The PROXY chip (amber) and the
+                                     ORIGINAL chip (green) share the left slot and
+                                     are mutually exclusive on IsPlayingProxy, so
+                                     there's always a chip telling the reviewer at a
+                                     glance whether they're watching a transcoded
+                                     proxy or the full-resolution source file. -->
                                 <Border HorizontalAlignment="Left"
                                         VerticalAlignment="Center"
                                         Background="{DynamicResource App.Accent.Subtle}"
@@ -1011,6 +1017,21 @@
                                                FontSize="11"
                                                FontWeight="SemiBold"
                                                Foreground="{DynamicResource App.Accent}" />
+                                </Border>
+                                <Border HorizontalAlignment="Left"
+                                        VerticalAlignment="Center"
+                                        Background="#1F3DDC84"
+                                        BorderBrush="#3DDC84"
+                                        BorderThickness="1"
+                                        CornerRadius="3"
+                                        Padding="6,2"
+                                        Visibility="{Binding IsPlayingProxy, Converter={StaticResource BoolToVisibilityInverted}}"
+                                        ToolTip="Playing the original, full-resolution source file">
+                                    <TextBlock Text="ORIGINAL"
+                                               FontFamily="Consolas"
+                                               FontSize="11"
+                                               FontWeight="SemiBold"
+                                               Foreground="#3DDC84" />
                                 </Border>
                                 <WrapPanel HorizontalAlignment="Center" ItemHeight="40">
                                     <Button Margin="0,4,0,4"
