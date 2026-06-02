@@ -24,6 +24,7 @@ public partial class VideoDetailViewModel : ObservableObject
     private readonly IProxyResolver _proxyResolver;
     private readonly ISettingsStore _settings;
     private readonly IReverseGeocodingService _reverseGeocoder;
+    private readonly IDjiSrtTelemetryReader _srtReader;
 
     public VideoDetailViewModel(
         IDbContextFactory<VideoArchiveDbContext> contextFactory,
@@ -32,7 +33,8 @@ public partial class VideoDetailViewModel : ObservableObject
         ISidecarService sidecar,
         IProxyResolver proxyResolver,
         ISettingsStore settings,
-        IReverseGeocodingService reverseGeocoder)
+        IReverseGeocodingService reverseGeocoder,
+        IDjiSrtTelemetryReader srtReader)
     {
         _contextFactory = contextFactory;
         _tagService = tagService;
@@ -41,6 +43,7 @@ public partial class VideoDetailViewModel : ObservableObject
         _proxyResolver = proxyResolver;
         _settings = settings;
         _reverseGeocoder = reverseGeocoder;
+        _srtReader = srtReader;
     }
 
     [ObservableProperty]
@@ -51,6 +54,20 @@ public partial class VideoDetailViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _isPlayerVisible;
+
+    // DJI flight track for the selected clip, read lazily from a sibling
+    // ".SRT" companion on selection. Null when the clip has no companion (or
+    // the read is still in flight); the sidebar map draws it as a polyline
+    // with takeoff / landing dots when present. Not persisted — it's derived
+    // on demand from the file on disk, so a multi-thousand-point track never
+    // touches the catalog DB.
+    [ObservableProperty]
+    private IReadOnlyList<GeoPoint>? _flightPath;
+
+    // Cancels the in-flight SRT read when the selection changes again before
+    // the previous parse finished, so a slow read for an earlier clip can't
+    // land its track on the clip the user has since moved to.
+    private CancellationTokenSource? _flightPathCts;
 
     // True when PlayInApp substituted a DaVinci-style proxy for the hero
     // clip's MediaSource. Surfaces a "PROXY" badge in the player toolbar
@@ -164,6 +181,15 @@ public partial class VideoDetailViewModel : ObservableObject
 
         Current = item;
         Tags.Clear();
+
+        // Cancel any flight-path read still running for the previous clip and
+        // clear the old track immediately so the map doesn't show a stale
+        // polyline while the new clip's SRT (if any) is parsed.
+        _flightPathCts?.Cancel();
+        _flightPathCts?.Dispose();
+        _flightPathCts = null;
+        FlightPath = null;
+
         if (item is null)
         {
             Notes = null;
@@ -171,6 +197,18 @@ public partial class VideoDetailViewModel : ObservableObject
             Status = VideoStatus.Unreviewed;
             OnPropertyChanged(nameof(LargeThumbnail));
             return;
+        }
+
+        // Fire-and-forget: a sibling DJI ".SRT" companion, when present, is
+        // parsed off the UI thread and the resulting track is applied back
+        // on this context once it completes (guarded against a since-changed
+        // selection inside LoadFlightPathAsync). Gated behind the display-only
+        // "Show drone flight paths" setting — when off we simply never read
+        // the track, so FlightPath stays null and the map falls back to the
+        // single-fix pin (geotags are unaffected; they're read at scan time).
+        if (_settings.Current.ShowDroneFlightPaths)
+        {
+            _ = LoadFlightPathAsync(item);
         }
 
         Notes = item.Model.Notes;
@@ -185,6 +223,39 @@ public partial class VideoDetailViewModel : ObservableObject
         // single-table query and the user is likely about to start
         // tagging this clip.
         await RefreshTagCatalogAsync();
+    }
+
+    // Parses the clip's sibling DJI ".SRT" companion (if any) into a flight
+    // track on a background thread, then applies it to FlightPath — but only
+    // if the user hasn't moved to a different clip in the meantime. All
+    // failures are swallowed: a missing / unreadable / non-DJI SRT simply
+    // leaves FlightPath null and the map falls back to the single-fix marker.
+    private async Task LoadFlightPathAsync(VideoItemViewModel item)
+    {
+        var cts = new CancellationTokenSource();
+        _flightPathCts = cts;
+        try
+        {
+            var path = await _srtReader
+                .TryReadFlightPathAsync(item.FilePath, cancellationToken: cts.Token)
+                .ConfigureAwait(true);
+
+            // Ignore a result that arrived after the selection moved on, or a
+            // path with nothing worth drawing.
+            if (cts.IsCancellationRequested) return;
+            if (!ReferenceEquals(Current, item)) return;
+            if (path is null || path.Count < 2) return;
+
+            FlightPath = path;
+        }
+        catch (OperationCanceledException)
+        {
+            // Superseded by a newer selection; nothing to do.
+        }
+        catch
+        {
+            // Defensive: never let a telemetry-read failure surface to the UI.
+        }
     }
 
     // Reloads the in-memory tag catalog used by the AutoSuggestBox.

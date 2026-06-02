@@ -725,7 +725,10 @@
                              box keeps a true 16:9 shape by binding its Height to
                              its own ActualWidth via WidthTo16x9Height. -->
                         <StackPanel>
-                            <Border Style="{StaticResource App.VideoCard.Thumbnail}">
+                            <!-- Double-clicking the thumbnail mirrors the sidebar
+                                 "Play in app" button — see Thumbnail_OnMouseLeftButtonDown. -->
+                            <Border Style="{StaticResource App.VideoCard.Thumbnail}"
+                                    MouseLeftButtonDown="Thumbnail_OnMouseLeftButtonDown">
                                 <Grid Height="{Binding ActualWidth, RelativeSource={RelativeSource Self}, Converter={StaticResource WidthTo16x9Height}}">
                                     <Image Source="{Binding Thumbnail}"
                                            Stretch="UniformToFill"
@@ -1025,6 +1028,7 @@
                                 <controls:LocationMapView x:Name="LocationMap"
                                                           Latitude="{Binding Current.GpsLatitude}"
                                                           Longitude="{Binding Current.GpsLongitude}"
+                                                          FlightPath="{Binding FlightPath}"
                                                           IsPickingMode="{Binding IsPickingLocation}"
                                                           LocationPicked="LocationMap_OnLocationPicked" />
                             </Border>

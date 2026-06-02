@@ -239,6 +239,26 @@ public partial class MainWindow : Window
         }
     }
 
+    // Double-clicking a catalog thumbnail starts in-app playback — the same
+    // action as the sidebar "Play in app" button. The preceding single click
+    // already selected the card (which synchronously sets Detail.Current via
+    // LoadAsync), but we set the selection explicitly so playback always
+    // targets the clip the user double-clicked, even on edge cases.
+    private void Thumbnail_OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ClickCount != 2) return;
+        if (sender is not FrameworkElement element) return;
+        if (element.DataContext is not VideoItemViewModel vm) return;
+
+        _viewModel.SelectedVideo = vm;
+
+        var command = _viewModel.Detail.PlayInAppCommand;
+        if (command.CanExecute(null))
+        {
+            command.Execute(null);
+        }
+    }
+
     // Re-entrancy guard for the tag picker. Adding a chip mutates
     // SelectedTagFilters, which synchronously rebuilds FilteredTags
     // (Clear + Add). That mutation re-fires SelectionChanged on the

@@ -168,6 +168,13 @@
                           Content="Write sidecar JSON files next to videos"
                           Margin="0,0,0,16" />
 
+                <TextBlock Text="MAP" Style="{StaticResource App.Type.Section}" />
+                <TextBlock TextWrapping="Wrap" Style="{StaticResource App.Type.BodyMuted}" Margin="0,0,0,12"
+                           Text="When enabled, the sidebar map draws the full drone flight path for clips that have a sibling DJI &quot;.SRT&quot; file, as a line with start / end markers. This is display-only: turning it off just hides the route — clips are still geotagged with their location and the single pin still shows. The flight path is read live from the file and never stored." />
+                <CheckBox IsChecked="{Binding ShowDroneFlightPaths}"
+                          Content="Show drone flight paths on the map"
+                          Margin="0,0,0,16" />
+
                 <TextBlock Text="PLAYBACK" Style="{StaticResource App.Type.Section}" />
                 <TextBlock TextWrapping="Wrap" Style="{StaticResource App.Type.BodyMuted}" Margin="0,0,0,12"
                            Text="When enabled, the in-app player prefers a DaVinci Resolve-style proxy when one exists. For each clip we look for a sibling &quot;Proxy&quot; folder containing a file with the same base name (any extension) and play that instead — much faster on high-bitrate 4K 60p sources. Falls back to the original clip silently when no proxy is found. The catalog, thumbnails, metadata and the &quot;Play externally&quot; command always continue to point at the original file." />

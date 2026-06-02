@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Threading;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.Wpf;
+using VideoArchiveManager.Core.Services;
 
 namespace VideoArchiveManager.App.Helpers.Controls;
 
@@ -111,6 +112,10 @@ public class LocationMapView : UserControl
   var map = null, marker = null;
   var pickHandler = null;
   var pickModeRequested = false;
+  // DJI flight-path overlay: a polyline plus start/end dots. Held in
+  // module scope so a later setFlightPath call can tear the old one down
+  // before drawing the next clip's track.
+  var pathLine = null, startDot = null, endDot = null, hasPath = false;
   function setLocation(lat, lon, hasLocation) {
     var zoom = hasLocation ? 13 : 11;
     if (!map) {
@@ -120,20 +125,62 @@ public class LocationMapView : UserControl
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
       }).addTo(map);
       marker = L.marker([lat, lon]);
-      if (hasLocation) marker.addTo(map);
+      if (hasLocation && !hasPath) marker.addTo(map);
       // Host may have requested pick mode before the map existed
       // (race during first NavigateToString); apply the pending state now.
       if (pickModeRequested) setPickMode(true);
     } else {
-      map.setView([lat, lon], zoom);
+      // When a flight path is shown its fitBounds owns the viewport and its
+      // start/end dots mark the position, so we skip recentering on the
+      // single fix and keep the default pin hidden to avoid a stacked marker.
+      if (!hasPath) {
+        map.setView([lat, lon], zoom);
+      }
       marker.setLatLng([lat, lon]);
-      if (hasLocation) {
+      if (hasLocation && !hasPath) {
         marker.addTo(map);
       } else {
         map.removeLayer(marker);
       }
     }
     document.body.classList.toggle('no-location', !hasLocation);
+  }
+  // Builds the HTML for a start / end tooltip: a bold label, the
+  // coordinates (6 dp), and the relative altitude in metres when the SRT
+  // sample carried one (points are [lat, lon, relAltOrNull]).
+  function endpointTooltip(label, p) {
+    var lat = p[0].toFixed(6), lon = p[1].toFixed(6);
+    var html = '<b>' + label + '</b><br>' + lat + ', ' + lon;
+    if (p.length > 2 && p[2] != null && isFinite(p[2])) {
+      html += '<br>' + Math.round(p[2]) + ' m above takeoff';
+    }
+    return html;
+  }
+  function clearFlightPath() {
+    if (pathLine) { map.removeLayer(pathLine); pathLine = null; }
+    if (startDot) { map.removeLayer(startDot); startDot = null; }
+    if (endDot) { map.removeLayer(endDot); endDot = null; }
+  }
+  // points: array of [lat, lon] pairs (already downsampled by the host), or
+  // null/short array to clear. Draws an amber polyline with a green start
+  // dot and a red end dot, then fits the viewport to the whole track.
+  function setFlightPath(points) {
+    hasPath = !!(points && points.length >= 2);
+    if (!map) return;
+    clearFlightPath();
+    if (!hasPath) {
+      // No track for this clip — hand the viewport back to the single fix.
+      if (marker) { marker.addTo(map); }
+      return;
+    }
+    if (marker) { map.removeLayer(marker); }
+    pathLine = L.polyline(points, { color: '#f5a623', weight: 3, opacity: 0.9 }).addTo(map);
+    var start = points[0], end = points[points.length - 1];
+    startDot = L.circleMarker(start, { radius: 5, color: '#ffffff', weight: 2, fillColor: '#3ddc84', fillOpacity: 1 }).addTo(map);
+    endDot = L.circleMarker(end, { radius: 5, color: '#ffffff', weight: 2, fillColor: '#ff5252', fillOpacity: 1 }).addTo(map);
+    startDot.bindTooltip(endpointTooltip('Start', start), { direction: 'top', offset: [0, -4] });
+    endDot.bindTooltip(endpointTooltip('End', end), { direction: 'top', offset: [0, -4] });
+    map.fitBounds(pathLine.getBounds(), { padding: [16, 16], maxZoom: 17 });
   }
   function setPickMode(enabled) {
     pickModeRequested = enabled;
@@ -156,6 +203,7 @@ public class LocationMapView : UserControl
     }
   }
   setLocation(__LAT__, __LON__, __HAS__);
+  setFlightPath(__PATH__);
 </script>
 </body>
 </html>
@@ -211,6 +259,13 @@ public class LocationMapView : UserControl
             typeof(LocationMapView),
             new PropertyMetadata(null, OnCoordinateChanged));
 
+    public static readonly DependencyProperty FlightPathProperty =
+        DependencyProperty.Register(
+            nameof(FlightPath),
+            typeof(IReadOnlyList<GeoPoint>),
+            typeof(LocationMapView),
+            new PropertyMetadata(null, OnFlightPathChanged));
+
     public static readonly DependencyProperty IsPickingModeProperty =
         DependencyProperty.Register(
             nameof(IsPickingMode),
@@ -228,6 +283,20 @@ public class LocationMapView : UserControl
     {
         get => (double?)GetValue(LongitudeProperty);
         set => SetValue(LongitudeProperty, value);
+    }
+
+    /// <summary>
+    /// Ordered GPS samples of a DJI flight, drawn as a polyline with start
+    /// (green) and end (red) dots. When non-null with two or more points
+    /// the map fits the whole track and hides the single-fix pin; when null /
+    /// shorter the control falls back to the <see cref="Latitude"/> /
+    /// <see cref="Longitude"/> single-marker behaviour. Read lazily from a
+    /// sibling <c>.SRT</c> companion when the clip is selected.
+    /// </summary>
+    public IReadOnlyList<GeoPoint>? FlightPath
+    {
+        get => (IReadOnlyList<GeoPoint>?)GetValue(FlightPathProperty);
+        set => SetValue(FlightPathProperty, value);
     }
 
     /// <summary>
@@ -262,6 +331,14 @@ public class LocationMapView : UserControl
     }
 
     private static void OnCoordinateChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is LocationMapView self)
+        {
+            self.QueueUpdate();
+        }
+    }
+
+    private static void OnFlightPathChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is LocationMapView self)
         {
@@ -427,6 +504,7 @@ public class LocationMapView : UserControl
         var latText = lat.ToString("R", CultureInfo.InvariantCulture);
         var lonText = lon.ToString("R", CultureInfo.InvariantCulture);
         var hasText = hasLocation ? "true" : "false";
+        var pathJson = BuildFlightPathJson(FlightPath);
 
         try
         {
@@ -435,7 +513,8 @@ public class LocationMapView : UserControl
                 var html = ResolvedTemplate
                     .Replace("__LAT__", latText)
                     .Replace("__LON__", lonText)
-                    .Replace("__HAS__", hasText);
+                    .Replace("__HAS__", hasText)
+                    .Replace("__PATH__", pathJson);
                 _webView.CoreWebView2.NavigateToString(html);
                 _firstNavigationDone = true;
 
@@ -450,7 +529,9 @@ public class LocationMapView : UserControl
             }
             else
             {
-                var script = $"setLocation({latText}, {lonText}, {hasText});";
+                // Push the path first so its hasPath flag is set before
+                // setLocation decides whether to recenter on the single fix.
+                var script = $"setFlightPath({pathJson}); setLocation({latText}, {lonText}, {hasText});";
                 await _webView.CoreWebView2.ExecuteScriptAsync(script);
             }
         }
@@ -459,6 +540,37 @@ public class LocationMapView : UserControl
             // CoreWebView2 can be torn down mid-update (control unloaded);
             // ignore stale calls.
         }
+    }
+
+    // Serialises the flight path to a JS array literal of [lat, lon] pairs
+    // (invariant culture so decimals don't localise), or the literal "null"
+    // when there's no track to draw. Kept as a hand-rolled builder to avoid
+    // pulling a JSON serialiser into the hot selection path.
+    private static string BuildFlightPathJson(IReadOnlyList<GeoPoint>? path)
+    {
+        if (path is null || path.Count < 2) return "null";
+
+        var sb = new System.Text.StringBuilder(path.Count * 28 + 2);
+        sb.Append('[');
+        for (int i = 0; i < path.Count; i++)
+        {
+            if (i > 0) sb.Append(',');
+            // [lat, lon, relAlt] — Leaflet treats the third element as the
+            // LatLng altitude and ignores it for the 2D polyline; the JS only
+            // reads it for the takeoff / landing endpoint tooltips. Emit
+            // "null" when the sample carried no altitude.
+            sb.Append('[')
+              .Append(path[i].Latitude.ToString("R", CultureInfo.InvariantCulture))
+              .Append(',')
+              .Append(path[i].Longitude.ToString("R", CultureInfo.InvariantCulture))
+              .Append(',')
+              .Append(path[i].RelativeAltitude is double alt
+                  ? alt.ToString("R", CultureInfo.InvariantCulture)
+                  : "null")
+              .Append(']');
+        }
+        sb.Append(']');
+        return sb.ToString();
     }
 }
 

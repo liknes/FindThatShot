@@ -27,6 +27,16 @@ public class AppSettings
     // continue to point at the hero file regardless of this flag.
     public bool PreferProxyForPlayback { get; set; } = false;
 
+    // When true, the sidebar map plots the full DJI flight path (read live
+    // from a sibling ".SRT" companion) as a polyline with start / end dots.
+    // This is purely a *display* toggle: turning it off only suppresses the
+    // on-map track — clips are still geotagged with their single GPS fix
+    // (extracted at scan time and persisted to the catalog / sidecars), and
+    // the single-location marker still shows. Defaults to on to preserve the
+    // existing behaviour; pilots who'd rather not have a route drawn on a map
+    // (e.g. while screen-sharing) can switch it off without losing geotags.
+    public bool ShowDroneFlightPaths { get; set; } = true;
+
     // GitHub repo (https://github.com/owner/repo) that hosts Velopack
     // release artifacts. The app's "Check for updates" command reads this
     // value at runtime. Empty / null disables the check.

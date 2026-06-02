@@ -75,6 +75,7 @@ public class JsonSettingsStore : ISettingsStore
                 BackupRetentionCount = loaded.BackupRetentionCount > 0 ? loaded.BackupRetentionCount : baseline.BackupRetentionCount,
                 WriteSidecarFiles = loaded.WriteSidecarFiles,
                 PreferProxyForPlayback = loaded.PreferProxyForPlayback,
+                ShowDroneFlightPaths = loaded.ShowDroneFlightPaths,
                 UpdateRepoUrl = !string.IsNullOrWhiteSpace(loaded.UpdateRepoUrl) ? loaded.UpdateRepoUrl : baseline.UpdateRepoUrl,
                 MaxScanParallelism = loaded.MaxScanParallelism > 0 ? loaded.MaxScanParallelism : baseline.MaxScanParallelism,
                 PageSize = loaded.PageSize > 0 ? loaded.PageSize : baseline.PageSize,
