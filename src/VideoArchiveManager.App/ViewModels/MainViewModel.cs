@@ -399,8 +399,16 @@ public partial class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(CanRemoveSelectedFolder));
         OnFilterChanged();
     }
-    partial void OnDateFromChanged(DateTime? value) => OnFilterChanged();
-    partial void OnDateToChanged(DateTime? value) => OnFilterChanged();
+    partial void OnDateFromChanged(DateTime? value)
+    {
+        ClearDateFilterCommand.NotifyCanExecuteChanged();
+        OnFilterChanged();
+    }
+    partial void OnDateToChanged(DateTime? value)
+    {
+        ClearDateFilterCommand.NotifyCanExecuteChanged();
+        OnFilterChanged();
+    }
     partial void OnShowOnlyAvailableChanged(bool value) => OnFilterChanged();
     partial void OnOnlyUnreviewedChanged(bool value) => OnFilterChanged();
 
@@ -915,6 +923,28 @@ public partial class MainViewModel : ObservableObject
     private void ClearCameraFilter() => CameraFilter = null;
 
     private bool CanClearCameraFilter() => !string.IsNullOrEmpty(CameraFilter);
+
+    // Clears just the From / To date range (the DATE panel's header action),
+    // mirroring the per-panel Clear buttons on TAGS / CAMERAS. Wrapped in the
+    // filter-search suppression so clearing both pickers runs one search, not
+    // two. Disabled (greyed) when no date is set, like the camera Clear.
+    [RelayCommand(CanExecute = nameof(CanClearDateFilter))]
+    private async Task ClearDateFilterAsync()
+    {
+        _suppressFilterSearch = true;
+        try
+        {
+            DateFrom = null;
+            DateTo = null;
+        }
+        finally
+        {
+            _suppressFilterSearch = false;
+        }
+        await SearchAsync();
+    }
+
+    private bool CanClearDateFilter() => DateFrom.HasValue || DateTo.HasValue;
 
     // Tracks the currently-running search so that fast successive filter
     // changes don't race — a newer call cancels any older one before its

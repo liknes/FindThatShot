@@ -800,6 +800,29 @@ public partial class MainWindow : Window
         _diagnosticsWindow.Show();
     }
 
+    // Single shared, non-modal catalog statistics window. Non-modal so the
+    // user can keep it open beside the catalog while they curate; resolved
+    // from DI for its statistics service + viewmodel. Re-clicking the menu
+    // brings the existing window forward (and refreshes it) rather than
+    // stacking duplicates.
+    private CatalogStatsWindow? _statsWindow;
+
+    private void CatalogStats_Click(object sender, RoutedEventArgs e)
+    {
+        if (_statsWindow is not null && _statsWindow.IsLoaded)
+        {
+            if (_statsWindow.WindowState == WindowState.Minimized)
+                _statsWindow.WindowState = WindowState.Normal;
+            _statsWindow.Activate();
+            return;
+        }
+
+        _statsWindow = App.GetService<CatalogStatsWindow>();
+        _statsWindow.Owner = this;
+        _statsWindow.Closed += (_, _) => _statsWindow = null;
+        _statsWindow.Show();
+    }
+
     // Opens the non-modal clip-info popup. Reuses an existing window if one
     // is already open (refreshes its contents by recreating + replacing) so
     // power users mashing Alt+Enter don't end up with a stack of dialogs.

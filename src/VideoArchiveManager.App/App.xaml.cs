@@ -191,6 +191,7 @@ public partial class App : Application
                 services.AddSingleton<IDjiSrtTelemetryReader, DjiSrtTelemetryReader>();
                 services.AddSingleton<ITagService, TagService>();
                 services.AddSingleton<ISearchService, SearchService>();
+                services.AddSingleton<ICatalogStatisticsService, CatalogStatisticsService>();
                 services.AddSingleton<ISavedSearchService, SavedSearchService>();
                 services.AddSingleton<IVideoScannerService, VideoScannerService>();
                 services.AddSingleton<IVideoLibraryService, VideoLibraryService>();
@@ -229,9 +230,11 @@ public partial class App : Application
                 services.AddTransient<VideoDetailViewModel>();
                 services.AddTransient<SettingsViewModel>();
                 services.AddTransient<BulkEditViewModel>();
+                services.AddTransient<CatalogStatsViewModel>();
 
                 services.AddTransient<MainWindow>();
                 services.AddTransient<DiagnosticsWindow>();
+                services.AddTransient<CatalogStatsWindow>();
 
                 // In-app diagnostics buffer + rolling file log. A singleton so
                 // the buffer survives across Diagnostics window open/close, and

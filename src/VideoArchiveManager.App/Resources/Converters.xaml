@@ -15,4 +15,7 @@
          so an expanded panel grabs proportional rail height while a
          collapsed one shrinks to header-only Auto height. -->
     <conv:BoolToGridLengthConverter x:Key="BoolToStarOrAuto" />
+    <!-- (value, max, trackWidth) → filled bar width. Drives the proportional
+         breakdown bars in the catalog statistics dashboard. -->
+    <conv:RatioToWidthConverter x:Key="RatioToWidth" />
 </ResourceDictionary>

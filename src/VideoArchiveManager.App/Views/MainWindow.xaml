@@ -111,6 +111,10 @@
                                   Command="{Binding RefreshCommand}"
                                   InputGestureText="Ctrl+R" />
                         <Separator />
+                        <MenuItem Header="Catalog stat_istics…"
+                                  Click="CatalogStats_Click"
+                                  ToolTip="See aggregate metrics for the whole catalog — counts, total size and runtime, and status / rating / camera / codec / resolution / tag / year breakdowns. Read-only." />
+                        <Separator />
                         <MenuItem Header="_Bulk edit selection…"
                                   Command="{Binding OpenBulkEditCommand}"
                                   InputGestureText="Ctrl+B" />
@@ -263,7 +267,6 @@
                              AppSettings.SidebarSavedSearchesExpanded. -->
                         <Expander Grid.Row="4"
                                   Style="{StaticResource App.Expander}"
-                                  Margin="0"
                                   IsExpanded="{Binding IsSavedSearchesPanelExpanded, Mode=TwoWay}">
                             <Expander.Header>
                                 <TextBlock Text="SAVED SEARCHES"
@@ -718,6 +721,20 @@
                                            Style="{StaticResource App.Type.Section}"
                                            Margin="0" />
                             </Expander.Header>
+                            <!-- Clear ghost button mirrors TAGS / CAMERAS so every
+                                 sidebar panel header carries a 24px trailing control
+                                 and the panels keep an even vertical rhythm. Disabled
+                                 (greyed) until a From / To date is set. -->
+                            <Expander.Tag>
+                                <Button Content="Clear"
+                                        Style="{StaticResource App.Button.Ghost}"
+                                        Height="24"
+                                        FontSize="11"
+                                        Padding="8,0"
+                                        VerticalAlignment="Center"
+                                        ToolTip="Clear the date range filter."
+                                        Command="{Binding ClearDateFilterCommand}" />
+                            </Expander.Tag>
                             <StackPanel>
                                 <DatePicker Margin="0,0,0,6"
                                             FontSize="13"

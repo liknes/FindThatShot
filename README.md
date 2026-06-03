@@ -76,6 +76,15 @@ If FFmpeg / FFprobe is not on `PATH`, open **Settings** and point the app at `ff
 
    All three flows only affect the catalog database and the app's thumbnail cache — **source video files on disk are never touched**.
 
+## Catalog statistics
+
+Open **Catalog → Catalog statistics…** for a read-only dashboard that summarises the whole catalog at a glance — handy for understanding the shape of your archive and tracking how much of it you've reviewed:
+
+- **Overview cards**: total clips (with online/offline split), combined file size and runtime, distinct folders, camera models, tag count, and the percentage of clips that are reviewed and geotagged.
+- **Breakdowns**: proportional bars for clips by status, rating, resolution (8K / 4K / 1440p / 1080p / 720p / SD), and year, plus your top cameras, codecs, and tags. Each bar shows its count and its share of the catalog.
+
+The numbers are computed on demand straight from the catalog database (a **Refresh** button recomputes them). Like the rest of the app, building the dashboard never reads, moves, or modifies any source video file.
+
 ## Catalog backup
 
 All curation work — tags, ratings, notes, statuses, and workflow state — lives in `catalog.db`. The app protects that data with rotating backups:
