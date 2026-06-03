@@ -17,11 +17,20 @@
          into the artwork); the version label and loading spinner sit in a
          bottom scrim so they stay legible over the photo. -->
     <Border CornerRadius="10"
+            BorderBrush="#66808080"
+            BorderThickness="1"
+            SnapsToDevicePixels="True"
+            UseLayoutRounding="True"
             ClipToBounds="True">
         <Border.Effect>
             <DropShadowEffect Color="Black" BlurRadius="20" ShadowDepth="4" Opacity="0.4" />
         </Border.Effect>
         <Grid>
+            <!-- Clip children to the rounded corners (Border.CornerRadius doesn't
+                 clip its child). Rect is inset 1px for the border; radius 9 = 10 - 1. -->
+            <Grid.Clip>
+                <RectangleGeometry Rect="0,0,598,448" RadiusX="9" RadiusY="9" />
+            </Grid.Clip>
             <!-- Branded artwork fills the window (4:3, matches the source PNG). -->
             <Image Source="pack://application:,,,/Resources/Images/Splash-Screen-0.9.2.png"
                    Stretch="UniformToFill"
