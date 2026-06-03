@@ -114,6 +114,9 @@
                         <MenuItem Header="Catalog stat_istics…"
                                   Click="CatalogStats_Click"
                                   ToolTip="See aggregate metrics for the whole catalog — counts, total size and runtime, and status / rating / camera / codec / resolution / tag / year breakdowns. Read-only." />
+                        <MenuItem Header="Find _duplicates…"
+                                  Click="Duplicates_Click"
+                                  ToolTip="Find clips that share the same file size, duration, and resolution — almost certainly the same footage in more than one place — and prune the redundant catalog entries. Source video files are never moved or deleted." />
                         <Separator />
                         <MenuItem Header="_Bulk edit selection…"
                                   Command="{Binding OpenBulkEditCommand}"

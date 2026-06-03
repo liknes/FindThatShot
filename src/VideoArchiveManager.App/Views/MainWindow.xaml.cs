@@ -913,6 +913,30 @@ public partial class MainWindow : Window
         _statsWindow.Show();
     }
 
+    // Single shared, non-modal duplicate finder. Like the stats window it's
+    // resolved from DI and re-clicking brings the existing one forward. When it
+    // removes redundant catalog entries it raises CatalogChanged so we re-run
+    // the current search and drop the now-gone clips from the grid.
+    private DuplicatesWindow? _duplicatesWindow;
+
+    private void Duplicates_Click(object sender, RoutedEventArgs e)
+    {
+        if (_duplicatesWindow is not null && _duplicatesWindow.IsLoaded)
+        {
+            if (_duplicatesWindow.WindowState == WindowState.Minimized)
+                _duplicatesWindow.WindowState = WindowState.Normal;
+            _duplicatesWindow.Activate();
+            return;
+        }
+
+        _duplicatesWindow = App.GetService<DuplicatesWindow>();
+        _duplicatesWindow.Owner = this;
+        _duplicatesWindow.CatalogChanged += async (_, _) =>
+            await _viewModel.SearchCommand.ExecuteAsync(null);
+        _duplicatesWindow.Closed += (_, _) => _duplicatesWindow = null;
+        _duplicatesWindow.Show();
+    }
+
     // Opens the non-modal clip-info popup. Reuses an existing window if one
     // is already open (refreshes its contents by recreating + replacing) so
     // power users mashing Alt+Enter don't end up with a stack of dialogs.

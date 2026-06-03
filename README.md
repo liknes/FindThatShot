@@ -85,6 +85,18 @@ Open **Catalog → Catalog statistics…** for a read-only dashboard that summar
 
 The numbers are computed on demand straight from the catalog database (a **Refresh** button recomputes them). Like the rest of the app, building the dashboard never reads, moves, or modifies any source video file.
 
+## Finding duplicates
+
+Open **Catalog → Find duplicates…** to track down clips that exist in more than one place — typically the same footage copied to a backup or external drive. The finder groups clips by a **metadata fingerprint** the scanner already captured — **exact file size + duration + resolution** — so it's instant, needs nothing read off disk, and finds duplicates even among **offline** clips.
+
+Each duplicate set is shown as a card listing its copies (thumbnail, filename, folder, size/resolution/codec/camera, and an Online/Offline badge). One copy is flagged **Suggested keep** (preferring an online, well-curated, original import), but nothing is selected for you:
+
+- Tick exactly which redundant copies to remove, or use **Select all redundant** to mark everything except the suggested keep in each set (then fine-tune).
+- A running total shows how many copies are selected and how much disk would no longer be cataloged.
+- **Remove selected from database…** confirms first — and warns if you've selected *every* copy of a clip — then removes only those catalog entries and their cached thumbnails.
+
+As everywhere else in the app, this only ever edits the catalog: **your source video files are never moved, renamed, or deleted.** Removing duplicate entries just forgets them from the database; the files (including the copies you chose to "remove") remain untouched on disk.
+
 ## Catalog backup
 
 All curation work — tags, ratings, notes, statuses, and workflow state — lives in `catalog.db`. The app protects that data with rotating backups:

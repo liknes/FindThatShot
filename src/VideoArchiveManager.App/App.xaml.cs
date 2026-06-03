@@ -192,6 +192,7 @@ public partial class App : Application
                 services.AddSingleton<ITagService, TagService>();
                 services.AddSingleton<ISearchService, SearchService>();
                 services.AddSingleton<ICatalogStatisticsService, CatalogStatisticsService>();
+                services.AddSingleton<IDuplicateDetectionService, DuplicateDetectionService>();
                 services.AddSingleton<ISavedSearchService, SavedSearchService>();
                 services.AddSingleton<IVideoScannerService, VideoScannerService>();
                 services.AddSingleton<IVideoLibraryService, VideoLibraryService>();
@@ -231,10 +232,12 @@ public partial class App : Application
                 services.AddTransient<SettingsViewModel>();
                 services.AddTransient<BulkEditViewModel>();
                 services.AddTransient<CatalogStatsViewModel>();
+                services.AddTransient<DuplicatesViewModel>();
 
                 services.AddTransient<MainWindow>();
                 services.AddTransient<DiagnosticsWindow>();
                 services.AddTransient<CatalogStatsWindow>();
+                services.AddTransient<DuplicatesWindow>();
 
                 // In-app diagnostics buffer + rolling file log. A singleton so
                 // the buffer survives across Diagnostics window open/close, and
