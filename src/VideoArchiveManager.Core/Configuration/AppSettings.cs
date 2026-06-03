@@ -70,6 +70,8 @@ public class AppSettings
 
     public bool SidebarDateExpanded { get; set; } = true;
 
+    public bool SidebarSavedSearchesExpanded { get; set; } = true;
+
     // Up to 10 tags bound to number-key hotkeys (1-9 then 0) in review mode.
     // Pressing the digit toggles that tag on / off for the current clip, so a
     // user with a stable tag vocabulary can rate-and-tag a review queue without
@@ -117,6 +119,9 @@ public class AppSettings
 
     public static string DefaultBackupDirectory =>
         Path.Combine(DefaultBaseDirectory, "Backups");
+
+    public static string DefaultLogDirectory =>
+        Path.Combine(DefaultBaseDirectory, "Logs");
 
     public static string UserSettingsPath =>
         Path.Combine(

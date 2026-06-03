@@ -16,6 +16,7 @@ public class VideoArchiveDbContext : DbContext
     public DbSet<RootFolder> RootFolders => Set<RootFolder>();
     public DbSet<AiTagSuggestion> AiTagSuggestions => Set<AiTagSuggestion>();
     public DbSet<GeocodeCacheEntry> GeocodeCacheEntries => Set<GeocodeCacheEntry>();
+    public DbSet<SavedSearch> SavedSearches => Set<SavedSearch>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

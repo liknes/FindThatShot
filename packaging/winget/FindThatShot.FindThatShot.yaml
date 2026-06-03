@@ -1,0 +1,7 @@
+# Version manifest — ties the package identity to a version + default locale.
+# Docs: https://learn.microsoft.com/windows/package-manager/package/manifest
+PackageIdentifier: FindThatShot.FindThatShot
+PackageVersion: 0.9.4
+DefaultLocale: en-US
+ManifestType: version
+ManifestVersion: 1.6.0

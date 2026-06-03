@@ -191,6 +191,7 @@ public partial class App : Application
                 services.AddSingleton<IDjiSrtTelemetryReader, DjiSrtTelemetryReader>();
                 services.AddSingleton<ITagService, TagService>();
                 services.AddSingleton<ISearchService, SearchService>();
+                services.AddSingleton<ISavedSearchService, SavedSearchService>();
                 services.AddSingleton<IVideoScannerService, VideoScannerService>();
                 services.AddSingleton<IVideoLibraryService, VideoLibraryService>();
                 services.AddSingleton<ICatalogBackupService, CatalogBackupService>();
@@ -230,11 +231,28 @@ public partial class App : Application
                 services.AddTransient<BulkEditViewModel>();
 
                 services.AddTransient<MainWindow>();
+                services.AddTransient<DiagnosticsWindow>();
+
+                // In-app diagnostics buffer + rolling file log. A singleton so
+                // the buffer survives across Diagnostics window open/close, and
+                // wired into the logging pipeline as its own provider so every
+                // ILogger call across the app/services is captured for support.
+                services.AddSingleton<Services.Diagnostics.IDiagnosticsLog, Services.Diagnostics.DiagnosticsLog>();
 
                 services.AddLogging(b =>
                 {
                     b.AddDebug();
+                    b.Services.AddSingleton<Microsoft.Extensions.Logging.ILoggerProvider>(sp =>
+                        new Services.Diagnostics.DiagnosticsLoggerProvider(
+                            sp.GetRequiredService<Services.Diagnostics.IDiagnosticsLog>()));
                     b.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Information);
+
+                    // EF Core logs every executed SQL statement at Information,
+                    // which floods the diagnostics buffer/file and buries the
+                    // app-level events that actually help troubleshooting. Lift
+                    // its command category to Warning so the log stays signal.
+                    b.AddFilter("Microsoft.EntityFrameworkCore.Database.Command",
+                        Microsoft.Extensions.Logging.LogLevel.Warning);
                 });
             })
             .Build();

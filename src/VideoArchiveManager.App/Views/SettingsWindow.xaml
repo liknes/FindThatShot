@@ -4,8 +4,8 @@
         xmlns:ui="http://schemas.modernwpf.com/2019"
         xmlns:helpers="clr-namespace:VideoArchiveManager.App.Helpers.Controls"
         Title="Settings"
-        Width="720" Height="800"
-        MinWidth="600" MinHeight="560"
+        Width="760" Height="800"
+        MinWidth="640" MinHeight="560"
         WindowStartupLocation="CenterOwner"
         Background="{DynamicResource App.Background.Base}"
         ui:WindowHelper.UseModernWindowStyle="True"
@@ -14,274 +14,336 @@
         ui:TitleBar.Foreground="{DynamicResource App.Foreground.Primary}"
         ui:TitleBar.InactiveForeground="{DynamicResource App.Foreground.Tertiary}"
         Icon="pack://application:,,,/Assets/AppIcon.png">
-    <Grid Margin="24"
-          TextElement.FontFamily="{StaticResource App.FontFamily}"
+    <Grid TextElement.FontFamily="{StaticResource App.FontFamily}"
           TextElement.Foreground="{DynamicResource App.Foreground.Primary}">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Margin="0,0,0,16">
-            <TextBlock Text="Settings" Style="{StaticResource App.Type.H1}" />
-            <TextBlock Text="Configure scanning, storage, sidecar files, and catalog backups."
-                       Style="{StaticResource App.Type.BodyMuted}"
-                       Margin="0,4,0,0" />
-        </StackPanel>
+        <!--
+            Categories sit in a left navigation rail (Win11-Settings style).
+            Each NavigationViewItem's Tag matches a content pane below; the
+            code-behind SelectionChanged toggles the matching pane's
+            visibility. The Save / Cancel footer (last row) is global across
+            all panes since they all bind the one SettingsViewModel. The window
+            title bar already reads "Settings", so there's no in-window heading.
+        -->
+        <ui:NavigationView x:Name="SettingsNav" Grid.Row="0"
+                           PaneDisplayMode="Left"
+                           IsBackButtonVisible="Collapsed"
+                           IsSettingsVisible="False"
+                           IsPaneToggleButtonVisible="False"
+                           OpenPaneLength="200"
+                           Background="Transparent"
+                           SelectionChanged="SettingsNav_SelectionChanged">
+            <ui:NavigationView.MenuItems>
+                <ui:NavigationViewItem Content="General" Tag="general" IsSelected="True">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon FontFamily="{StaticResource App.Icon.FontFamily}" Glyph="{StaticResource Icon.Filter}" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+                <ui:NavigationViewItem Content="Library &amp; Storage" Tag="storage">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon FontFamily="{StaticResource App.Icon.FontFamily}" Glyph="{StaticResource Icon.Folder}" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+                <ui:NavigationViewItem Content="Playback &amp; Map" Tag="playback">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon FontFamily="{StaticResource App.Icon.FontFamily}" Glyph="{StaticResource Icon.Movie}" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+                <ui:NavigationViewItem Content="Review" Tag="review">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon FontFamily="{StaticResource App.Icon.FontFamily}" Glyph="{StaticResource Icon.Tag}" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+            </ui:NavigationView.MenuItems>
 
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-            <StackPanel Margin="0,0,12,0">
+            <Grid>
 
-                <TextBlock Text="FFMPEG" Style="{StaticResource App.Type.Section}" />
+                <!-- ============================ GENERAL ============================ -->
+                <ScrollViewer x:Name="PageGeneral"
+                              VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="24,16,20,16">
 
-                <TextBlock Text="ffmpeg.exe path (leave blank to use PATH)"
-                           Style="{StaticResource App.Type.Caption}" />
-                <Grid Margin="0,4,0,12">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <TextBox Grid.Column="0" Text="{Binding FfmpegPath, UpdateSourceTrigger=PropertyChanged}" />
-                    <Button Grid.Column="1" Margin="8,0,0,0"
-                            Content="Browse"
-                            Style="{StaticResource App.Button.Secondary}"
-                            helpers:Theme.Icon="{StaticResource Icon.Folder}"
-                            Command="{Binding BrowseFfmpegCommand}" />
-                </Grid>
+                        <TextBlock Text="SCANNING" Style="{StaticResource App.Type.Section}" />
 
-                <TextBlock Text="ffprobe.exe path (leave blank to use PATH)"
-                           Style="{StaticResource App.Type.Caption}" />
-                <Grid Margin="0,4,0,16">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <TextBox Grid.Column="0" Text="{Binding FfprobePath, UpdateSourceTrigger=PropertyChanged}" />
-                    <Button Grid.Column="1" Margin="8,0,0,0"
-                            Content="Browse"
-                            Style="{StaticResource App.Button.Secondary}"
-                            helpers:Theme.Icon="{StaticResource Icon.Folder}"
-                            Command="{Binding BrowseFfprobeCommand}" />
-                </Grid>
+                        <TextBlock Text="Max scan parallelism" Style="{StaticResource App.Type.Caption}" />
+                        <ui:NumberBox Value="{Binding MaxScanParallelism}" Minimum="1" Maximum="16" Margin="0,4,0,12" />
 
-                <TextBlock Text="STORAGE" Style="{StaticResource App.Type.Section}" />
+                        <TextBlock Text="Excluded folder names (comma-separated, matched on any path segment, case-insensitive)"
+                                   Style="{StaticResource App.Type.Caption}" TextWrapping="Wrap" />
+                        <TextBox Text="{Binding ExcludedFolderNames, UpdateSourceTrigger=PropertyChanged}"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap"
+                                 MinHeight="60"
+                                 Margin="0,4,0,12" />
 
-                <TextBlock Text="Thumbnail directory" Style="{StaticResource App.Type.Caption}" />
-                <TextBox Text="{Binding ThumbnailDirectory, UpdateSourceTrigger=PropertyChanged}"
-                         Margin="0,4,0,12" />
+                        <TextBlock Text="Excluded file name patterns (comma-separated globs, e.g. *_proxy.mp4, *.LRV)"
+                                   Style="{StaticResource App.Type.Caption}" TextWrapping="Wrap" />
+                        <TextBox Text="{Binding ExcludedFileNamePatterns, UpdateSourceTrigger=PropertyChanged}"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap"
+                                 MinHeight="40"
+                                 Margin="0,4,0,16" />
 
-                <TextBlock Text="Database file" Style="{StaticResource App.Type.Caption}" />
-                <TextBox Text="{Binding DatabasePath, UpdateSourceTrigger=PropertyChanged}"
-                         Margin="0,4,0,16" />
+                        <TextBlock TextWrapping="Wrap"
+                                   Style="{StaticResource App.Type.Caption}"
+                                   Text="Settings are saved to %APPDATA%\VideoArchiveManager\settings.json." />
+                    </StackPanel>
+                </ScrollViewer>
 
-                <TextBlock Text="CATALOG BACKUP" Style="{StaticResource App.Type.Section}" />
-                <TextBlock TextWrapping="Wrap" Style="{StaticResource App.Type.BodyMuted}" Margin="0,0,0,12"
-                           Text="The app can back up the catalog database (your tags, ratings, notes, status) to a folder you choose. Source video files are never touched." />
+                <!-- ======================= LIBRARY &amp; STORAGE ======================= -->
+                <ScrollViewer x:Name="PageStorage" Visibility="Collapsed"
+                              VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="24,16,20,16">
 
-                <TextBlock Text="Backup directory" Style="{StaticResource App.Type.Caption}" />
-                <Grid Margin="0,4,0,8">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <TextBox Grid.Column="0" Text="{Binding BackupDirectory, UpdateSourceTrigger=PropertyChanged}" />
-                    <Button Grid.Column="1" Margin="8,0,0,0"
-                            Content="Browse"
-                            Style="{StaticResource App.Button.Secondary}"
-                            helpers:Theme.Icon="{StaticResource Icon.Folder}"
-                            Command="{Binding BrowseBackupDirectoryCommand}" />
-                </Grid>
+                        <TextBlock Text="STORAGE" Style="{StaticResource App.Type.Section}" />
 
-                <CheckBox IsChecked="{Binding AutoBackupOnStartup}"
-                          Content="Back up automatically on app startup"
-                          Margin="0,0,0,8" />
+                        <TextBlock Text="Thumbnail directory" Style="{StaticResource App.Type.Caption}" />
+                        <TextBox Text="{Binding ThumbnailDirectory, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0,4,0,12" />
 
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,12" VerticalAlignment="Center">
-                    <TextBlock Text="Keep last" VerticalAlignment="Center" Margin="0,0,8,0" />
-                    <ui:NumberBox Width="100"
-                                  Minimum="1" Maximum="365"
-                                  Value="{Binding BackupRetentionCount}" />
-                    <TextBlock Text="backup(s); older backups are deleted." VerticalAlignment="Center" Margin="8,0,0,0" />
-                </StackPanel>
+                        <TextBlock Text="Database file" Style="{StaticResource App.Type.Caption}" />
+                        <TextBox Text="{Binding DatabasePath, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0,4,0,4" />
+                        <TextBlock TextWrapping="Wrap"
+                                   Style="{StaticResource App.Type.Caption}"
+                                   Margin="0,0,0,16"
+                                   Text="Changing the database path requires an app restart." />
 
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                    <Button Content="Back up now"
-                            Style="{StaticResource App.Button.Secondary}"
-                            helpers:Theme.Icon="{StaticResource Icon.Cloud}"
-                            Command="{Binding BackupNowCommand}"
-                            IsEnabled="{Binding IsBackingUp, Converter={StaticResource InverseBool}}" />
-                    <Button Content="Refresh list"
-                            Margin="8,0,0,0"
-                            Style="{StaticResource App.Button.Ghost}"
-                            helpers:Theme.Icon="{StaticResource Icon.Refresh}"
-                            Command="{Binding RefreshBackupsCommand}" />
-                </StackPanel>
-                <TextBlock Text="{Binding BackupStatusMessage}"
-                           TextWrapping="Wrap"
-                           Style="{StaticResource App.Type.Caption}"
-                           Margin="0,4,0,12" />
+                        <TextBlock Text="SIDECAR FILES" Style="{StaticResource App.Type.Section}" />
+                        <TextBlock TextWrapping="Wrap" Style="{StaticResource App.Type.BodyMuted}" Margin="0,0,0,12"
+                                   Text="When enabled, a small &quot;&lt;filename&gt;.findthatshot.json&quot; file is written next to each video on save, containing its tags, rating, status and notes. Other tools (DaVinci Resolve, Premiere, Lightroom, FCP, etc.) ignore these files. Source video files are never modified. Failures on read-only / offline drives are skipped silently." />
+                        <CheckBox IsChecked="{Binding WriteSidecarFiles}"
+                                  Content="Write sidecar JSON files next to videos"
+                                  Margin="0,0,0,16" />
 
-                <TextBlock Text="Available backups (select one to restore)"
-                           Style="{StaticResource App.Type.Caption}" />
-                <ListBox ItemsSource="{Binding Backups}"
-                         SelectedItem="{Binding SelectedBackup}"
-                         Height="160"
-                         Margin="0,4,0,8">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="{Binding FileName}" FontWeight="SemiBold"
-                                               Foreground="{DynamicResource App.Foreground.Primary}" />
-                                    <TextBlock Text="{Binding Path}"
-                                               Foreground="{DynamicResource App.Foreground.Tertiary}"
-                                               FontSize="11" TextTrimming="CharacterEllipsis" />
-                                </StackPanel>
-                                <TextBlock Grid.Column="1" VerticalAlignment="Center"
-                                           Foreground="{DynamicResource App.Foreground.Secondary}"
-                                           FontFamily="{StaticResource App.FontFamily.Mono}"
-                                           FontSize="11"
-                                           Margin="12,0,0,0">
-                                    <Run Text="{Binding CreatedAtUtc, Mode=OneWay, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" />
-                                </TextBlock>
-                            </Grid>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                    <Button Content="Restore selected"
-                            Style="{StaticResource App.Button.Secondary}"
-                            helpers:Theme.Icon="{StaticResource Icon.Refresh}"
-                            Command="{Binding RestoreCommand}"
-                            ToolTip="Stage a restore from the selected backup. The app will restart to safely swap the database file." />
-                </StackPanel>
+                        <TextBlock Text="CATALOG BACKUP" Style="{StaticResource App.Type.Section}" />
+                        <TextBlock TextWrapping="Wrap" Style="{StaticResource App.Type.BodyMuted}" Margin="0,0,0,12"
+                                   Text="The app can back up the catalog database (your tags, ratings, notes, status) to a folder you choose. Source video files are never touched." />
 
-                <TextBlock Text="SIDECAR FILES" Style="{StaticResource App.Type.Section}" />
-                <TextBlock TextWrapping="Wrap" Style="{StaticResource App.Type.BodyMuted}" Margin="0,0,0,12"
-                           Text="When enabled, a small &quot;&lt;filename&gt;.findthatshot.json&quot; file is written next to each video on save, containing its tags, rating, status and notes. Other tools (DaVinci Resolve, Premiere, Lightroom, FCP, etc.) ignore these files. Source video files are never modified. Failures on read-only / offline drives are skipped silently." />
-                <CheckBox IsChecked="{Binding WriteSidecarFiles}"
-                          Content="Write sidecar JSON files next to videos"
-                          Margin="0,0,0,16" />
+                        <TextBlock Text="Backup directory" Style="{StaticResource App.Type.Caption}" />
+                        <Grid Margin="0,4,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Text="{Binding BackupDirectory, UpdateSourceTrigger=PropertyChanged}" />
+                            <Button Grid.Column="1" Margin="8,0,0,0"
+                                    Content="Browse"
+                                    Style="{StaticResource App.Button.Secondary}"
+                                    helpers:Theme.Icon="{StaticResource Icon.Folder}"
+                                    Command="{Binding BrowseBackupDirectoryCommand}" />
+                        </Grid>
 
-                <TextBlock Text="MAP" Style="{StaticResource App.Type.Section}" />
-                <TextBlock TextWrapping="Wrap" Style="{StaticResource App.Type.BodyMuted}" Margin="0,0,0,12"
-                           Text="When enabled, the sidebar map draws the full drone flight path for clips that have a sibling DJI &quot;.SRT&quot; file, as a line with start / end markers. This is display-only: turning it off just hides the route — clips are still geotagged with their location and the single pin still shows. The flight path is read live from the file and never stored." />
-                <CheckBox IsChecked="{Binding ShowDroneFlightPaths}"
-                          Content="Show drone flight paths on the map"
-                          Margin="0,0,0,16" />
+                        <CheckBox IsChecked="{Binding AutoBackupOnStartup}"
+                                  Content="Back up automatically on app startup"
+                                  Margin="0,0,0,8" />
 
-                <TextBlock Text="PLAYBACK" Style="{StaticResource App.Type.Section}" />
-                <TextBlock TextWrapping="Wrap" Style="{StaticResource App.Type.BodyMuted}" Margin="0,0,0,12"
-                           Text="When enabled, the in-app player prefers a DaVinci Resolve-style proxy when one exists. For each clip we look for a sibling &quot;Proxy&quot; folder containing a file with the same base name (any extension) and play that instead — much faster on high-bitrate 4K 60p sources. Falls back to the original clip silently when no proxy is found. The catalog, thumbnails, metadata and the &quot;Play externally&quot; command always continue to point at the original file." />
-                <CheckBox IsChecked="{Binding PreferProxyForPlayback}"
-                          Content="Prefer DaVinci Resolve proxies for in-app playback"
-                          Margin="0,0,0,12" />
-                <TextBlock TextWrapping="Wrap" Style="{StaticResource App.Type.BodyMuted}" Margin="0,0,0,12"
-                           Text="When enabled, the in-app player shows a telemetry strip under the video for DJI clips that have a sibling &quot;.SRT&quot; file — ISO, shutter, aperture, focal length, altitude and GPS, synced to the current frame. Display-only and read live from the file; the player also has its own inline toggle." />
-                <CheckBox IsChecked="{Binding ShowPlayerTelemetry}"
-                          Content="Show drone telemetry overlay in the player"
-                          Margin="0,0,0,16" />
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12" VerticalAlignment="Center">
+                            <TextBlock Text="Keep last" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <ui:NumberBox Width="100"
+                                          Minimum="1" Maximum="365"
+                                          Value="{Binding BackupRetentionCount}" />
+                            <TextBlock Text="backup(s); older backups are deleted." VerticalAlignment="Center" Margin="8,0,0,0" />
+                        </StackPanel>
 
-                <TextBlock Text="REVIEW HOTKEYS" Style="{StaticResource App.Type.Section}" />
-                <TextBlock TextWrapping="Wrap" Style="{StaticResource App.Type.BodyMuted}" Margin="0,0,0,12"
-                           Text="Pin up to ten tags to the number keys. While the in-app player is open (review mode), pressing a digit toggles that tag on or off for the current clip — no mouse needed. Digits still type normally while you're editing the tag name, notes or coordinates fields." />
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <Button Content="Back up now"
+                                    Style="{StaticResource App.Button.Secondary}"
+                                    helpers:Theme.Icon="{StaticResource Icon.Cloud}"
+                                    Command="{Binding BackupNowCommand}"
+                                    IsEnabled="{Binding IsBackingUp, Converter={StaticResource InverseBool}}" />
+                            <Button Content="Refresh list"
+                                    Margin="8,0,0,0"
+                                    Style="{StaticResource App.Button.Ghost}"
+                                    helpers:Theme.Icon="{StaticResource Icon.Refresh}"
+                                    Command="{Binding RefreshBackupsCommand}" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding BackupStatusMessage}"
+                                   TextWrapping="Wrap"
+                                   Style="{StaticResource App.Type.Caption}"
+                                   Margin="0,4,0,12" />
 
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                    <Button Content="Fill from most-used"
-                            Style="{StaticResource App.Button.Secondary}"
-                            helpers:Theme.Icon="{StaticResource Icon.Tag}"
-                            Command="{Binding FillFromMostUsedCommand}"
-                            ToolTip="Drop your most-used tags into the empty slots." />
-                    <Button Content="Clear all"
-                            Margin="8,0,0,0"
-                            Style="{StaticResource App.Button.Ghost}"
-                            Command="{Binding ClearAllPinnedTagsCommand}" />
-                </StackPanel>
+                        <TextBlock Text="Available backups (select one to restore)"
+                                   Style="{StaticResource App.Type.Caption}" />
+                        <ListBox ItemsSource="{Binding Backups}"
+                                 SelectedItem="{Binding SelectedBackup}"
+                                 Height="160"
+                                 Margin="0,4,0,8">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="{Binding FileName}" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource App.Foreground.Primary}" />
+                                            <TextBlock Text="{Binding Path}"
+                                                       Foreground="{DynamicResource App.Foreground.Tertiary}"
+                                                       FontSize="11" TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="1" VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource App.Foreground.Secondary}"
+                                                   FontFamily="{StaticResource App.FontFamily.Mono}"
+                                                   FontSize="11"
+                                                   Margin="12,0,0,0">
+                                            <Run Text="{Binding CreatedAtUtc, Mode=OneWay, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" />
+                                        </TextBlock>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                            <Button Content="Restore selected"
+                                    Style="{StaticResource App.Button.Secondary}"
+                                    helpers:Theme.Icon="{StaticResource Icon.Refresh}"
+                                    Command="{Binding RestoreCommand}"
+                                    ToolTip="Stage a restore from the selected backup. The app will restart to safely swap the database file." />
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
 
-                <ItemsControl ItemsSource="{Binding PinnedTagSlots}" Margin="0,0,0,16">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Grid Margin="0,0,0,6">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <Border Grid.Column="0"
-                                        Width="28" Height="28"
-                                        CornerRadius="6"
-                                        VerticalAlignment="Center"
-                                        Background="{DynamicResource App.Background.Elevated}"
-                                        BorderBrush="{DynamicResource App.Border.Subtle}"
-                                        BorderThickness="1">
-                                    <TextBlock Text="{Binding KeyLabel}"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center"
-                                               FontFamily="{StaticResource App.FontFamily.Mono}"
-                                               FontWeight="SemiBold"
-                                               Foreground="{DynamicResource App.Foreground.Secondary}" />
-                                </Border>
-                                <ComboBox Grid.Column="1"
-                                          Margin="8,0,0,0"
-                                          VerticalAlignment="Center"
-                                          ui:ControlHelper.PlaceholderText="— not bound —"
-                                          ItemsSource="{Binding DataContext.AvailableTags, RelativeSource={RelativeSource AncestorType=Window}}"
-                                          SelectedItem="{Binding SelectedTag, Mode=TwoWay}">
-                                    <ComboBox.ItemTemplate>
-                                        <DataTemplate>
-                                            <TextBlock>
-                                                <Run Text="{Binding Name, Mode=OneWay}" />
-                                                <Run Text="{Binding Type, Mode=OneWay}"
-                                                     Foreground="{DynamicResource App.Foreground.Tertiary}" />
-                                            </TextBlock>
-                                        </DataTemplate>
-                                    </ComboBox.ItemTemplate>
-                                </ComboBox>
-                                <Button Grid.Column="2"
-                                        Margin="8,0,0,0"
-                                        VerticalAlignment="Center"
-                                        Style="{StaticResource App.Button.Ghost}"
-                                        helpers:Theme.Icon="{StaticResource Icon.Close}"
-                                        Command="{Binding ClearCommand}"
-                                        ToolTip="Unbind this key" />
-                            </Grid>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                <!-- ======================= PLAYBACK &amp; MAP ======================= -->
+                <ScrollViewer x:Name="PagePlayback" Visibility="Collapsed"
+                              VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="24,16,20,16">
 
-                <TextBlock Text="SCANNING" Style="{StaticResource App.Type.Section}" />
+                        <TextBlock Text="FFMPEG" Style="{StaticResource App.Type.Section}" />
 
-                <TextBlock Text="Max scan parallelism" Style="{StaticResource App.Type.Caption}" />
-                <ui:NumberBox Value="{Binding MaxScanParallelism}" Minimum="1" Maximum="16" Margin="0,4,0,12" />
+                        <TextBlock Text="ffmpeg.exe path (leave blank to use PATH)"
+                                   Style="{StaticResource App.Type.Caption}" />
+                        <Grid Margin="0,4,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Text="{Binding FfmpegPath, UpdateSourceTrigger=PropertyChanged}" />
+                            <Button Grid.Column="1" Margin="8,0,0,0"
+                                    Content="Browse"
+                                    Style="{StaticResource App.Button.Secondary}"
+                                    helpers:Theme.Icon="{StaticResource Icon.Folder}"
+                                    Command="{Binding BrowseFfmpegCommand}" />
+                        </Grid>
 
-                <TextBlock Text="Excluded folder names (comma-separated, matched on any path segment, case-insensitive)"
-                           Style="{StaticResource App.Type.Caption}" TextWrapping="Wrap" />
-                <TextBox Text="{Binding ExcludedFolderNames, UpdateSourceTrigger=PropertyChanged}"
-                         AcceptsReturn="True"
-                         TextWrapping="Wrap"
-                         MinHeight="60"
-                         Margin="0,4,0,12" />
+                        <TextBlock Text="ffprobe.exe path (leave blank to use PATH)"
+                                   Style="{StaticResource App.Type.Caption}" />
+                        <Grid Margin="0,4,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Text="{Binding FfprobePath, UpdateSourceTrigger=PropertyChanged}" />
+                            <Button Grid.Column="1" Margin="8,0,0,0"
+                                    Content="Browse"
+                                    Style="{StaticResource App.Button.Secondary}"
+                                    helpers:Theme.Icon="{StaticResource Icon.Folder}"
+                                    Command="{Binding BrowseFfprobeCommand}" />
+                        </Grid>
 
-                <TextBlock Text="Excluded file name patterns (comma-separated globs, e.g. *_proxy.mp4, *.LRV)"
-                           Style="{StaticResource App.Type.Caption}" TextWrapping="Wrap" />
-                <TextBox Text="{Binding ExcludedFileNamePatterns, UpdateSourceTrigger=PropertyChanged}"
-                         AcceptsReturn="True"
-                         TextWrapping="Wrap"
-                         MinHeight="40"
-                         Margin="0,4,0,12" />
+                        <TextBlock Text="PLAYBACK" Style="{StaticResource App.Type.Section}" />
+                        <TextBlock TextWrapping="Wrap" Style="{StaticResource App.Type.BodyMuted}" Margin="0,0,0,12"
+                                   Text="When enabled, the in-app player prefers a DaVinci Resolve-style proxy when one exists. For each clip we look for a sibling &quot;Proxy&quot; folder containing a file with the same base name (any extension) and play that instead — much faster on high-bitrate 4K 60p sources. Falls back to the original clip silently when no proxy is found. The catalog, thumbnails, metadata and the &quot;Play externally&quot; command always continue to point at the original file." />
+                        <CheckBox IsChecked="{Binding PreferProxyForPlayback}"
+                                  Content="Prefer DaVinci Resolve proxies for in-app playback"
+                                  Margin="0,0,0,12" />
+                        <TextBlock TextWrapping="Wrap" Style="{StaticResource App.Type.BodyMuted}" Margin="0,0,0,12"
+                                   Text="When enabled, the in-app player shows a telemetry strip under the video for DJI clips that have a sibling &quot;.SRT&quot; file — ISO, shutter, aperture, focal length, altitude and GPS, synced to the current frame. Display-only and read live from the file; the player also has its own inline toggle." />
+                        <CheckBox IsChecked="{Binding ShowPlayerTelemetry}"
+                                  Content="Show drone telemetry overlay in the player"
+                                  Margin="0,0,0,16" />
 
-                <TextBlock TextWrapping="Wrap"
-                           Style="{StaticResource App.Type.Caption}"
-                           Text="Settings are saved to %APPDATA%\VideoArchiveManager\settings.json. Changes to the database path require an app restart." />
-            </StackPanel>
-        </ScrollViewer>
+                        <TextBlock Text="MAP" Style="{StaticResource App.Type.Section}" />
+                        <TextBlock TextWrapping="Wrap" Style="{StaticResource App.Type.BodyMuted}" Margin="0,0,0,12"
+                                   Text="When enabled, the sidebar map draws the full drone flight path for clips that have a sibling DJI &quot;.SRT&quot; file, as a line with start / end markers. This is display-only: turning it off just hides the route — clips are still geotagged with their location and the single pin still shows. The flight path is read live from the file and never stored." />
+                        <CheckBox IsChecked="{Binding ShowDroneFlightPaths}"
+                                  Content="Show drone flight paths on the map"
+                                  Margin="0,0,0,16" />
+                    </StackPanel>
+                </ScrollViewer>
 
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                <!-- ============================= REVIEW ============================= -->
+                <ScrollViewer x:Name="PageReview" Visibility="Collapsed"
+                              VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="24,16,20,16">
+
+                        <TextBlock Text="REVIEW HOTKEYS" Style="{StaticResource App.Type.Section}" />
+                        <TextBlock TextWrapping="Wrap" Style="{StaticResource App.Type.BodyMuted}" Margin="0,0,0,12"
+                                   Text="Pin up to ten tags to the number keys. While the in-app player is open (review mode), pressing a digit toggles that tag on or off for the current clip — no mouse needed. Digits still type normally while you're editing the tag name, notes or coordinates fields." />
+
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <Button Content="Fill from most-used"
+                                    Style="{StaticResource App.Button.Secondary}"
+                                    helpers:Theme.Icon="{StaticResource Icon.Tag}"
+                                    Command="{Binding FillFromMostUsedCommand}"
+                                    ToolTip="Drop your most-used tags into the empty slots." />
+                            <Button Content="Clear all"
+                                    Margin="8,0,0,0"
+                                    Style="{StaticResource App.Button.Ghost}"
+                                    Command="{Binding ClearAllPinnedTagsCommand}" />
+                        </StackPanel>
+
+                        <ItemsControl ItemsSource="{Binding PinnedTagSlots}" Margin="0,0,0,16">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,0,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0"
+                                                Width="28" Height="28"
+                                                CornerRadius="6"
+                                                VerticalAlignment="Center"
+                                                Background="{DynamicResource App.Background.Elevated}"
+                                                BorderBrush="{DynamicResource App.Border.Subtle}"
+                                                BorderThickness="1">
+                                            <TextBlock Text="{Binding KeyLabel}"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"
+                                                       FontFamily="{StaticResource App.FontFamily.Mono}"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource App.Foreground.Secondary}" />
+                                        </Border>
+                                        <ComboBox Grid.Column="1"
+                                                  Margin="8,0,0,0"
+                                                  VerticalAlignment="Center"
+                                                  ui:ControlHelper.PlaceholderText="— not bound —"
+                                                  ItemsSource="{Binding DataContext.AvailableTags, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                  SelectedItem="{Binding SelectedTag, Mode=TwoWay}">
+                                            <ComboBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock>
+                                                        <Run Text="{Binding Name, Mode=OneWay}" />
+                                                        <Run Text="{Binding Type, Mode=OneWay}"
+                                                             Foreground="{DynamicResource App.Foreground.Tertiary}" />
+                                                    </TextBlock>
+                                                </DataTemplate>
+                                            </ComboBox.ItemTemplate>
+                                        </ComboBox>
+                                        <Button Grid.Column="2"
+                                                Margin="8,0,0,0"
+                                                VerticalAlignment="Center"
+                                                Style="{StaticResource App.Button.Ghost}"
+                                                helpers:Theme.Icon="{StaticResource Icon.Close}"
+                                                Command="{Binding ClearCommand}"
+                                                ToolTip="Unbind this key" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </ScrollViewer>
+
+            </Grid>
+        </ui:NavigationView>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="24,12,24,24">
             <Button Content="Cancel"
                     Style="{StaticResource App.Button.Ghost}"
                     Command="{Binding CancelCommand}" />

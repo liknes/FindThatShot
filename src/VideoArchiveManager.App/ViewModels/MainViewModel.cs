@@ -20,6 +20,7 @@ public partial class MainViewModel : ObservableObject
 {
     private readonly IDbContextFactory<VideoArchiveDbContext> _contextFactory;
     private readonly ISearchService _searchService;
+    private readonly ISavedSearchService _savedSearchService;
     private readonly ITagService _tagService;
     private readonly IVideoScannerService _scannerService;
     private readonly IVideoLibraryService _libraryService;
@@ -40,6 +41,7 @@ public partial class MainViewModel : ObservableObject
     public MainViewModel(
         IDbContextFactory<VideoArchiveDbContext> contextFactory,
         ISearchService searchService,
+        ISavedSearchService savedSearchService,
         ITagService tagService,
         IVideoScannerService scannerService,
         IVideoLibraryService libraryService,
@@ -53,6 +55,7 @@ public partial class MainViewModel : ObservableObject
     {
         _contextFactory = contextFactory;
         _searchService = searchService;
+        _savedSearchService = savedSearchService;
         _tagService = tagService;
         _scannerService = scannerService;
         _libraryService = libraryService;
@@ -124,6 +127,11 @@ public partial class MainViewModel : ObservableObject
 
     public ObservableCollection<Tag> AllTags { get; } = new();
     public ObservableCollection<string> Cameras { get; } = new();
+
+    // Named, reusable filters (Smart Collections). Clicking one re-applies
+    // its captured criteria and re-runs the catalog search live, so the
+    // result always reflects the current catalog rather than a frozen list.
+    public ObservableCollection<SavedSearch> SavedSearches { get; } = new();
 
     // Tag filters the user has picked. Search applies them as AND
     // (a video must carry every selected tag). Backed by the Tag picker
@@ -229,10 +237,14 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private bool _isDatePanelExpanded = true;
 
+    [ObservableProperty]
+    private bool _isSavedSearchesPanelExpanded = true;
+
     partial void OnIsFoldersPanelExpandedChanged(bool value) => PersistSidebarPanelState();
     partial void OnIsTagsPanelExpandedChanged(bool value) => PersistSidebarPanelState();
     partial void OnIsCamerasPanelExpandedChanged(bool value) => PersistSidebarPanelState();
     partial void OnIsDatePanelExpandedChanged(bool value) => PersistSidebarPanelState();
+    partial void OnIsSavedSearchesPanelExpandedChanged(bool value) => PersistSidebarPanelState();
 
     private void PersistSidebarPanelState()
     {
@@ -246,6 +258,7 @@ public partial class MainViewModel : ObservableObject
         s.SidebarTagsExpanded = IsTagsPanelExpanded;
         s.SidebarCamerasExpanded = IsCamerasPanelExpanded;
         s.SidebarDateExpanded = IsDatePanelExpanded;
+        s.SidebarSavedSearchesExpanded = IsSavedSearchesPanelExpanded;
         _ = SaveSettingsSilentlyAsync(s);
     }
 
@@ -264,6 +277,7 @@ public partial class MainViewModel : ObservableObject
             IsTagsPanelExpanded = s.SidebarTagsExpanded;
             IsCamerasPanelExpanded = s.SidebarCamerasExpanded;
             IsDatePanelExpanded = s.SidebarDateExpanded;
+            IsSavedSearchesPanelExpanded = s.SidebarSavedSearchesExpanded;
         }
         finally
         {
@@ -450,6 +464,16 @@ public partial class MainViewModel : ObservableObject
         var cams = await _searchService.GetDistinctCamerasAsync();
         Cameras.Clear();
         foreach (var c in cams) Cameras.Add(c);
+
+        await ReloadSavedSearchesAsync();
+    }
+
+    private async Task ReloadSavedSearchesAsync()
+    {
+        var searches = await _savedSearchService.GetAllAsync();
+        SavedSearches.Clear();
+        foreach (var s in searches) SavedSearches.Add(s);
+        SaveCurrentSearchCommand.NotifyCanExecuteChanged();
     }
 
     // Rebuilds the sidebar folder tree from the catalog.
@@ -973,25 +997,98 @@ public partial class MainViewModel : ObservableObject
             Title = "Select a root folder to scan"
         };
         if (dialog.ShowDialog() != true) return;
-        var path = dialog.FolderName;
-        if (string.IsNullOrWhiteSpace(path) || !Directory.Exists(path)) return;
+        await AddRootFoldersByPathsAsync(new[] { dialog.FolderName });
+    }
 
-        await using var ctx = await _contextFactory.CreateDbContextAsync();
-        if (await ctx.RootFolders.AnyAsync(r => r.Path == path))
+    // Registers one or more directories as catalog root folders. Shared
+    // by the "Add folder…" picker (single path) and the sidebar
+    // drag-and-drop handler (potentially several folders dropped at once
+    // from Explorer). Mirrors the picker's old behaviour per path —
+    // dedupe against existing roots, persist, surface in the RootFolders
+    // collection — but is batch-aware: it filters to real directories,
+    // skips paths already registered (and dupes within the same drop),
+    // commits the additions in one SaveChanges, rebuilds the folder tree
+    // so the new roots appear immediately, and reports a single rolled-up
+    // status line. Newly added roots are returned so callers can offer a
+    // follow-up action (e.g. kick a scan).
+    public async Task<IReadOnlyList<RootFolder>> AddRootFoldersByPathsAsync(IEnumerable<string> paths)
+    {
+        // Normalise, keep only existing directories, and dedupe within the
+        // batch (case-insensitive on Windows) before touching the DB.
+        var candidates = new List<string>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var raw in paths)
         {
-            StatusMessage = "Root folder already exists";
-            return;
+            if (string.IsNullOrWhiteSpace(raw)) continue;
+            var path = raw.Trim();
+            if (!Directory.Exists(path)) continue;
+            if (seen.Add(path)) candidates.Add(path);
         }
 
-        var rf = new RootFolder
+        if (candidates.Count == 0)
         {
-            Path = path,
-            Name = Path.GetFileName(path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))
-        };
-        ctx.RootFolders.Add(rf);
-        await ctx.SaveChangesAsync();
-        RootFolders.Add(rf);
-        StatusMessage = $"Added root folder: {rf.Path}";
+            StatusMessage = "No folders to add — drop one or more folders.";
+            return Array.Empty<RootFolder>();
+        }
+
+        var added = new List<RootFolder>();
+        var skipped = 0;
+
+        await using (var ctx = await _contextFactory.CreateDbContextAsync())
+        {
+            foreach (var path in candidates)
+            {
+                if (await ctx.RootFolders.AnyAsync(r => r.Path == path))
+                {
+                    skipped++;
+                    continue;
+                }
+
+                var rf = new RootFolder
+                {
+                    Path = path,
+                    Name = Path.GetFileName(path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))
+                };
+                ctx.RootFolders.Add(rf);
+                added.Add(rf);
+            }
+
+            if (added.Count > 0) await ctx.SaveChangesAsync();
+
+            foreach (var rf in added) RootFolders.Add(rf);
+
+            // Surface the new roots in the tree right away (the picker used
+            // to leave them invisible until the next scan/load).
+            if (added.Count > 0) await RebuildFolderTreeAsync(ctx);
+        }
+
+        StatusMessage = BuildAddRootsStatus(added, skipped);
+
+        // Auto-scan the freshly added roots so the clips show up without a
+        // separate, easy-to-miss Scan step. We scan only the new roots
+        // (not the whole library) to keep adding a folder cheap, and skip
+        // it entirely if a scan is already running so we don't stomp it.
+        if (added.Count > 0 && !IsScanning)
+        {
+            await RunScanAsync(added);
+        }
+
+        return added;
+    }
+
+    private static string BuildAddRootsStatus(IReadOnlyList<RootFolder> added, int skipped)
+    {
+        if (added.Count == 0)
+        {
+            return skipped > 0
+                ? (skipped == 1 ? "Root folder already exists" : $"{skipped} folders already in the catalog")
+                : "No folders added";
+        }
+
+        var addedPart = added.Count == 1
+            ? $"Added root folder: {added[0].Path}"
+            : $"Added {added.Count} root folders";
+        return skipped > 0 ? $"{addedPart} ({skipped} already existed)" : addedPart;
     }
 
     [RelayCommand]
@@ -1125,12 +1222,26 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private async Task ScanAsync()
     {
-        if (IsScanning) return;
         if (RootFolders.Count == 0)
         {
             StatusMessage = "Add at least one root folder before scanning";
             return;
         }
+
+        await RunScanAsync(RootFolders.ToList());
+    }
+
+    // Core scan routine shared by the explicit Scan command (which passes
+    // every registered root) and the add-folder flow (which passes only
+    // the freshly added roots so dropping a folder catalogues just that
+    // folder instead of rescanning the whole library). Honours the same
+    // IsScanning re-entrancy guard and ffprobe availability check, drives
+    // the same progress/heartbeat plumbing, and refreshes the filters +
+    // results when done.
+    private async Task RunScanAsync(IReadOnlyList<RootFolder> roots)
+    {
+        if (IsScanning) return;
+        if (roots.Count == 0) return;
 
         if (!_ffprobeService.IsAvailable())
         {
@@ -1167,7 +1278,6 @@ public partial class MainViewModel : ObservableObject
 
         try
         {
-            var roots = RootFolders.ToList();
             await _scannerService.ScanAsync(roots, progress, _scanCts.Token);
         }
         catch (OperationCanceledException)
@@ -1527,6 +1637,234 @@ public partial class MainViewModel : ObservableObject
             _suppressFilterSearch = false;
         }
         await SearchAsync();
+    }
+
+    // --- Saved searches (Smart Collections) -----------------------------
+
+    // Snapshot the current sidebar filter state into a serialisable criteria
+    // object. RootFolderPath comes from the selected folder-tree node so a
+    // saved search can re-scope the catalog to the same folder on apply.
+    private SavedSearchCriteria BuildCurrentCriteria() => new()
+    {
+        Text = string.IsNullOrWhiteSpace(SearchText) ? null : SearchText,
+        Status = StatusFilter,
+        MinRating = MinRatingFilter,
+        Camera = string.IsNullOrWhiteSpace(CameraFilter) ? null : CameraFilter,
+        TagIds = SelectedTagFilters.Select(t => t.Id).ToArray(),
+        DateFrom = DateFrom,
+        DateTo = DateTo,
+        RootFolderPath = SelectedFolderNode?.FullPath,
+        ShowOnlyAvailable = ShowOnlyAvailable,
+        OnlyUnreviewed = OnlyUnreviewed
+    };
+
+    // Lets the user name and store whatever filter combination is currently
+    // dialled in. A blank catalog (no filters at all) is still saveable —
+    // e.g. an "Everything" reset view — so there's no CanExecute gate.
+    [RelayCommand]
+    private async Task SaveCurrentSearchAsync()
+    {
+        // Offer a sensible default name derived from the active filters so
+        // the user usually just hits Enter.
+        var suggested = SuggestSavedSearchName();
+
+        var dialog = new SaveSearchDialog(suggested)
+        {
+            Owner = App.Current.MainWindow
+        };
+        if (dialog.ShowDialog() != true) return;
+
+        var name = dialog.SearchName;
+        if (string.IsNullOrWhiteSpace(name)) return;
+
+        try
+        {
+            await _savedSearchService.SaveAsync(name, BuildCurrentCriteria());
+            await ReloadSavedSearchesAsync();
+            StatusMessage = $"Saved search \"{name.Trim()}\"";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Couldn't save search: {ex.Message}";
+        }
+    }
+
+    // Re-applies a saved search's captured criteria, then runs one search.
+    // Wrapped in _suppressFilterSearch so the 9 property writes collapse
+    // into a single query rather than nine overlapping ones.
+    [RelayCommand]
+    private async Task ApplySavedSearchAsync(SavedSearch? saved)
+    {
+        if (saved is null) return;
+
+        var criteria = SavedSearchCriteria.Deserialize(saved.CriteriaJson);
+
+        // Tag IDs are matched against the live tag set; tags deleted since
+        // the search was saved simply drop out of the restored chip strip.
+        var tagsById = AllTags.ToDictionary(t => t.Id);
+
+        _suppressFilterSearch = true;
+        try
+        {
+            SearchText = criteria.Text ?? string.Empty;
+            StatusFilter = criteria.Status;
+            MinRatingFilter = criteria.MinRating;
+            CameraFilter = string.IsNullOrWhiteSpace(criteria.Camera) ? null : criteria.Camera;
+            TagFilterSearchText = string.Empty;
+
+            SelectedTagFilters.Clear();
+            foreach (var id in criteria.TagIds)
+            {
+                if (tagsById.TryGetValue(id, out var tag))
+                {
+                    SelectedTagFilters.Add(tag);
+                }
+            }
+
+            DateFrom = criteria.DateFrom;
+            DateTo = criteria.DateTo;
+            ShowOnlyAvailable = criteria.ShowOnlyAvailable;
+            OnlyUnreviewed = criteria.OnlyUnreviewed;
+
+            SelectFolderNodeByPath(criteria.RootFolderPath);
+        }
+        finally
+        {
+            _suppressFilterSearch = false;
+        }
+
+        await SearchAsync();
+        StatusMessage = $"Applied saved search \"{saved.Name}\" · {Videos.Count} of {TotalCount} videos";
+    }
+
+    [RelayCommand]
+    private async Task RenameSavedSearchAsync(SavedSearch? saved)
+    {
+        if (saved is null) return;
+
+        var dialog = new SaveSearchDialog(saved.Name)
+        {
+            Owner = App.Current.MainWindow,
+            Title = "Rename saved search"
+        };
+        if (dialog.ShowDialog() != true) return;
+
+        var name = dialog.SearchName;
+        if (string.IsNullOrWhiteSpace(name) || string.Equals(name.Trim(), saved.Name, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        try
+        {
+            await _savedSearchService.RenameAsync(saved.Id, name);
+            await ReloadSavedSearchesAsync();
+            StatusMessage = $"Renamed saved search to \"{name.Trim()}\"";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Couldn't rename search: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task DeleteSavedSearchAsync(SavedSearch? saved)
+    {
+        if (saved is null) return;
+
+        var result = MessageBox.Show(
+            $"Delete the saved search \"{saved.Name}\"?\n\n" +
+            "This only removes the saved filter. No videos, tags, or catalog " +
+            "records are affected.",
+            "Delete saved search",
+            MessageBoxButton.OKCancel,
+            MessageBoxImage.Question,
+            MessageBoxResult.Cancel);
+        if (result != MessageBoxResult.OK) return;
+
+        await _savedSearchService.DeleteAsync(saved.Id);
+        await ReloadSavedSearchesAsync();
+        StatusMessage = $"Deleted saved search \"{saved.Name}\"";
+    }
+
+    // Walks the folder tree for the node whose FullPath matches, selects it,
+    // and expands its ancestors so the highlight is visible. Clears the
+    // folder filter when the path is null or the node no longer exists
+    // (e.g. the drive is offline or the folder was removed since saving).
+    private void SelectFolderNodeByPath(string? fullPath)
+    {
+        if (string.IsNullOrWhiteSpace(fullPath))
+        {
+            SelectedFolderNode = null;
+            return;
+        }
+
+        var match = FindFolderNode(FolderTree, fullPath);
+        if (match is null)
+        {
+            SelectedFolderNode = null;
+            return;
+        }
+
+        ExpandAncestorsByPath(match.FullPath);
+        SelectedFolderNode = match;
+        match.IsSelected = true;
+    }
+
+    private static FolderNode? FindFolderNode(IEnumerable<FolderNode> nodes, string fullPath)
+    {
+        foreach (var node in nodes)
+        {
+            if (string.Equals(node.FullPath, fullPath, StringComparison.OrdinalIgnoreCase))
+            {
+                return node;
+            }
+            var child = FindFolderNode(node.Children, fullPath);
+            if (child is not null) return child;
+        }
+        return null;
+    }
+
+    // Expand every ancestor of the node at the given path so a deep
+    // selection is realised and visible in the TreeView.
+    private void ExpandAncestorsByPath(string fullPath)
+    {
+        var path = fullPath;
+        while (true)
+        {
+            var parentPath = Path.GetDirectoryName(
+                path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+            if (string.IsNullOrEmpty(parentPath)
+                || string.Equals(parentPath, path, StringComparison.OrdinalIgnoreCase))
+            {
+                break;
+            }
+            var parent = FindFolderNode(FolderTree, parentPath);
+            if (parent is not null)
+            {
+                parent.IsExpanded = true;
+            }
+            path = parentPath;
+        }
+    }
+
+    // Builds a friendly default name from the active filters, e.g.
+    // "Status: Favorite · 4★+ · birds". Falls back to "All clips" when
+    // nothing is filtered.
+    private string SuggestSavedSearchName()
+    {
+        var parts = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(SearchText)) parts.Add($"\u201c{SearchText.Trim()}\u201d");
+        if (StatusFilter.HasValue) parts.Add(StatusFilter.Value.ToString());
+        if (MinRatingFilter > 0) parts.Add($"{MinRatingFilter}\u2605+");
+        if (!string.IsNullOrWhiteSpace(CameraFilter)) parts.Add(CameraFilter!);
+        if (SelectedTagFilters.Count > 0) parts.Add(string.Join(", ", SelectedTagFilters.Take(3).Select(t => t.Name)));
+        if (SelectedFolderNode is not null) parts.Add(SelectedFolderNode.Name);
+        if (OnlyUnreviewed) parts.Add("Unreviewed");
+        if (DateFrom.HasValue || DateTo.HasValue) parts.Add("date range");
+
+        return parts.Count == 0 ? "All clips" : string.Join(" \u00b7 ", parts);
     }
 
     private void StartHeartbeat()

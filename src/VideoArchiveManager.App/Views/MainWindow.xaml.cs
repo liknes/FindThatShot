@@ -509,6 +509,53 @@ public partial class MainWindow : Window
         _viewModel.SelectedFolderNode = e.NewValue as FolderNode;
     }
 
+    // --- Drag-and-drop folders into the FOLDERS sidebar panel ---------
+    //
+    // Familiar from Lightroom / Bridge: drop one or more folders from
+    // Windows Explorer onto the FOLDERS panel to register them as catalog
+    // roots (the same outcome as the "Add folder…" picker / Ctrl+O). We
+    // only accept the drop when the payload contains at least one real
+    // directory; dropping plain files is rejected so the cursor shows the
+    // "no-drop" affordance rather than silently doing nothing.
+
+    private static IReadOnlyList<string> GetDroppedDirectories(IDataObject data)
+    {
+        if (!data.GetDataPresent(DataFormats.FileDrop)) return System.Array.Empty<string>();
+        if (data.GetData(DataFormats.FileDrop) is not string[] paths) return System.Array.Empty<string>();
+        return paths.Where(System.IO.Directory.Exists).ToList();
+    }
+
+    private void FoldersPanel_OnDragEnter(object sender, DragEventArgs e)
+    {
+        if (GetDroppedDirectories(e.Data).Count > 0)
+        {
+            FolderDropOverlay.Visibility = Visibility.Visible;
+        }
+        FoldersPanel_OnDragOver(sender, e);
+    }
+
+    private void FoldersPanel_OnDragOver(object sender, DragEventArgs e)
+    {
+        e.Effects = GetDroppedDirectories(e.Data).Count > 0
+            ? DragDropEffects.Copy
+            : DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    private void FoldersPanel_OnDragLeave(object sender, DragEventArgs e)
+    {
+        FolderDropOverlay.Visibility = Visibility.Collapsed;
+    }
+
+    private async void FoldersPanel_OnDrop(object sender, DragEventArgs e)
+    {
+        FolderDropOverlay.Visibility = Visibility.Collapsed;
+        var directories = GetDroppedDirectories(e.Data);
+        if (directories.Count == 0) return;
+        e.Handled = true;
+        await _viewModel.AddRootFoldersByPathsAsync(directories);
+    }
+
     // ModernWpf's AutoSuggestBox raises QuerySubmitted on Enter (or when
     // the user picks a suggestion with Enter). The Text binding has
     // already pushed NewTagName, so we just kick the existing
@@ -728,6 +775,29 @@ public partial class MainWindow : Window
             Owner = this
         };
         dialog.ShowDialog();
+    }
+
+    // Single shared, non-modal Diagnostics window. Non-modal so its live log
+    // tail keeps updating while the user reproduces an issue in the main
+    // window; resolved from DI for its IDiagnosticsLog / settings / ffprobe
+    // dependencies. Re-clicking the menu brings the existing window forward
+    // rather than stacking duplicates.
+    private DiagnosticsWindow? _diagnosticsWindow;
+
+    private void Diagnostics_Click(object sender, RoutedEventArgs e)
+    {
+        if (_diagnosticsWindow is not null && _diagnosticsWindow.IsLoaded)
+        {
+            if (_diagnosticsWindow.WindowState == WindowState.Minimized)
+                _diagnosticsWindow.WindowState = WindowState.Normal;
+            _diagnosticsWindow.Activate();
+            return;
+        }
+
+        _diagnosticsWindow = App.GetService<DiagnosticsWindow>();
+        _diagnosticsWindow.Owner = this;
+        _diagnosticsWindow.Closed += (_, _) => _diagnosticsWindow = null;
+        _diagnosticsWindow.Show();
     }
 
     // Opens the non-modal clip-info popup. Reuses an existing window if one

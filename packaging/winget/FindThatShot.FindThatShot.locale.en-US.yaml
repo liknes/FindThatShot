@@ -1,0 +1,39 @@
+# Default-locale manifest — the human-facing listing (name, description, links).
+PackageIdentifier: FindThatShot.FindThatShot
+PackageVersion: 0.9.4
+PackageLocale: en-US
+# TODO: set these to your real identity / links.
+Publisher: Find That Shot
+PublisherUrl: https://github.com/<OWNER>
+PublisherSupportUrl: https://github.com/<OWNER>/<REPO>/issues
+PackageName: Find That Shot
+PackageUrl: https://github.com/<OWNER>/<REPO>
+License: GPL-3.0-or-later
+LicenseUrl: https://github.com/<OWNER>/<REPO>/blob/main/LICENSE
+Copyright: Copyright (C) Find That Shot
+ShortDescription: Catalog, tag, and review a large local video archive across internal and external drives — without ever moving or modifying the source files.
+Description: |-
+  Find That Shot is a Windows desktop app for organizing a large local video
+  archive across internal and external drives. Source video files are never
+  moved, renamed, deleted, or modified — it only catalogs them, generates
+  thumbnails, and stores searchable metadata, tags, notes, ratings, and workflow
+  status in its own SQLite catalog.
+
+  Highlights include a fast thumbnail gallery, in-app playback (double-click to
+  play) with previous/next navigation, number-key tag hotkeys for review, saved
+  searches, and first-class support for DJI drone footage — extracting GPS
+  geotags and drawing full flight paths with live drone position on an offline
+  map during playback.
+Moniker: findthatshot
+Tags:
+  - video
+  - video-management
+  - dam
+  - catalog
+  - footage
+  - drone
+  - dji
+  - ffmpeg
+  - windows
+ManifestType: defaultLocale
+ManifestVersion: 1.6.0

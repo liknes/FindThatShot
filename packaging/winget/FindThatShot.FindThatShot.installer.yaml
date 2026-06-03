@@ -1,0 +1,39 @@
+# Installer manifest — points winget at the Velopack-produced Setup.exe.
+#
+# Velopack facts this relies on (confirmed from docs.velopack.io):
+#   * `vpk pack` emits "{PackId}-Setup.exe" -> "VideoArchiveManager-Setup.exe".
+#   * Setup.exe installs PER-USER into %LocalAppData% (no admin)  -> Scope: user
+#   * Its silent switch is "-s" / "--silent".
+#   * It writes an Add/Remove-Programs (ARP) entry under HKCU, which is how
+#     winget correlates an installed app for `winget upgrade`. The
+#     AppsAndFeaturesEntries below must match that ARP entry: Velopack uses
+#     --packTitle ("Find That Shot") as DisplayName and --packAuthors
+#     ("Find That Shot") as Publisher.
+PackageIdentifier: FindThatShot.FindThatShot
+PackageVersion: 0.9.4
+InstallerLocale: en-US
+InstallerType: exe
+Scope: user
+InstallModes:
+  - silent
+  - silentWithProgress
+InstallerSwitches:
+  Silent: "--silent"
+  SilentWithProgress: "--silent"
+UpgradeBehavior: install
+ReleaseDate: 2026-06-02
+Installers:
+  - Architecture: x64
+    # TODO: replace <OWNER>/<REPO> with your GitHub repo, and confirm the asset
+    # filename actually attached to the release (run scripts/publish.ps1 and look
+    # in .\releases — it should be VideoArchiveManager-Setup.exe).
+    InstallerUrl: https://github.com/<OWNER>/<REPO>/releases/download/v0.9.4/VideoArchiveManager-Setup.exe
+    # TODO: paste the UPPERCASE SHA256 of that exact Setup.exe. Compute with:
+    #   (Get-FileHash .\releases\VideoArchiveManager-Setup.exe -Algorithm SHA256).Hash
+    InstallerSha256: REPLACE_WITH_UPPERCASE_SHA256_OF_SETUP_EXE
+    AppsAndFeaturesEntries:
+      - DisplayName: Find That Shot
+        Publisher: Find That Shot
+        DisplayVersion: 0.9.4
+ManifestType: installer
+ManifestVersion: 1.6.0

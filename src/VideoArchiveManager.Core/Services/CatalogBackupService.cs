@@ -13,6 +13,13 @@ public class CatalogBackupService : ICatalogBackupService
 {
     private const string BackupPrefix = "catalog";
     private const string BackupExtension = ".db";
+    // Companion snapshot of settings.json captured next to each catalog
+    // backup so a restore target carries the user's configuration (paths,
+    // pinned tags, sidebar layout, …) and not just the database. Named with
+    // the same timestamp as its catalog backup so the pair is obvious on disk
+    // and can be pruned together.
+    private const string SettingsBackupPrefix = "settings";
+    private const string SettingsBackupExtension = ".json";
     public const string PendingRestoreSuffix = ".restore-pending";
     public const string PreRestoreSafetyPrefix = "catalog-pre-restore-";
     // Timestamp format that is safe for Windows filenames: yyyyMMdd-HHmmss.
@@ -69,6 +76,11 @@ public class CatalogBackupService : ICatalogBackupService
             }
 
             var bytes = new FileInfo(backupPath).Length;
+
+            // Best-effort companion copy of settings.json. A failure here must
+            // not fail the catalog backup (the database is what matters), so we
+            // only log and carry on.
+            await TryBackupSettingsAsync(backupDir, stamp, cancellationToken).ConfigureAwait(false);
 
             var pruned = await PruneAsync(current.BackupRetentionCount, cancellationToken).ConfigureAwait(false);
 
@@ -127,6 +139,22 @@ public class CatalogBackupService : ICatalogBackupService
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Failed to delete old backup {Path}", old.Path);
+            }
+
+            // Delete the companion settings snapshot in lockstep so the two
+            // never drift apart in the folder. Absence is fine (older backups
+            // predate this feature).
+            var settingsSidecar = GetSettingsSidecarPath(old.Path);
+            if (settingsSidecar is not null && File.Exists(settingsSidecar))
+            {
+                try
+                {
+                    File.Delete(settingsSidecar);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to delete old settings backup {Path}", settingsSidecar);
+                }
             }
         }
 
@@ -248,6 +276,62 @@ public class CatalogBackupService : ICatalogBackupService
             logger?.LogError(ex, "Failed to apply pending restore at {DbPath}", dbPath);
             return false;
         }
+    }
+
+    // Copies the current settings.json into the backup folder as
+    // "settings-<stamp>.json" alongside its "catalog-<stamp>.db". No-op (with
+    // a debug note) when settings.json doesn't exist yet. Never throws — the
+    // caller treats this as best-effort.
+    private async Task TryBackupSettingsAsync(string backupDir, string stamp, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var settingsPath = AppSettings.UserSettingsPath;
+            if (string.IsNullOrWhiteSpace(settingsPath) || !File.Exists(settingsPath))
+            {
+                _logger.LogDebug("No settings.json at {Path}; skipping settings backup.", settingsPath);
+                return;
+            }
+
+            var destPath = Path.Combine(
+                backupDir, $"{SettingsBackupPrefix}-{stamp}{SettingsBackupExtension}");
+
+            await using var source = new FileStream(
+                settingsPath, FileMode.Open, FileAccess.Read,
+                FileShare.ReadWrite | FileShare.Delete,
+                bufferSize: 1 << 14, useAsync: true);
+            await using var dest = new FileStream(
+                destPath, FileMode.Create, FileAccess.Write,
+                FileShare.None, bufferSize: 1 << 14, useAsync: true);
+            await source.CopyToAsync(dest, cancellationToken).ConfigureAwait(false);
+
+            _logger.LogInformation("Backed up settings.json to {Path}.", destPath);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Settings backup failed; catalog backup is unaffected.");
+        }
+    }
+
+    // Maps "…/catalog-<stamp>.db" to its companion "…/settings-<stamp>.json".
+    // Returns null when the supplied path isn't a recognised catalog backup
+    // name (so we never guess a sidecar for an unrelated file).
+    private static string? GetSettingsSidecarPath(string catalogBackupPath)
+    {
+        var dir = Path.GetDirectoryName(catalogBackupPath);
+        var fileName = Path.GetFileName(catalogBackupPath);
+        if (string.IsNullOrEmpty(dir) || string.IsNullOrEmpty(fileName)) return null;
+
+        var prefix = $"{BackupPrefix}-";
+        if (!fileName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) ||
+            !fileName.EndsWith(BackupExtension, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var stamp = fileName.Substring(
+            prefix.Length, fileName.Length - prefix.Length - BackupExtension.Length);
+        return Path.Combine(dir, $"{SettingsBackupPrefix}-{stamp}{SettingsBackupExtension}");
     }
 
     private static IEnumerable<CatalogBackupInfo> EnumerateBackups(string dir)

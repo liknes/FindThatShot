@@ -29,8 +29,8 @@
                 CornerRadius="{StaticResource App.Radius.Button}"
                 SnapsToDevicePixels="True">
             <StackPanel Orientation="Horizontal"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
+                        HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                        VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                         Margin="{TemplateBinding Padding}">
                 <TextBlock x:Name="IconGlyph"
                            FontFamily="{StaticResource App.Icon.FontFamily}"
