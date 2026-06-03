@@ -72,6 +72,24 @@ public class AppSettings
 
     public bool SidebarSavedSearchesExpanded { get; set; } = true;
 
+    // Persisted main-window placement so the window reopens at the size and
+    // position the user left it. All four geometry values are nullable: null
+    // means "never saved" and the XAML defaults (1400x880, centered) apply.
+    // Position (Left/Top) is validated against the current monitor layout on
+    // restore, so a window saved on a since-removed monitor falls back to the
+    // centered default rather than opening off-screen. WindowMaximized is
+    // restored on top of the saved normal-mode geometry, so un-maximizing
+    // lands back on the user's last floating size.
+    public double? WindowLeft { get; set; }
+
+    public double? WindowTop { get; set; }
+
+    public double? WindowWidth { get; set; }
+
+    public double? WindowHeight { get; set; }
+
+    public bool WindowMaximized { get; set; }
+
     // Up to 10 tags bound to number-key hotkeys (1-9 then 0) in review mode.
     // Pressing the digit toggles that tag on / off for the current clip, so a
     // user with a stable tag vocabulary can rate-and-tag a review queue without

@@ -92,6 +92,16 @@ public class JsonSettingsStore : ISettingsStore
                 SidebarTagsExpanded = loaded.SidebarTagsExpanded,
                 SidebarCamerasExpanded = loaded.SidebarCamerasExpanded,
                 SidebarDateExpanded = loaded.SidebarDateExpanded,
+                SidebarSavedSearchesExpanded = loaded.SidebarSavedSearchesExpanded,
+                // Window placement is validated (on-screen + sane size) at
+                // restore time in MainWindow, so we pass the saved values
+                // through verbatim here and let the UI decide whether to honour
+                // them or fall back to the centered XAML default.
+                WindowLeft = loaded.WindowLeft,
+                WindowTop = loaded.WindowTop,
+                WindowWidth = loaded.WindowWidth,
+                WindowHeight = loaded.WindowHeight,
+                WindowMaximized = loaded.WindowMaximized,
                 PinnedTags = SanitizePinnedTags(
                     loaded.PinnedTags is not null ? loaded.PinnedTags : baseline.PinnedTags),
                 SupportedExtensions = DedupePreserveOrder(

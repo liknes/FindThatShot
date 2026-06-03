@@ -101,8 +101,98 @@ public partial class MainWindow : Window
             VideoPlayer.MessageLogged += MediaElement_MessageLogged;
         }
 
+        // Restore the user's last window size / position / maximized state
+        // BEFORE the window is shown so it paints directly into place (no
+        // flash at the centered XAML default). Validated against the current
+        // monitor layout inside RestoreWindowPlacement.
+        RestoreWindowPlacement();
+
         Loaded += MainWindow_Loaded;
         Closed += MainWindow_Closed;
+    }
+
+    // Apply the persisted window geometry on startup. Size and position are
+    // validated independently: a bad/old size falls back to the XAML default
+    // while still honouring a saved position, and a position that no longer
+    // lands on any connected monitor falls back to CenterScreen. Maximized is
+    // layered on top of the restored normal-mode bounds so un-maximizing
+    // returns to the user's last floating size.
+    private void RestoreWindowPlacement()
+    {
+        try
+        {
+            var p = _viewModel.InitialWindowPlacement;
+
+            if (p.Width is { } w && p.Height is { } h
+                && w >= MinWidth && h >= MinHeight
+                && w <= SystemParameters.VirtualScreenWidth + 1
+                && h <= SystemParameters.VirtualScreenHeight + 1)
+            {
+                Width = w;
+                Height = h;
+            }
+
+            if (p.Left is { } left && p.Top is { } top
+                && IsOnScreen(left, top, Width, Height))
+            {
+                WindowStartupLocation = WindowStartupLocation.Manual;
+                Left = left;
+                Top = top;
+            }
+
+            if (p.Maximized)
+            {
+                WindowState = WindowState.Maximized;
+            }
+        }
+        catch
+        {
+            // Any failure here just means we keep the centered XAML defaults.
+        }
+    }
+
+    // True when the given window rectangle overlaps the current virtual screen
+    // (all monitors) enough that the user could actually grab the title bar.
+    // Guards against restoring onto a monitor that has since been unplugged or
+    // rearranged, which would otherwise open the window off-screen.
+    private static bool IsOnScreen(double left, double top, double width, double height)
+    {
+        var virtualScreen = new Rect(
+            SystemParameters.VirtualScreenLeft,
+            SystemParameters.VirtualScreenTop,
+            SystemParameters.VirtualScreenWidth,
+            SystemParameters.VirtualScreenHeight);
+        var windowRect = new Rect(left, top, width, height);
+        if (!virtualScreen.IntersectsWith(windowRect)) return false;
+        var visible = Rect.Intersect(virtualScreen, windowRect);
+        return visible.Width >= 120 && visible.Height >= 40;
+    }
+
+    // Persist the window placement as it closes. We read RestoreBounds rather
+    // than the live Left/Top/Width/Height so a maximized (or minimized) window
+    // still saves its underlying *normal-mode* geometry — un-maximizing next
+    // launch lands back on the user's floating size. The save is run off the
+    // UI sync-context and briefly awaited so settings.json is flushed before
+    // the process exits, without deadlocking the dispatcher we're blocking on.
+    protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+    {
+        try
+        {
+            var bounds = RestoreBounds;
+            if (!bounds.IsEmpty)
+            {
+                var maximized = WindowState == WindowState.Maximized;
+                Task.Run(() => _viewModel.PersistWindowStateAsync(
+                        bounds.Left, bounds.Top, bounds.Width, bounds.Height, maximized))
+                    .Wait(TimeSpan.FromSeconds(2));
+            }
+        }
+        catch
+        {
+            // Best-effort: never let a persistence hiccup block window close.
+        }
+
+        base.OnClosing(e);
     }
 
     private async void MainWindow_Loaded(object sender, RoutedEventArgs e)

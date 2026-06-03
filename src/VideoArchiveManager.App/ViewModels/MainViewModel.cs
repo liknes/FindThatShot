@@ -304,6 +304,42 @@ public partial class MainViewModel : ObservableObject
         return SaveSettingsSilentlyAsync(s);
     }
 
+    // Read-only view of the persisted main-window placement so MainWindow can
+    // restore its size / position / maximized state on first paint without
+    // taking an ISettingsStore dependency. Returns null for any value the user
+    // hasn't saved yet; the window validates the geometry (on-screen, sane
+    // size) before applying it.
+    public WindowPlacement InitialWindowPlacement
+    {
+        get
+        {
+            var s = _settingsStore.Current;
+            return new WindowPlacement(
+                s.WindowLeft, s.WindowTop, s.WindowWidth, s.WindowHeight, s.WindowMaximized);
+        }
+    }
+
+    // Persistence for the window placement (driven from MainWindow on close).
+    // Callers pass the *normal-mode* bounds (RestoreBounds) plus whether the
+    // window was maximized, so un-maximizing next launch lands on the user's
+    // floating size. Best-effort, like the rest of the UI-state persistence.
+    public Task PersistWindowStateAsync(
+        double left, double top, double width, double height, bool maximized)
+    {
+        if (double.IsNaN(width) || double.IsNaN(height) || width <= 0 || height <= 0)
+        {
+            return Task.CompletedTask;
+        }
+
+        var s = _settingsStore.Current;
+        s.WindowLeft = double.IsNaN(left) || double.IsInfinity(left) ? null : left;
+        s.WindowTop = double.IsNaN(top) || double.IsInfinity(top) ? null : top;
+        s.WindowWidth = width;
+        s.WindowHeight = height;
+        s.WindowMaximized = maximized;
+        return SaveSettingsSilentlyAsync(s);
+    }
+
     private async Task SaveSettingsSilentlyAsync(AppSettings s)
     {
         try
@@ -1936,3 +1972,9 @@ public partial class MainViewModel : ObservableObject
         return $"{(int)t.TotalMinutes:D2}:{t.Seconds:D2}";
     }
 }
+
+// Snapshot of the persisted main-window geometry. Any component may be null
+// when the user hasn't saved a window placement yet; MainWindow validates the
+// values (on-screen, sane size) before applying them on startup.
+public readonly record struct WindowPlacement(
+    double? Left, double? Top, double? Width, double? Height, bool Maximized);
