@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using VideoArchiveManager.Core.Configuration;
+using VideoArchiveManager.Core.Models;
 using VideoArchiveManager.Core.Services;
 
 namespace VideoArchiveManager.App.ViewModels;
@@ -14,11 +15,21 @@ public partial class SettingsViewModel : ObservableObject
 {
     private readonly ISettingsStore _store;
     private readonly ICatalogBackupService _backupService;
+    private readonly ITagService _tagService;
 
-    public SettingsViewModel(ISettingsStore store, ICatalogBackupService backupService)
+    public SettingsViewModel(ISettingsStore store, ICatalogBackupService backupService, ITagService tagService)
     {
         _store = store;
         _backupService = backupService;
+        _tagService = tagService;
+
+        // Ten fixed hotkey slots (digits 1-9 then 0). Built up front so the
+        // Settings UI can bind immediately; the tag catalog + the user's
+        // current bindings are filled in asynchronously by LoadPinnedTagsAsync.
+        for (var i = 0; i < 10; i++)
+        {
+            PinnedTagSlots.Add(new PinnedTagSlotViewModel(i));
+        }
 
         var current = store.Current;
         _ffmpegPath = current.FfmpegPath ?? string.Empty;
@@ -37,9 +48,19 @@ public partial class SettingsViewModel : ObservableObject
         _showPlayerTelemetry = current.ShowPlayerTelemetry;
 
         _ = RefreshBackupsAsync();
+        _ = LoadPinnedTagsAsync();
     }
 
     public ObservableCollection<CatalogBackupInfo> Backups { get; } = new();
+
+    // Every tag in the catalog, shown in each slot's picker. Loaded once on
+    // open by LoadPinnedTagsAsync (ordered by type then name, matching the
+    // sidebar picker).
+    public ObservableCollection<Tag> AvailableTags { get; } = new();
+
+    // The ten review-mode hotkey slots (index 0 = "1" key … index 9 = "0"
+    // key). Each holds an optional Tag; an empty slot leaves that digit unbound.
+    public ObservableCollection<PinnedTagSlotViewModel> PinnedTagSlots { get; } = new();
 
     [ObservableProperty]
     private CatalogBackupInfo? _selectedBackup;
@@ -238,6 +259,68 @@ public partial class SettingsViewModel : ObservableObject
         Application.Current.Shutdown();
     }
 
+    // Loads the tag catalog into the slot pickers and selects whatever the
+    // user has already pinned. Resolves stored bindings by name + type (the
+    // catalog's natural key) against the freshly-loaded AvailableTags so the
+    // ComboBox shows the exact instance it has in its item list.
+    private async Task LoadPinnedTagsAsync()
+    {
+        var all = await _tagService.GetAllAsync();
+        AvailableTags.Clear();
+        foreach (var t in all) AvailableTags.Add(t);
+
+        var pinned = _store.Current.PinnedTags;
+        if (pinned is null) return;
+
+        foreach (var p in pinned)
+        {
+            if (p is null || p.Slot < 0 || p.Slot > 9) continue;
+            var match = AvailableTags.FirstOrDefault(
+                t => t.Type == p.Type && string.Equals(t.Name, p.Name, StringComparison.OrdinalIgnoreCase));
+            if (match is not null)
+            {
+                PinnedTagSlots[p.Slot].SelectedTag = match;
+            }
+        }
+    }
+
+    // Bootstraps the bindings from the user's existing vocabulary: drops the
+    // most-used tags (that aren't already pinned) into the empty slots, top to
+    // bottom. Filled slots are left untouched so this never clobbers a
+    // deliberate choice.
+    [RelayCommand]
+    private async Task FillFromMostUsedAsync()
+    {
+        var top = await _tagService.GetMostUsedAsync(10);
+        if (top.Count == 0) return;
+
+        var alreadyPinned = PinnedTagSlots
+            .Where(s => s.SelectedTag is not null)
+            .Select(s => s.SelectedTag!.Id)
+            .ToHashSet();
+
+        var candidates = new Queue<Tag>(top.Where(t => !alreadyPinned.Contains(t.Id)));
+
+        foreach (var slot in PinnedTagSlots)
+        {
+            if (candidates.Count == 0) break;
+            if (slot.SelectedTag is not null) continue;
+            var tag = candidates.Dequeue();
+            // Prefer the AvailableTags instance so the ComboBox renders it as
+            // selected (GetMostUsedAsync returns rows from a separate context).
+            slot.SelectedTag = AvailableTags.FirstOrDefault(t => t.Id == tag.Id) ?? tag;
+        }
+    }
+
+    [RelayCommand]
+    private void ClearAllPinnedTags()
+    {
+        foreach (var slot in PinnedTagSlots)
+        {
+            slot.SelectedTag = null;
+        }
+    }
+
     [RelayCommand]
     private async Task SaveAsync()
     {
@@ -266,6 +349,17 @@ public partial class SettingsViewModel : ObservableObject
             SupportedExtensions = _store.Current.SupportedExtensions,
             ExcludedFolderNames = SplitList(ExcludedFolderNames),
             ExcludedFileNamePatterns = SplitList(ExcludedFileNamePatterns),
+            // Review-mode hotkey bindings: one entry per filled slot, carrying
+            // its digit slot so empty slots are simply absent (no gaps to track).
+            PinnedTags = PinnedTagSlots
+                .Where(s => s.SelectedTag is not null)
+                .Select(s => new PinnedTag
+                {
+                    Slot = s.Slot,
+                    Name = s.SelectedTag!.Name,
+                    Type = s.SelectedTag!.Type
+                })
+                .ToList(),
             // Carry forward sidebar layout state from the live store
             // so saving the Settings dialog doesn't accidentally reset
             // the user's last drag-resize / collapse state on the rail.
@@ -317,4 +411,26 @@ public partial class SettingsViewModel : ObservableObject
         var result = dialog.ShowDialog();
         return result == true ? dialog.FileName : null;
     }
+}
+
+// One review-mode hotkey row in the Settings dialog: the digit it's triggered
+// by plus the (optional) tag bound to it. Slot 0 is the "1" key … slot 8 the
+// "9" key, slot 9 the "0" key, matching VideoDetailViewModel.ToggleTagBySlotAsync.
+public partial class PinnedTagSlotViewModel : ObservableObject
+{
+    public PinnedTagSlotViewModel(int slot)
+    {
+        Slot = slot;
+    }
+
+    public int Slot { get; }
+
+    // The digit printed on the triggering key (slot 9 maps to "0").
+    public string KeyLabel => Slot == 9 ? "0" : (Slot + 1).ToString();
+
+    [ObservableProperty]
+    private Tag? _selectedTag;
+
+    [RelayCommand]
+    private void Clear() => SelectedTag = null;
 }

@@ -24,6 +24,38 @@ public class TagService : ITagService
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Tag>> GetMostUsedAsync(int count, CancellationToken cancellationToken = default)
+    {
+        if (count <= 0) return Array.Empty<Tag>();
+
+        await using var ctx = await _contextFactory.CreateDbContextAsync(cancellationToken);
+
+        // Rank tag ids by attachment count, then materialise the matching Tag
+        // rows and re-order them to the ranked id sequence (a Contains() filter
+        // doesn't preserve order on its own).
+        var rankedIds = await ctx.VideoTags
+            .GroupBy(vt => vt.TagId)
+            .Select(g => new { TagId = g.Key, Count = g.Count() })
+            .OrderByDescending(x => x.Count)
+            .ThenBy(x => x.TagId)
+            .Take(count)
+            .Select(x => x.TagId)
+            .ToListAsync(cancellationToken);
+
+        if (rankedIds.Count == 0) return Array.Empty<Tag>();
+
+        var tags = await ctx.Tags
+            .AsNoTracking()
+            .Where(t => rankedIds.Contains(t.Id))
+            .ToListAsync(cancellationToken);
+
+        var byId = tags.ToDictionary(t => t.Id);
+        return rankedIds
+            .Where(byId.ContainsKey)
+            .Select(id => byId[id])
+            .ToList();
+    }
+
     public async Task<Tag> GetOrCreateAsync(string name, TagType type, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(name))

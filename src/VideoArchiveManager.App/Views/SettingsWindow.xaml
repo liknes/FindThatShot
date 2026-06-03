@@ -187,6 +187,73 @@
                           Content="Show drone telemetry overlay in the player"
                           Margin="0,0,0,16" />
 
+                <TextBlock Text="REVIEW HOTKEYS" Style="{StaticResource App.Type.Section}" />
+                <TextBlock TextWrapping="Wrap" Style="{StaticResource App.Type.BodyMuted}" Margin="0,0,0,12"
+                           Text="Pin up to ten tags to the number keys. While the in-app player is open (review mode), pressing a digit toggles that tag on or off for the current clip — no mouse needed. Digits still type normally while you're editing the tag name, notes or coordinates fields." />
+
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <Button Content="Fill from most-used"
+                            Style="{StaticResource App.Button.Secondary}"
+                            helpers:Theme.Icon="{StaticResource Icon.Tag}"
+                            Command="{Binding FillFromMostUsedCommand}"
+                            ToolTip="Drop your most-used tags into the empty slots." />
+                    <Button Content="Clear all"
+                            Margin="8,0,0,0"
+                            Style="{StaticResource App.Button.Ghost}"
+                            Command="{Binding ClearAllPinnedTagsCommand}" />
+                </StackPanel>
+
+                <ItemsControl ItemsSource="{Binding PinnedTagSlots}" Margin="0,0,0,16">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0,0,0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0"
+                                        Width="28" Height="28"
+                                        CornerRadius="6"
+                                        VerticalAlignment="Center"
+                                        Background="{DynamicResource App.Background.Elevated}"
+                                        BorderBrush="{DynamicResource App.Border.Subtle}"
+                                        BorderThickness="1">
+                                    <TextBlock Text="{Binding KeyLabel}"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               FontFamily="{StaticResource App.FontFamily.Mono}"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource App.Foreground.Secondary}" />
+                                </Border>
+                                <ComboBox Grid.Column="1"
+                                          Margin="8,0,0,0"
+                                          VerticalAlignment="Center"
+                                          ui:ControlHelper.PlaceholderText="— not bound —"
+                                          ItemsSource="{Binding DataContext.AvailableTags, RelativeSource={RelativeSource AncestorType=Window}}"
+                                          SelectedItem="{Binding SelectedTag, Mode=TwoWay}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock>
+                                                <Run Text="{Binding Name, Mode=OneWay}" />
+                                                <Run Text="{Binding Type, Mode=OneWay}"
+                                                     Foreground="{DynamicResource App.Foreground.Tertiary}" />
+                                            </TextBlock>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                                <Button Grid.Column="2"
+                                        Margin="8,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Style="{StaticResource App.Button.Ghost}"
+                                        helpers:Theme.Icon="{StaticResource Icon.Close}"
+                                        Command="{Binding ClearCommand}"
+                                        ToolTip="Unbind this key" />
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
                 <TextBlock Text="SCANNING" Style="{StaticResource App.Type.Section}" />
 
                 <TextBlock Text="Max scan parallelism" Style="{StaticResource App.Type.Caption}" />

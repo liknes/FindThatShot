@@ -656,12 +656,24 @@ public partial class VideoDetailViewModel : ObservableObject
     {
         if (Current is null || string.IsNullOrWhiteSpace(NewTagName)) return;
         var tag = await _tagService.GetOrCreateAsync(NewTagName.Trim(), NewTagType);
+        NewTagName = string.Empty;
+        await AttachTagCoreAsync(tag);
+    }
+
+    // Shared attach pipeline behind both the Add button and the review-mode
+    // pinned-tag hotkeys: persists the join row, mirrors the tag into the
+    // editor's chip list + suggestion cache, notifies the sidebar picker of a
+    // possibly-new tag, auto-promotes an Unreviewed clip to Keep on its first
+    // tag, and writes the sidecar — reporting the outcome through LastSaveStatus.
+    private async Task AttachTagCoreAsync(Tag tag)
+    {
+        if (Current is null) return;
+
         await _tagService.AttachAsync(Current.Id, tag.Id);
         if (!Tags.Any(t => t.Id == tag.Id))
         {
             Tags.Add(tag);
         }
-        NewTagName = string.Empty;
         Current.TagSummary = string.Join(", ", Tags.Select(t => t.Name));
 
         // Keep the suggestion cache fresh if this was a brand-new tag —
@@ -686,6 +698,45 @@ public partial class VideoDetailViewModel : ObservableObject
         LastSaveStatus = statusBumped
             ? $"Tag added · status → Keep · {sidecarStatus}"
             : $"Tag added · {sidecarStatus}";
+    }
+
+    // Toggles a tag (identified by name + type, the catalog's natural key) on
+    // the current clip. Already attached → detach; otherwise create-if-needed
+    // and attach. Routed to by the review-mode number-key hotkeys, and reuses
+    // the same attach / detach pipelines as the editor so auto-Keep, sidecars
+    // and the catalog picker all stay in sync regardless of entry point.
+    public async Task ToggleTagAsync(string name, TagType type)
+    {
+        if (Current is null || string.IsNullOrWhiteSpace(name)) return;
+        var trimmed = name.Trim();
+
+        var attached = Tags.FirstOrDefault(
+            t => t.Type == type && string.Equals(t.Name, trimmed, StringComparison.OrdinalIgnoreCase));
+        if (attached is not null)
+        {
+            await RemoveTagAsync(attached);
+            return;
+        }
+
+        var tag = await _tagService.GetOrCreateAsync(trimmed, type);
+        await AttachTagCoreAsync(tag);
+    }
+
+    // Routes a review-mode number-key press to the pinned tag bound to that
+    // slot (slot 0 = "1" key … slot 9 = "0" key), reading the live mapping
+    // from settings so a Settings-dialog edit takes effect on the next
+    // keypress without any reload wiring. A no-op when the slot is empty /
+    // unconfigured, so an unbound digit does nothing.
+    public Task ToggleTagBySlotAsync(int slotIndex)
+    {
+        if (Current is null) return Task.CompletedTask;
+        var pinned = _settings.Current.PinnedTags;
+        if (pinned is null || pinned.Count == 0) return Task.CompletedTask;
+
+        var entry = pinned.FirstOrDefault(p => p is not null && p.Slot == slotIndex);
+        if (entry is null || string.IsNullOrWhiteSpace(entry.Name)) return Task.CompletedTask;
+
+        return ToggleTagAsync(entry.Name, entry.Type);
     }
 
     // Promotes Status from Unreviewed → Keep on the very first tag for a

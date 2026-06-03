@@ -70,6 +70,14 @@ public class AppSettings
 
     public bool SidebarDateExpanded { get; set; } = true;
 
+    // Up to 10 tags bound to number-key hotkeys (1-9 then 0) in review mode.
+    // Pressing the digit toggles that tag on / off for the current clip, so a
+    // user with a stable tag vocabulary can rate-and-tag a review queue without
+    // leaving the keyboard. Each entry carries its slot (0-9; see PinnedTag),
+    // so empty slots are simply absent rather than represented by gaps. Empty
+    // by default — the feature is opt-in via Settings → Review hotkeys.
+    public IReadOnlyList<PinnedTag> PinnedTags { get; set; } = Array.Empty<PinnedTag>();
+
     public IReadOnlyList<string> SupportedExtensions { get; set; } = new[]
     {
         ".mp4", ".mov", ".mxf", ".avi", ".mkv"

@@ -802,6 +802,7 @@ public partial class MainWindow : Window
     //   Esc          close the player and return to the gallery
     //   Space        toggle play / pause
     //   Left / Right  jump to the previous / next clip and keep playing
+    //   1-9, 0       toggle the matching pinned tag on the current clip
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
         if (!_viewModel.Detail.IsPlayerVisible) return;
@@ -815,6 +816,20 @@ public partial class MainWindow : Window
             {
                 _viewModel.Detail.ClosePlayerCommand.Execute(null);
             }
+            e.Handled = true;
+            return;
+        }
+
+        // Number keys 1-9 then 0 toggle the pinned tag bound to that slot on
+        // the current clip. Plain digits only (a modifier means it's some other
+        // shortcut), and never while a text input has focus so typing tag
+        // names / notes / coordinates still inserts digits normally. Handled
+        // independently of the player engine — tagging doesn't need playback.
+        if (Keyboard.Modifiers == ModifierKeys.None && TryGetPinnedTagSlot(e.Key, out var slot))
+        {
+            var digitFocus = Keyboard.FocusedElement;
+            if (digitFocus is TextBoxBase or PasswordBox or ComboBox) return;
+            _ = _viewModel.Detail.ToggleTagBySlotAsync(slot);
             e.Handled = true;
             return;
         }
@@ -854,6 +869,30 @@ public partial class MainWindow : Window
 
         ToggleFfmePlayPause();
         e.Handled = true;
+    }
+
+    // Maps a digit key to a pinned-tag slot index. The printed digit is the
+    // visible hotkey; slots run 0-9 with "1" → slot 0 … "9" → slot 8 and "0"
+    // → slot 9 (so the tenth pin lands on the 0 key at the end of the number
+    // row). Both the top-row digits and the numpad are accepted. Returns false
+    // (slot = -1) for any non-digit key.
+    private static bool TryGetPinnedTagSlot(Key key, out int slot)
+    {
+        slot = key switch
+        {
+            Key.D1 or Key.NumPad1 => 0,
+            Key.D2 or Key.NumPad2 => 1,
+            Key.D3 or Key.NumPad3 => 2,
+            Key.D4 or Key.NumPad4 => 3,
+            Key.D5 or Key.NumPad5 => 4,
+            Key.D6 or Key.NumPad6 => 5,
+            Key.D7 or Key.NumPad7 => 6,
+            Key.D8 or Key.NumPad8 => 7,
+            Key.D9 or Key.NumPad9 => 8,
+            Key.D0 or Key.NumPad0 => 9,
+            _ => -1
+        };
+        return slot >= 0;
     }
 
     private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e)

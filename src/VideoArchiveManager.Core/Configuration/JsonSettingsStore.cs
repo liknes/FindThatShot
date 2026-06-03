@@ -18,6 +18,7 @@ public class JsonSettingsStore : ISettingsStore
         _current.SupportedExtensions = DedupePreserveOrder(_current.SupportedExtensions);
         _current.ExcludedFolderNames = DedupePreserveOrder(_current.ExcludedFolderNames);
         _current.ExcludedFileNamePatterns = DedupePreserveOrder(_current.ExcludedFileNamePatterns);
+        _current.PinnedTags = SanitizePinnedTags(_current.PinnedTags);
         _current = MergeWithUserOverrides(_current);
     }
 
@@ -44,6 +45,7 @@ public class JsonSettingsStore : ISettingsStore
         settings.SupportedExtensions = DedupePreserveOrder(settings.SupportedExtensions);
         settings.ExcludedFolderNames = DedupePreserveOrder(settings.ExcludedFolderNames);
         settings.ExcludedFileNamePatterns = DedupePreserveOrder(settings.ExcludedFileNamePatterns);
+        settings.PinnedTags = SanitizePinnedTags(settings.PinnedTags);
 
         var json = JsonSerializer.Serialize(settings, JsonOptions);
         await File.WriteAllTextAsync(path, json, cancellationToken).ConfigureAwait(false);
@@ -90,6 +92,8 @@ public class JsonSettingsStore : ISettingsStore
                 SidebarTagsExpanded = loaded.SidebarTagsExpanded,
                 SidebarCamerasExpanded = loaded.SidebarCamerasExpanded,
                 SidebarDateExpanded = loaded.SidebarDateExpanded,
+                PinnedTags = SanitizePinnedTags(
+                    loaded.PinnedTags is not null ? loaded.PinnedTags : baseline.PinnedTags),
                 SupportedExtensions = DedupePreserveOrder(
                     loaded.SupportedExtensions is { Count: > 0 } ? loaded.SupportedExtensions : baseline.SupportedExtensions),
                 ExcludedFolderNames = DedupePreserveOrder(
@@ -102,6 +106,30 @@ public class JsonSettingsStore : ISettingsStore
         {
             return baseline;
         }
+    }
+
+    // Normalises the pinned-tag list before it's persisted or surfaced:
+    // drops entries with no name or an out-of-range slot, keeps only the
+    // first tag seen per slot (so a hand-edited file with duplicate slots
+    // can't bind two tags to one digit), and orders by slot for a tidy
+    // settings.json. At most 10 entries survive (slots 0-9).
+    private static IReadOnlyList<PinnedTag> SanitizePinnedTags(IReadOnlyList<PinnedTag>? values)
+    {
+        if (values is null || values.Count == 0) return Array.Empty<PinnedTag>();
+
+        var seenSlots = new HashSet<int>();
+        var result = new List<PinnedTag>(Math.Min(values.Count, 10));
+        foreach (var p in values)
+        {
+            if (p is null) continue;
+            if (p.Slot < 0 || p.Slot > 9) continue;
+            if (string.IsNullOrWhiteSpace(p.Name)) continue;
+            if (!seenSlots.Add(p.Slot)) continue;
+            result.Add(new PinnedTag { Slot = p.Slot, Name = p.Name.Trim(), Type = p.Type });
+        }
+
+        result.Sort((a, b) => a.Slot.CompareTo(b.Slot));
+        return result;
     }
 
     private static IReadOnlyList<string> DedupePreserveOrder(IReadOnlyList<string>? values)
