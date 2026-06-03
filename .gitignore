@@ -451,3 +451,10 @@ tools/ffmpeg/swscale-9.dll
 # (exceeds GitHub's 100MB file limit). Drop a shinchiro "mpv-dev" libmpv-2.dll
 # into tools/mpv/ to enable the GPU player locally. See docs/in-app-player.md.
 tools/mpv/libmpv-2.dll
+
+# Release-process scratch files (multi-line git commit / tag / release-note
+# bodies written to disk then passed via -F, and removed after each release).
+# Ignored so a forgotten cleanup can never accidentally land one in a commit.
+.commit-msg.tmp
+.tag-msg.tmp
+.release-notes.tmp

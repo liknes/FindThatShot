@@ -21,7 +21,7 @@
          shared binaries already bundled in tools/ffmpeg/ for FFprobe so the
          player and the FFprobe pipeline share one FFmpeg. -->
     <PackageReference Include="Sinaxxr.FFME.Windows" Version="8.0.361-sinaxxr.2" />
-    <PackageReference Include="Velopack" Version="1.0.1" />
+    <PackageReference Include="Velopack" Version="1.1.1" />
   </ItemGroup>
 
   <PropertyGroup>
