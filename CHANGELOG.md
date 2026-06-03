@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+## [0.9.6] - 2026-06-03
+
+### Changed
+
+- **Upgraded the update framework, Velopack, from 1.0.1 to 1.1.1.** Both the `vpk` packaging CLI (`.config/dotnet-tools.json`) and the Velopack runtime NuGet (referenced by the app) were bumped in lockstep so the packer and the in-app updater stay on matching versions. No application code changed — the in-app updater already targets the stable Velopack 1.x API (`CheckForUpdatesAsync`, `TargetFullRelease`, `DownloadUpdatesAsync`, `ApplyUpdatesAndRestart`). This release is intentionally **Velopack-only** so the one sensitive transition — a 0.9.5 install (built with Velopack 1.0.1) consuming a 1.1.1-packed update — is isolated and easy to verify. If an in-app update ever misbehaves, reinstalling from `Setup.exe` is always a clean recovery path.
+
+### Fixed
+
+- The release-process scratch files (`.commit-msg.tmp`, `.tag-msg.tmp`, `.release-notes.tmp`) are now git-ignored, so a forgotten cleanup can't accidentally land one in a commit.
+
 ## [0.9.5] - 2026-06-03
 
 ### Added
@@ -305,7 +315,8 @@ First public release.
 
 - Responsive default window size; date pickers and the *Play externally* button are no longer clipped at common screen widths.
 
-[Unreleased]: https://github.com/liknes/FindThatShot/compare/v0.9.5...HEAD
+[Unreleased]: https://github.com/liknes/FindThatShot/compare/v0.9.6...HEAD
+[0.9.6]: https://github.com/liknes/FindThatShot/compare/v0.9.5...v0.9.6
 [0.9.5]: https://github.com/liknes/FindThatShot/compare/v0.9.4...v0.9.5
 [0.9.4]: https://github.com/liknes/FindThatShot/compare/v0.9.3...v0.9.4
 [0.9.3]: https://github.com/liknes/FindThatShot/compare/v0.9.2...v0.9.3
