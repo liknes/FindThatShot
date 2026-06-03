@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+## [0.9.5] - 2026-06-03
+
 ### Added
 
 - **Duplicate finder (Catalog → Find duplicates…).** A new non-modal window surfaces sets of catalog entries that are almost certainly the same footage living in more than one place — the classic case being the same clip copied to a backup drive. This is "Tier 1" detection: clips are grouped purely by a **metadata fingerprint** the scanner already stored — **exact file size + duration (rounded to the second) + resolution** — so the scan is effectively instant, needs no new migration, and works for **offline** clips too (no source file is ever opened or hashed). Each duplicate set is shown as a card (e.g. *"2 copies · 1.2 GB each · 1920×1080 · 0:45"*, with the reclaimable bytes called out) listing its members with thumbnail, filename, folder path, size/resolution/codec/camera, and an **Online/Offline** badge. The finder flags one member as the **Suggested keep** (preferring online, then better-curated by rating/tag count, then the oldest catalog id) but never auto-selects a destructive action: you tick exactly which redundant copies to forget, with **Select all redundant** / **Clear** helpers and a live running total (*"N selected · X GB of disk no longer cataloged"*). **Remove selected from database…** confirms first (and explicitly warns if you've selected *every* copy in a set), then removes only those catalog rows + their cached thumbnails via the existing `IVideoLibraryService` — **source video files on disk are never moved, renamed, or deleted.** Removing copies re-runs the scan so resolved sets drop off, and raises a `CatalogChanged` event the main window listens for to refresh its grid. Under the hood this adds a new `IDuplicateDetectionService` (Core interface + Data implementation that narrows to size-colliding rows in SQL, then fingerprints in memory to keep the exact-second rounding out of the query), a `DuplicatesViewModel`, and a `DuplicatesWindow`, all wired through DI and shown as a single reusable instance (re-invoking the menu brings it forward). Groups are ordered by reclaimable savings so the biggest wins surface first.
@@ -303,7 +305,8 @@ First public release.
 
 - Responsive default window size; date pickers and the *Play externally* button are no longer clipped at common screen widths.
 
-[Unreleased]: https://github.com/liknes/FindThatShot/compare/v0.9.4...HEAD
+[Unreleased]: https://github.com/liknes/FindThatShot/compare/v0.9.5...HEAD
+[0.9.5]: https://github.com/liknes/FindThatShot/compare/v0.9.4...v0.9.5
 [0.9.4]: https://github.com/liknes/FindThatShot/compare/v0.9.3...v0.9.4
 [0.9.3]: https://github.com/liknes/FindThatShot/compare/v0.9.2...v0.9.3
 [0.9.2]: https://github.com/liknes/FindThatShot/compare/v0.9.1...v0.9.2
