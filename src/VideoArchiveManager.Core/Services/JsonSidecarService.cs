@@ -178,6 +178,57 @@ public class JsonSidecarService : ISidecarService
         };
     }
 
+    public async Task<SidecarData?> TryReadAsync(
+        string videoPath,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(videoPath)) return null;
+
+        var sidecarPath = GetSidecarPathFor(videoPath);
+        try
+        {
+            if (!File.Exists(sidecarPath)) return null;
+
+            await using var fs = new FileStream(
+                sidecarPath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read,
+                bufferSize: 1 << 14,
+                useAsync: true);
+
+            var payload = await JsonSerializer
+                .DeserializeAsync<SidecarPayload>(fs, JsonOptions, cancellationToken)
+                .ConfigureAwait(false);
+            if (payload is null) return null;
+
+            return new SidecarData
+            {
+                Rating = payload.Rating,
+                Status = payload.Status,
+                Notes = payload.Notes,
+                LocationText = payload.LocationText,
+                ContextText = payload.ContextText,
+                FolderDate = payload.FolderDate,
+                Tags = payload.Tags
+                    .Where(t => !string.IsNullOrWhiteSpace(t.Name))
+                    .Select(t => new SidecarTagData { Name = t.Name, Type = t.Type })
+                    .ToArray()
+            };
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            // Corrupt/partial JSON, locked file, offline drive — metadata is
+            // best-effort, so degrade to "no sidecar" rather than failing.
+            _logger.LogWarning(ex, "Sidecar read failed for {Path}", sidecarPath);
+            return null;
+        }
+    }
+
     private static SidecarPayload BuildPayload(VideoItem video, IEnumerable<Tag> tags)
     {
         return new SidecarPayload

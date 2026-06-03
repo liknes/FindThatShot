@@ -17,10 +17,21 @@ public partial class MainWindow : Window
     private readonly MainViewModel _viewModel;
     private readonly ISidecarService _sidecar;
 
-    // Set while the user is dragging the seek slider so the periodic
-    // MediaElement.PropertyChanged "Position" updates don't fight the
-    // user's input.
+    // Set while the user is interacting with the seek slider (dragging the
+    // thumb OR pressing on the track) so the periodic position poller doesn't
+    // fight the user's input. Raised on mouse-DOWN — not just thumb drag — so
+    // a plain track click is bracketed too.
     private bool _isUserSeeking;
+
+    // Briefly suppresses the position poller right after a user seek. The
+    // engine doesn't report the new position instantly, so without this the
+    // 250ms poll could fire in the gap and yank the thumb back to the old
+    // spot, making clicks appear to "jump back". Cleared by elapsed time.
+    private DateTime _seekCooldownUntilUtc = DateTime.MinValue;
+    private static readonly TimeSpan SeekCooldown = TimeSpan.FromMilliseconds(350);
+
+    private bool IsSeekSyncSuppressed =>
+        _isUserSeeking || DateTime.UtcNow < _seekCooldownUntilUtc;
 
     // Our own source of truth for whether the FFME video is meant to be
     // playing, used to drive BOTH the play/pause toggle decision and the
@@ -297,7 +308,7 @@ public partial class MainWindow : Window
         // clip has no telemetry track or the matched sample hasn't changed).
         _viewModel.Detail.UpdateTelemetryForPosition(TimeSpan.FromSeconds(pos));
 
-        if (!_isUserSeeking && dur > 0)
+        if (!IsSeekSyncSuppressed && dur > 0)
         {
             var fraction = Math.Clamp(pos / dur, 0.0, 1.0);
             var newValue = fraction * PlayerSeekSlider.Maximum;
@@ -603,21 +614,47 @@ public partial class MainWindow : Window
     //
     // Familiar from Lightroom / Bridge: drop one or more folders from
     // Windows Explorer onto the FOLDERS panel to register them as catalog
-    // roots (the same outcome as the "Add folder…" picker / Ctrl+O). We
-    // only accept the drop when the payload contains at least one real
-    // directory; dropping plain files is rejected so the cursor shows the
-    // "no-drop" affordance rather than silently doing nothing.
+    // roots (the same outcome as the "Add folder…" picker / Ctrl+O).
+    //
+    // We also accept dropped *files*: a dropped file contributes its
+    // containing folder as a root candidate. This matches the user's
+    // expectation that "the folder I dragged from shows up" — dropping a
+    // mix of folders and loose files (e.g. a parent folder's contents)
+    // registers the loose files' parent as a root rather than silently
+    // discarding them. AddRootFoldersByPathsAsync collapses the resulting
+    // set by ancestry so a parent and its subfolders don't become
+    // redundant nested roots.
 
-    private static IReadOnlyList<string> GetDroppedDirectories(IDataObject data)
+    private static IReadOnlyList<string> GetDroppedFolderCandidates(IDataObject data)
     {
         if (!data.GetDataPresent(DataFormats.FileDrop)) return System.Array.Empty<string>();
         if (data.GetData(DataFormats.FileDrop) is not string[] paths) return System.Array.Empty<string>();
-        return paths.Where(System.IO.Directory.Exists).ToList();
+
+        var candidates = new List<string>();
+        var seen = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
+        foreach (var path in paths)
+        {
+            string? folder = null;
+            if (System.IO.Directory.Exists(path))
+            {
+                folder = path;
+            }
+            else if (System.IO.File.Exists(path))
+            {
+                folder = System.IO.Path.GetDirectoryName(path);
+            }
+
+            if (!string.IsNullOrWhiteSpace(folder) && seen.Add(folder))
+            {
+                candidates.Add(folder);
+            }
+        }
+        return candidates;
     }
 
     private void FoldersPanel_OnDragEnter(object sender, DragEventArgs e)
     {
-        if (GetDroppedDirectories(e.Data).Count > 0)
+        if (GetDroppedFolderCandidates(e.Data).Count > 0)
         {
             FolderDropOverlay.Visibility = Visibility.Visible;
         }
@@ -626,7 +663,7 @@ public partial class MainWindow : Window
 
     private void FoldersPanel_OnDragOver(object sender, DragEventArgs e)
     {
-        e.Effects = GetDroppedDirectories(e.Data).Count > 0
+        e.Effects = GetDroppedFolderCandidates(e.Data).Count > 0
             ? DragDropEffects.Copy
             : DragDropEffects.None;
         e.Handled = true;
@@ -640,10 +677,10 @@ public partial class MainWindow : Window
     private async void FoldersPanel_OnDrop(object sender, DragEventArgs e)
     {
         FolderDropOverlay.Visibility = Visibility.Collapsed;
-        var directories = GetDroppedDirectories(e.Data);
-        if (directories.Count == 0) return;
+        var folders = GetDroppedFolderCandidates(e.Data);
+        if (folders.Count == 0) return;
         e.Handled = true;
-        await _viewModel.AddRootFoldersByPathsAsync(directories);
+        await _viewModel.AddRootFoldersByPathsAsync(folders);
     }
 
     // ModernWpf's AutoSuggestBox raises QuerySubmitted on Enter (or when
@@ -804,21 +841,59 @@ public partial class MainWindow : Window
         }
     }
 
+    // Raise the seeking guard as soon as the button goes down — this covers a
+    // plain click on the track (IsMoveToPointEnabled jumps the thumb to the
+    // click point) which otherwise never raises Thumb.DragStarted, leaving the
+    // poller free to reset Value mid-click and snap the playhead back.
+    //
+    // We also map the click's X directly to the slider value here instead of
+    // relying on the template's internal hit-targets. That makes a click
+    // ANYWHERE in the slider's bounds (the transparent backdrop spans the full
+    // band) seek to that point — you no longer have to land on the thin line.
+    private void PlayerSeekSlider_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        _isUserSeeking = true;
+
+        var width = PlayerSeekSlider.ActualWidth;
+        if (width <= 0) return;
+
+        var x = e.GetPosition(PlayerSeekSlider).X;
+        var fraction = Math.Clamp(x / width, 0.0, 1.0);
+        PlayerSeekSlider.Value = PlayerSeekSlider.Minimum +
+            fraction * (PlayerSeekSlider.Maximum - PlayerSeekSlider.Minimum);
+    }
+
     private void PlayerSeekSlider_DragStarted(object sender, DragStartedEventArgs e)
     {
         _isUserSeeking = true;
     }
 
-    private void PlayerSeekSlider_DragCompleted(object sender, DragCompletedEventArgs e)
+    private async void PlayerSeekSlider_DragCompleted(object sender, DragCompletedEventArgs e)
     {
-        _ = ApplySliderPositionAsync();
-        _isUserSeeking = false;
+        await EndUserSeekAsync();
     }
 
-    private void PlayerSeekSlider_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    private async void PlayerSeekSlider_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
         // Fires on a click directly on the track (no thumb drag). Apply once.
-        _ = ApplySliderPositionAsync();
+        await EndUserSeekAsync();
+    }
+
+    // Applies the slider's position to the player, THEN releases the seeking
+    // guard and arms a short cooldown. Ordering matters: awaiting the seek
+    // before clearing _isUserSeeking — plus the cooldown — keeps the poller
+    // from reading a stale engine position and bouncing the thumb back.
+    private async Task EndUserSeekAsync()
+    {
+        try
+        {
+            await ApplySliderPositionAsync();
+        }
+        finally
+        {
+            _seekCooldownUntilUtc = DateTime.UtcNow + SeekCooldown;
+            _isUserSeeking = false;
+        }
     }
 
     private async Task ApplySliderPositionAsync()
@@ -1262,7 +1337,7 @@ public partial class MainWindow : Window
     private void SyncSliderFromPlayer()
     {
         if (!App.IsPlayerAvailable) return;
-        if (_isUserSeeking) return;
+        if (IsSeekSyncSuppressed) return;
         var duration = VideoPlayer.NaturalDuration ?? TimeSpan.Zero;
         if (duration <= TimeSpan.Zero) return;
         var fraction = Math.Clamp(VideoPlayer.Position.TotalSeconds / duration.TotalSeconds, 0.0, 1.0);

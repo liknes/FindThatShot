@@ -15,6 +15,16 @@ public interface ISidecarService
         IEnumerable<(VideoItem Video, IReadOnlyList<Tag> Tags)> items,
         CancellationToken cancellationToken = default);
 
+    // Reads and parses the sidecar sitting next to a video, if one exists.
+    // Returns null when there is no sidecar or it can't be read/parsed —
+    // a sidecar is best-effort metadata, never a hard dependency, so a bad
+    // file must not break a scan. Used to rehydrate a freshly-imported
+    // clip (tags, rating, status, …) from a sidecar written by a previous
+    // install.
+    Task<SidecarData?> TryReadAsync(
+        string videoPath,
+        CancellationToken cancellationToken = default);
+
     string GetSidecarPathFor(string videoPath);
 
     // True when a sidecar file already exists on disk for this video. Used to
@@ -58,4 +68,31 @@ public class SidecarBatchResult
     public int Skipped { get; init; }
 
     public IReadOnlyList<string> Errors { get; init; } = Array.Empty<string>();
+}
+
+// Parsed, transport-agnostic view of a sidecar's catalog metadata. Tag
+// type/status are kept as raw strings here so the Core layer stays free of
+// JSON concerns; callers map them onto the enums.
+public sealed class SidecarData
+{
+    public int Rating { get; init; }
+
+    public string? Status { get; init; }
+
+    public string? Notes { get; init; }
+
+    public string? LocationText { get; init; }
+
+    public string? ContextText { get; init; }
+
+    public DateTime? FolderDate { get; init; }
+
+    public IReadOnlyList<SidecarTagData> Tags { get; init; } = Array.Empty<SidecarTagData>();
+}
+
+public sealed class SidecarTagData
+{
+    public string Name { get; init; } = string.Empty;
+
+    public string? Type { get; init; }
 }

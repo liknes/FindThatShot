@@ -1124,7 +1124,7 @@
                          white so it stays legible on the dark backdrop. -->
                     <Border Grid.Row="2"
                             Background="Black"
-                            Padding="10,8"
+                            Padding="12,8"
                             Visibility="{Binding IsPlayerVisible, Converter={StaticResource BoolToVisibility}}">
                         <Grid>
                             <Grid.RowDefinitions>
@@ -1132,7 +1132,11 @@
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
-                            <!-- Seek bar row -->
+                            <!-- Seek bar row: current time first, full-width
+                                 slider in the middle, duration last. The time
+                                 columns are auto-width and the slider takes the
+                                 rest, so the row spans the full panel width with
+                                 the readouts flanking the bar at each end. -->
                             <Grid Grid.Row="0" Margin="0,0,0,6">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
@@ -1142,10 +1146,10 @@
                                 <TextBlock x:Name="PlayerCurrentTimeText" Grid.Column="0"
                                            Text="00:00" FontFamily="Consolas"
                                            Foreground="White"
-                                           VerticalAlignment="Center" Width="60"
+                                           VerticalAlignment="Center"
                                            TextAlignment="Right" />
                                 <Slider x:Name="PlayerSeekSlider" Grid.Column="1"
-                                        Margin="12,0,12,0"
+                                        Margin="10,0,10,0"
                                         Minimum="0" Maximum="1000"
                                         SmallChange="5" LargeChange="50"
                                         IsMoveToPointEnabled="True"
@@ -1153,11 +1157,12 @@
                                         Style="{StaticResource App.SeekSlider}"
                                         Thumb.DragStarted="PlayerSeekSlider_DragStarted"
                                         Thumb.DragCompleted="PlayerSeekSlider_DragCompleted"
+                                        PreviewMouseLeftButtonDown="PlayerSeekSlider_PreviewMouseLeftButtonDown"
                                         PreviewMouseLeftButtonUp="PlayerSeekSlider_PreviewMouseLeftButtonUp" />
                                 <TextBlock x:Name="PlayerDurationText" Grid.Column="2"
                                            Text="00:00" FontFamily="Consolas"
                                            Foreground="White"
-                                           VerticalAlignment="Center" Width="60"
+                                           VerticalAlignment="Center"
                                            TextAlignment="Left" />
                             </Grid>
 

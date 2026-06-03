@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using VideoArchiveManager.Core.Configuration;
 using VideoArchiveManager.Core.Helpers;
 using VideoArchiveManager.Core.Models;
+using VideoArchiveManager.Core.Models.Enums;
 using VideoArchiveManager.Core.Services;
 
 namespace VideoArchiveManager.Data.Services;
@@ -15,8 +16,15 @@ public class VideoScannerService : IVideoScannerService
     private readonly IFfprobeService _ffprobe;
     private readonly IThumbnailService _thumbnails;
     private readonly IDjiSrtTelemetryReader _djiSrt;
+    private readonly ISidecarService _sidecar;
     private readonly ISettingsStore _settings;
     private readonly ILogger<VideoScannerService> _logger;
+
+    // Serializes sidecar tag get-or-create across the parallel scan. Tags
+    // carry a unique (Name, Type) index, so two workers importing the same
+    // tag at once would race into a constraint violation; the section is
+    // tiny and only runs for newly-imported clips that have a sidecar.
+    private readonly SemaphoreSlim _tagImportLock = new(1, 1);
 
     public VideoScannerService(
         IDbContextFactory<VideoArchiveDbContext> contextFactory,
@@ -24,6 +32,7 @@ public class VideoScannerService : IVideoScannerService
         IFfprobeService ffprobe,
         IThumbnailService thumbnails,
         IDjiSrtTelemetryReader djiSrt,
+        ISidecarService sidecar,
         ISettingsStore settings,
         ILogger<VideoScannerService> logger)
     {
@@ -32,6 +41,7 @@ public class VideoScannerService : IVideoScannerService
         _ffprobe = ffprobe;
         _thumbnails = thumbnails;
         _djiSrt = djiSrt;
+        _sidecar = sidecar;
         _settings = settings;
         _logger = logger;
     }
@@ -314,8 +324,26 @@ public class VideoScannerService : IVideoScannerService
                 GpsLatitude = gpsLat,
                 GpsLongitude = gpsLon
             };
+
+            // Rehydrate from a sidecar written by a previous install/catalog,
+            // if present. We only do this for brand-new records (the import
+            // path) — a rescan of an existing clip never reapplies the
+            // sidecar, so the live catalog stays the source of truth and
+            // user edits are never clobbered.
+            var sidecar = await _sidecar.TryReadAsync(path, cancellationToken).ConfigureAwait(false);
+            if (sidecar != null)
+            {
+                ApplySidecarScalars(entity, sidecar);
+            }
+
             ctx.VideoItems.Add(entity);
             await ctx.SaveChangesAsync(cancellationToken);
+
+            if (sidecar != null && sidecar.Tags.Count > 0)
+            {
+                await ApplySidecarTagsAsync(ctx, entity.Id, sidecar.Tags, cancellationToken).ConfigureAwait(false);
+            }
+
             return new ProcessResult(ProcessAction.Added, entity.Id);
         }
         else
@@ -351,6 +379,75 @@ public class VideoScannerService : IVideoScannerService
             return new ProcessResult(ProcessAction.Updated, existing.Id);
         }
     }
+
+    // Copies the sidecar's scalar metadata onto a freshly-built entity.
+    // Sidecar values win over the folder-name-parsed defaults here because
+    // they reflect deliberate curation from a prior catalog; we only keep a
+    // parsed/empty value when the sidecar doesn't carry one.
+    private static void ApplySidecarScalars(VideoItem entity, SidecarData sidecar)
+    {
+        entity.Rating = sidecar.Rating;
+
+        if (!string.IsNullOrWhiteSpace(sidecar.Status) &&
+            Enum.TryParse<VideoStatus>(sidecar.Status, ignoreCase: true, out var status))
+        {
+            entity.Status = status;
+        }
+
+        if (!string.IsNullOrWhiteSpace(sidecar.Notes)) entity.Notes = sidecar.Notes;
+        if (!string.IsNullOrWhiteSpace(sidecar.LocationText)) entity.LocationText = sidecar.LocationText;
+        if (!string.IsNullOrWhiteSpace(sidecar.ContextText)) entity.ContextText = sidecar.ContextText;
+        if (sidecar.FolderDate.HasValue) entity.FolderDate = sidecar.FolderDate;
+    }
+
+    // Get-or-create each sidecar tag by (name, type) and link it to the new
+    // video. Serialized behind _tagImportLock so concurrent scan workers
+    // can't race two inserts of the same tag past the unique index.
+    private async Task ApplySidecarTagsAsync(
+        VideoArchiveDbContext ctx,
+        int videoItemId,
+        IReadOnlyList<SidecarTagData> tags,
+        CancellationToken cancellationToken)
+    {
+        // Dedupe within the sidecar (defensive — a hand-edited file could
+        // repeat a tag) so we don't try to add the same link twice.
+        var distinct = tags
+            .Where(t => !string.IsNullOrWhiteSpace(t.Name))
+            .Select(t => (Name: t.Name.Trim(), Type: ParseTagType(t.Type)))
+            .Distinct()
+            .ToList();
+        if (distinct.Count == 0) return;
+
+        await _tagImportLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            foreach (var (name, type) in distinct)
+            {
+                var tag = await ctx.Tags
+                    .FirstOrDefaultAsync(t => t.Name == name && t.Type == type, cancellationToken)
+                    .ConfigureAwait(false);
+                if (tag == null)
+                {
+                    tag = new Tag { Name = name, Type = type };
+                    ctx.Tags.Add(tag);
+                    await ctx.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                }
+
+                ctx.VideoTags.Add(new VideoTag { VideoItemId = videoItemId, TagId = tag.Id });
+            }
+
+            await ctx.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            _tagImportLock.Release();
+        }
+    }
+
+    private static TagType ParseTagType(string? type) =>
+        !string.IsNullOrWhiteSpace(type) && Enum.TryParse<TagType>(type, ignoreCase: true, out var parsed)
+            ? parsed
+            : TagType.Subject;
 
     private async Task ProcessThumbnailQueueAsync(ChannelReader<int> reader, CancellationToken cancellationToken)
     {

@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+## [0.9.7] - 2026-06-03
+
+### Added
+
+- **Sidecars are now read back on import — your curation rehydrates a freshly-rebuilt catalog.** Until now sidecar files (`.findthatshot.json`) were write-only: the app kept them in sync next to each video but never read them. As of this release, when the scanner **imports a brand-new clip** it looks for a sidecar beside the file and, if present, restores the curation captured there — **rating, status, notes, location text, context, the parsed folder/shoot date, and all tags** — onto the new catalog record. This closes the round-trip: delete and rebuild your catalog (or move the library to a new machine / fresh install) and your ratings, statuses, notes and tags come back from the files on disk instead of being lost. It is deliberately **import-only** — a rescan of a clip that's *already* in the catalog never re-applies the sidecar, so the live database stays the source of truth and your in-app edits are never clobbered by an older file. Tags are matched/created by their natural `(Name, Type)` key (defaulting to *Subject* when a type is missing), and brand-new tags discovered in sidecars are created on the fly. Reads are best-effort and resilient: a corrupt, partial, locked, or offline-drive sidecar logs a warning and is skipped (degrades to "no sidecar") rather than failing the scan. Under the hood this adds `ISidecarService.TryReadAsync` returning a transport-agnostic `SidecarData`/`SidecarTagData`, consumed by `VideoScannerService` via new `ApplySidecarScalars` / `ApplySidecarTagsAsync` helpers; the tag get-or-create is serialised behind a small semaphore so parallel scan workers can't race two inserts of the same tag past the unique `(Name, Type)` index.
+
+- **Drop loose files (not just folders) onto the sidebar to add their folder as a root.** The FOLDERS drop target now also accepts dropped *files* — each contributes its containing folder as a root candidate — so dragging a mix of folders and loose clips (e.g. the contents of a folder) registers the right roots instead of silently discarding the files. The whole dropped set is then **collapsed by ancestry**: a parent folder supersedes any of its subfolders in the same drop, and any candidate already covered by an existing registered root (the root itself *or* an ancestor of it, compared case-insensitively on normalised full paths) is skipped — not just exact-path duplicates. The result is one clean root per intended location rather than redundant nested roots. New `MainViewModel` helpers `NormalizeFolderPath` / `IsStrictDescendant` back the comparison; the **Add folder…** picker shares the same `AddRootFoldersByPathsAsync` path, so it benefits too.
+
+### Changed
+
+- **The player seek bar is now click-anywhere and spans the full width.** Previously you had to land precisely on the thin 4px accent line to scrub, and the time readouts were pinned to fixed 60px columns. The slider template now carries a transparent full-height backdrop across the entire control (and inside the progress repeat-button), so a click **anywhere in the seek band** jumps the playhead to that point — the click's X position is mapped directly to the seek value. The row was also relaid so the current-time and duration readouts auto-size and flank a full-width slider that stretches across the whole player panel.
+
+- **Refreshed splash screen artwork** (`SplashScreen.png`), and removed the splash window's `DropShadowEffect`. The shadow forced WPF to rasterise the whole splash subtree to an intermediate 1x bitmap before scaling, which made the artwork look soft on high-DPI displays (and it was clipped by the window edge anyway); dropping it keeps the PNG pixel-sharp. The stale `Splash-Screen-0.9.2.png` asset was removed.
+
+### Fixed
+
+- **Clicking the seek track no longer snaps the playhead back to where it was.** The 250ms position poller could fire in the brief window after a click — before the engine reported the new position — and reset the slider to the old spot, so clicks appeared to "jump back". The seek guard is now raised on mouse-**down** (covering plain track clicks, which never raise the thumb's `DragStarted`), the new position is **awaited** before the guard is released, and a short 350ms cooldown suppresses the poller until the engine catches up.
+
 ## [0.9.6] - 2026-06-03
 
 ### Changed
@@ -315,7 +333,8 @@ First public release.
 
 - Responsive default window size; date pickers and the *Play externally* button are no longer clipped at common screen widths.
 
-[Unreleased]: https://github.com/liknes/FindThatShot/compare/v0.9.6...HEAD
+[Unreleased]: https://github.com/liknes/FindThatShot/compare/v0.9.7...HEAD
+[0.9.7]: https://github.com/liknes/FindThatShot/compare/v0.9.6...v0.9.7
 [0.9.6]: https://github.com/liknes/FindThatShot/compare/v0.9.5...v0.9.6
 [0.9.5]: https://github.com/liknes/FindThatShot/compare/v0.9.4...v0.9.5
 [0.9.4]: https://github.com/liknes/FindThatShot/compare/v0.9.3...v0.9.4

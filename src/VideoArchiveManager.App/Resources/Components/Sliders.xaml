@@ -166,7 +166,10 @@
 
     <Style x:Key="App.SeekSlider" TargetType="Slider">
         <Setter Property="OverridesDefaultStyle" Value="True" />
-        <Setter Property="MinHeight" Value="20" />
+        <!-- Taller than the visible 4px track on purpose: the extra height is
+             an invisible click target (both repeat buttons fill it), so you
+             don't have to land precisely on the line to seek. -->
+        <Setter Property="MinHeight" Value="24" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{DynamicResource App.Accent}" />
         <Setter Property="Focusable" Value="True" />
@@ -174,7 +177,9 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Slider">
-                    <Grid>
+                    <!-- Transparent backdrop across the whole control so the
+                         entire band is a hit target, not just the track parts. -->
+                    <Grid Background="Transparent">
                         <Border CornerRadius="2"
                                 Height="4"
                                 VerticalAlignment="Center"
@@ -188,10 +193,15 @@
                                               Focusable="False">
                                     <RepeatButton.Template>
                                         <ControlTemplate TargetType="RepeatButton">
-                                            <Border CornerRadius="2"
-                                                    Height="4"
-                                                    VerticalAlignment="Center"
-                                                    Background="{DynamicResource App.Accent}" />
+                                            <!-- Transparent full-height backdrop makes the WHOLE
+                                                 vertical band click-to-seek, not just the 4px
+                                                 line; the accent bar stays a slim 4px visual. -->
+                                            <Grid Background="Transparent">
+                                                <Border CornerRadius="2"
+                                                        Height="4"
+                                                        VerticalAlignment="Center"
+                                                        Background="{DynamicResource App.Accent}" />
+                                            </Grid>
                                         </ControlTemplate>
                                     </RepeatButton.Template>
                                 </RepeatButton>

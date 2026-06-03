@@ -1091,6 +1091,16 @@ public partial class MainViewModel : ObservableObject
             if (seen.Add(path)) candidates.Add(path);
         }
 
+        // Collapse the batch by ancestry: drop any candidate that sits
+        // *under* another candidate in the same drop. A root is scanned
+        // recursively, so registering both a parent and its subfolder is
+        // redundant (and muddles "Remove folder"). This is what turns a
+        // drop of e.g. "Videos\Captures" + a loose file from "Videos"
+        // (parent = "Videos") into a single "Videos" root.
+        candidates = candidates
+            .Where(c => !candidates.Any(other => IsStrictDescendant(c, other)))
+            .ToList();
+
         if (candidates.Count == 0)
         {
             StatusMessage = "No folders to add — drop one or more folders.";
@@ -1102,9 +1112,16 @@ public partial class MainViewModel : ObservableObject
 
         await using (var ctx = await _contextFactory.CreateDbContextAsync())
         {
+            // Existing roots, so we can also skip candidates already covered
+            // by a registered ancestor root (not just exact-path matches).
+            var existingRoots = await ctx.RootFolders.Select(r => r.Path).ToListAsync();
+
             foreach (var path in candidates)
             {
-                if (await ctx.RootFolders.AnyAsync(r => r.Path == path))
+                var alreadyCovered = existingRoots.Any(r =>
+                    string.Equals(NormalizeFolderPath(r), NormalizeFolderPath(path), StringComparison.OrdinalIgnoreCase)
+                    || IsStrictDescendant(path, r));
+                if (alreadyCovered)
                 {
                     skipped++;
                     continue;
@@ -1155,6 +1172,31 @@ public partial class MainViewModel : ObservableObject
             ? $"Added root folder: {added[0].Path}"
             : $"Added {added.Count} root folders";
         return skipped > 0 ? $"{addedPart} ({skipped} already existed)" : addedPart;
+    }
+
+    // Canonical, separator-trimmed full path for case-insensitive folder
+    // comparisons. Falls back to a plain trim if GetFullPath throws on a
+    // malformed path so a bad entry can't take the whole drop down.
+    private static string NormalizeFolderPath(string path)
+    {
+        try
+        {
+            return Path.TrimEndingDirectorySeparator(Path.GetFullPath(path));
+        }
+        catch
+        {
+            return path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        }
+    }
+
+    // True when `path` is strictly nested under `ancestor` (not equal). Used
+    // to collapse a drop so a parent folder supersedes its subfolders.
+    private static bool IsStrictDescendant(string path, string ancestor)
+    {
+        var p = NormalizeFolderPath(path);
+        var a = NormalizeFolderPath(ancestor);
+        if (string.Equals(p, a, StringComparison.OrdinalIgnoreCase)) return false;
+        return p.StartsWith(a + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
     }
 
     [RelayCommand]

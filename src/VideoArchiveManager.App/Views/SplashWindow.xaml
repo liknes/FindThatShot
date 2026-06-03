@@ -16,15 +16,18 @@
          fires. It's a full-bleed branded splash image (logo + tagline are baked
          into the artwork); the version label and loading spinner sit in a
          bottom scrim so they stay legible over the photo. -->
+    <!-- NOTE: do NOT put a DropShadowEffect (or any Effect) on this Border.
+         An Effect forces WPF to rasterise the whole subtree — including the
+         splash artwork — into an intermediate bitmap at 1x layout resolution,
+         which is then scaled to device pixels and makes the sharp PNG look
+         blurry on high-DPI displays. (The shadow was also clipped by the
+         window edge anyway, since the Border fills the window with no margin.) -->
     <Border CornerRadius="10"
             BorderBrush="#66808080"
             BorderThickness="1"
             SnapsToDevicePixels="True"
             UseLayoutRounding="True"
             ClipToBounds="True">
-        <Border.Effect>
-            <DropShadowEffect Color="Black" BlurRadius="20" ShadowDepth="4" Opacity="0.4" />
-        </Border.Effect>
         <Grid>
             <!-- Clip children to the rounded corners (Border.CornerRadius doesn't
                  clip its child). Rect is inset 1px for the border; radius 9 = 10 - 1. -->
@@ -32,7 +35,7 @@
                 <RectangleGeometry Rect="0,0,598,448" RadiusX="9" RadiusY="9" />
             </Grid.Clip>
             <!-- Branded artwork fills the window (4:3, matches the source PNG). -->
-            <Image Source="pack://application:,,,/Resources/Images/Splash-Screen-0.9.2.png"
+            <Image Source="pack://application:,,,/Resources/Images/SplashScreen.png"
                    Stretch="UniformToFill"
                    RenderOptions.BitmapScalingMode="HighQuality" />
 
