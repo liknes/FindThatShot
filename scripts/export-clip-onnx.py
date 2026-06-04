@@ -19,7 +19,7 @@ Once present, AiModelProvider resolves tools/models/clip-vit-b32 automatically
 Settings just works -- no hosting, no download URL.
 
 Usage:
-    python -m pip install "torch" "transformers" "onnx"
+    python -m pip install "torch" "transformers" "onnx" "onnxscript"
     python scripts/export-clip-onnx.py
     # options:
     python scripts/export-clip-onnx.py --model openai/clip-vit-base-patch32 --out tools/models/clip-vit-b32 --opset 14
@@ -49,6 +49,60 @@ def _repo_root() -> Path:
 
 def _eprint(*args: object) -> None:
     print(*args, file=sys.stderr)
+
+
+def _export_onnx(module, args_tuple, path, *, input_names, output_names, dynamic_axes, opset):
+    """torch.onnx.export across torch versions.
+
+    torch >= 2.x defaults to the new dynamo-based exporter (which needs the
+    optional `onnxscript` package and reinterprets input/output names). We want
+    the stable TorchScript exporter so the explicit names + dynamic axes below
+    map straight through. Pass dynamo=False when supported, and fall back for
+    older torch that lacks the kwarg.
+    """
+    import torch
+
+    common = dict(
+        input_names=input_names,
+        output_names=output_names,
+        dynamic_axes=dynamic_axes,
+        opset_version=opset,
+        do_constant_folding=True,
+    )
+    try:
+        torch.onnx.export(module, args_tuple, str(path), dynamo=False, **common)
+    except TypeError:
+        # Older torch: no `dynamo` kwarg, already uses the TorchScript exporter.
+        torch.onnx.export(module, args_tuple, str(path), **common)
+
+
+def _locate_merges(model_id: str, tokenizer, out_dir: "Path"):
+    """Return a path to the CLIP BPE merges.txt, or None.
+
+    Prefer downloading the canonical merges.txt from the Hub (it's already in the
+    local cache after from_pretrained). Fall back to save_vocabulary, which on
+    both slow and fast CLIP tokenizers writes vocab.json + merges.txt.
+    """
+    try:
+        from huggingface_hub import hf_hub_download
+
+        return Path(hf_hub_download(model_id, "merges.txt"))
+    except Exception as ex:  # noqa: BLE001 - best effort, fall back below
+        _eprint(f"[export] Hub merges.txt fetch failed ({ex}); trying local save.")
+
+    try:
+        tmp_dir = out_dir / "_hf_tokenizer"
+        tmp_dir.mkdir(exist_ok=True)
+        # save_vocabulary returns the paths it wrote; the merges file is among them.
+        written = tokenizer.save_vocabulary(str(tmp_dir))
+        for p in written or ():
+            if str(p).endswith("merges.txt"):
+                return Path(p)
+        candidate = tmp_dir / "merges.txt"
+        return candidate if candidate.exists() else None
+    except Exception as ex:  # noqa: BLE001
+        _eprint(f"[export] Local tokenizer save failed: {ex}")
+        return None
 
 
 def main() -> int:
@@ -84,9 +138,13 @@ def main() -> int:
             CLIPTokenizer,
             CLIPVisionModelWithProjection,
         )
+        # torch >= 2.x routes torch.onnx.export through an exporter module that
+        # imports onnxscript at call time even for the legacy path, so require it
+        # up front rather than failing mid-export.
+        import onnxscript  # noqa: F401
     except ImportError as ex:  # pragma: no cover - guidance path
         _eprint("Missing dependency:", ex)
-        _eprint('Install with:  python -m pip install "torch" "transformers" "onnx"')
+        _eprint('Install with:  python -m pip install "torch" "transformers" "onnx" "onnxscript"')
         return 2
 
     out_dir = Path(args.out) if args.out else _repo_root() / "tools" / "models" / "clip-vit-b32"
@@ -131,15 +189,14 @@ def main() -> int:
 
     print(f"[export] Writing {image_path.name} ...", flush=True)
     dummy_pixels = torch.randn(1, 3, image_size, image_size, dtype=torch.float32)
-    torch.onnx.export(
+    _export_onnx(
         VisionEmbed(vision),
         (dummy_pixels,),
-        str(image_path),
+        image_path,
         input_names=["pixel_values"],
         output_names=["image_embeds"],
         dynamic_axes={"pixel_values": {0: "batch"}, "image_embeds": {0: "batch"}},
-        opset_version=args.opset,
-        do_constant_folding=True,
+        opset=args.opset,
     )
 
     # --- Text encoder: input_ids/attention_mask [N,L] -> text_embeds [N,D] ----
@@ -154,10 +211,10 @@ def main() -> int:
     print(f"[export] Writing {text_path.name} ...", flush=True)
     dummy_ids = torch.ones(1, context_length, dtype=torch.int64)
     dummy_mask = torch.ones(1, context_length, dtype=torch.int64)
-    torch.onnx.export(
+    _export_onnx(
         TextEmbed(text),
         (dummy_ids, dummy_mask),
-        str(text_path),
+        text_path,
         input_names=["input_ids", "attention_mask"],
         output_names=["text_embeds"],
         dynamic_axes={
@@ -165,25 +222,25 @@ def main() -> int:
             "attention_mask": {0: "batch"},
             "text_embeds": {0: "batch"},
         },
-        opset_version=args.opset,
-        do_constant_folding=True,
+        opset=args.opset,
     )
 
     # --- Tokenizer merges: gzip HF's merges.txt under the default vocab name ---
     # The C# ClipTokenizer reads the standard CLIP merges format (skip the first
     # header line, take 48894 "a b" merge pairs). HuggingFace's CLIP merges.txt
     # is exactly that, so we just gzip it to the file name the manifest expects.
+    # transformers 5.x returns the *fast* tokenizer, whose save_pretrained emits
+    # only tokenizer.json (no merges.txt), so try a slow-tokenizer save first and
+    # fall back to fetching merges.txt straight from the Hub.
     print(f"[export] Writing {vocab_path.name} ...", flush=True)
-    tmp_dir = out_dir / "_hf_tokenizer"
-    tmp_dir.mkdir(exist_ok=True)
-    tokenizer.save_pretrained(str(tmp_dir))
-    merges_txt = tmp_dir / "merges.txt"
-    if not merges_txt.exists():
-        _eprint("Could not find merges.txt from the tokenizer export.")
+    merges_txt = _locate_merges(args.model, tokenizer, out_dir)
+    if merges_txt is None:
+        _eprint("Could not obtain merges.txt for the tokenizer.")
         return 3
     with open(merges_txt, "rb") as src, gzip.open(vocab_path, "wb") as dst:
         shutil.copyfileobj(src, dst)
-    shutil.rmtree(tmp_dir, ignore_errors=True)
+    # Never let the fallback's scratch dir leak into the bundle / zip.
+    shutil.rmtree(out_dir / "_hf_tokenizer", ignore_errors=True)
 
     # --- Manifest -------------------------------------------------------------
     manifest = {

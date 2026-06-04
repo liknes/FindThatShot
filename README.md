@@ -131,7 +131,7 @@ The feature is **off by default**, and — like the bundled FFmpeg/mpv binaries 
 - **Produce the bundle with the prep script (recommended).** Run the included exporter once to download the public `openai/clip-vit-base-patch32` weights and assemble the exact bundle the app expects into `tools/models/clip-vit-b32`:
 
 ```bash
-python -m pip install "torch" "transformers" "onnx"
+python -m pip install "torch" "transformers" "onnx" "onnxscript"
 python scripts/export-clip-onnx.py
 ```
 
