@@ -56,6 +56,7 @@ public partial class SettingsViewModel : ObservableObject
         _preferProxyForPlayback = current.PreferProxyForPlayback;
         _showDroneFlightPaths = current.ShowDroneFlightPaths;
         _showPlayerTelemetry = current.ShowPlayerTelemetry;
+        _enableHoverScrubPreview = current.EnableHoverScrubPreview;
         _enableAiTagging = current.EnableAiTagging;
         _aiModelDirectory = current.AiModelDirectory ?? string.Empty;
         _aiSecondsPerFrame = current.AiSecondsPerFrame;
@@ -124,6 +125,9 @@ public partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _showPlayerTelemetry;
+
+    [ObservableProperty]
+    private bool _enableHoverScrubPreview;
 
     [ObservableProperty]
     private string _backupStatusMessage = string.Empty;
@@ -400,6 +404,10 @@ public partial class SettingsViewModel : ObservableObject
             PreferProxyForPlayback = PreferProxyForPlayback,
             ShowDroneFlightPaths = ShowDroneFlightPaths,
             ShowPlayerTelemetry = ShowPlayerTelemetry,
+            EnableHoverScrubPreview = EnableHoverScrubPreview,
+            // Frame count is configurable via settings.json only; carry the
+            // live value forward so saving the dialog never resets it.
+            HoverScrubFrameCount = _store.Current.HoverScrubFrameCount,
             EnableAiTagging = EnableAiTagging,
             AiModelDirectory = string.IsNullOrWhiteSpace(AiModelDirectory) ? null : AiModelDirectory,
             AiModelDownloadUrl = _store.Current.AiModelDownloadUrl,

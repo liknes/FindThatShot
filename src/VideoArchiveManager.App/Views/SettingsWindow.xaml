@@ -268,6 +268,13 @@
                         <CheckBox IsChecked="{Binding ShowDroneFlightPaths}"
                                   Content="Show drone flight paths on the map"
                                   Margin="0,0,0,16" />
+
+                        <TextBlock Text="CATALOG GRID" Style="{StaticResource App.Type.Section}" />
+                        <TextBlock TextWrapping="Wrap" Style="{StaticResource App.Type.BodyMuted}" Margin="0,0,0,12"
+                                   Text="When enabled, hovering a catalog card and sweeping the pointer left-to-right scrubs through preview frames sampled across the clip — fast visual triage without opening the player. Frames are generated on demand the first time you hover a clip (a brief pause while ffmpeg extracts them), then cached; clips you never hover cost nothing. The source files are only ever read." />
+                        <CheckBox IsChecked="{Binding EnableHoverScrubPreview}"
+                                  Content="Enable hover-scrub previews on catalog cards"
+                                  Margin="0,0,0,16" />
                     </StackPanel>
                 </ScrollViewer>
 

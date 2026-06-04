@@ -1145,6 +1145,25 @@ public partial class MainViewModel : ObservableObject
 
     private bool CanClearDateFilter() => DateFrom.HasValue || DateTo.HasValue;
 
+    // Scopes the grid to an explicit date range — used by the calendar browse
+    // window's "Filter grid to this month" action. Sets both pickers under the
+    // filter-search suppression so it runs a single search, not two (same
+    // pattern as ClearDateFilterAsync).
+    public async Task ApplyDateRangeAsync(DateTime from, DateTime to)
+    {
+        _suppressFilterSearch = true;
+        try
+        {
+            DateFrom = from;
+            DateTo = to;
+        }
+        finally
+        {
+            _suppressFilterSearch = false;
+        }
+        await SearchAsync();
+    }
+
     // Tracks the currently-running search so that fast successive filter
     // changes don't race — a newer call cancels any older one before its
     // results can clobber the grid.

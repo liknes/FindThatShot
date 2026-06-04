@@ -48,6 +48,74 @@ public class ThumbnailService : IThumbnailService
         return Path.Combine(dir, $"{momentId}.jpg");
     }
 
+    public string GetScrubDirectory(int videoId)
+        => Path.Combine(_settings.Current.EffectiveThumbnailDirectory, "Scrub", videoId.ToString());
+
+    public async Task<IReadOnlyList<string>> GenerateScrubFramesAsync(
+        int videoId,
+        string videoFilePath,
+        double? durationSeconds,
+        int frameCount,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(videoFilePath) || !File.Exists(videoFilePath))
+            return Array.Empty<string>();
+
+        var count = Math.Clamp(frameCount, 2, 60);
+        var dir = GetScrubDirectory(videoId);
+        var timestamps = ComputeScrubTimestamps(durationSeconds, count);
+
+        // Fast cache-hit path: if every expected frame already exists, return
+        // the cached set without spawning a single ffmpeg process.
+        var expected = Enumerable.Range(0, timestamps.Count)
+            .Select(i => Path.Combine(dir, $"{i}.jpg"))
+            .ToList();
+        if (expected.All(File.Exists)) return expected;
+
+        Directory.CreateDirectory(dir);
+
+        var result = new List<string>(timestamps.Count);
+        for (var i = 0; i < timestamps.Count; i++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var outputPath = Path.Combine(dir, $"{i}.jpg");
+            if (File.Exists(outputPath))
+            {
+                result.Add(outputPath);
+                continue;
+            }
+
+            // Smaller + slightly lower quality than card thumbnails: scrub
+            // frames are transient triage visuals, so we trade a little detail
+            // for faster generation and a lighter cache footprint.
+            var produced = await ExtractFrameAsync(
+                videoFilePath, timestamps[i], outputPath, cancellationToken,
+                scaleFilter: "scale=320:-2", quality: 5).ConfigureAwait(false);
+            if (produced != null) result.Add(produced);
+        }
+        return result;
+    }
+
+    // Evenly spaced sample points biased to the clip interior (mid-bucket
+    // centers), mirroring the AI frame sampler so we never lean on a black
+    // first frame or a fade-out tail.
+    private static List<double> ComputeScrubTimestamps(double? duration, int count)
+    {
+        if (duration is null or <= 0)
+            return new List<double> { 1.0 };
+
+        var d = duration.Value;
+        var result = new List<double>(count);
+        for (var i = 0; i < count; i++)
+        {
+            var t = (i + 0.5) / count * d;
+            if (t < 0) t = 0;
+            if (t > d - 0.1) t = Math.Max(0, d - 0.1);
+            result.Add(t);
+        }
+        return result;
+    }
+
     // Deletes only canonical "{id}.jpg" files inside the configured thumbnail
     // cache directory. Source video files (anything outside this directory)
     // are NEVER touched, even if a malformed DB row tried to point us there.
@@ -67,6 +135,8 @@ public class ThumbnailService : IThumbnailService
         }
 
         if (!Directory.Exists(thumbDirFull)) return 0;
+
+        var scrubRootFull = Path.GetFullPath(Path.Combine(thumbDirFull, "Scrub"));
 
         var deleted = 0;
         foreach (var id in videoIds)
@@ -94,6 +164,23 @@ public class ThumbnailService : IThumbnailService
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Failed to delete thumbnail for video id {Id}", id);
+            }
+
+            // Drop the lazily-generated hover-scrub frame cache for this clip
+            // too. Guarded to resolve strictly under the "Scrub" subfolder so a
+            // malformed id can never escape the cache directory.
+            try
+            {
+                var scrubDir = Path.GetFullPath(Path.Combine(scrubRootFull, id.ToString()));
+                if (string.Equals(Path.GetDirectoryName(scrubDir), scrubRootFull, StringComparison.OrdinalIgnoreCase)
+                    && Directory.Exists(scrubDir))
+                {
+                    Directory.Delete(scrubDir, recursive: true);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to delete scrub frames for video id {Id}", id);
             }
         }
         return deleted;
@@ -124,10 +211,18 @@ public class ThumbnailService : IThumbnailService
         return ExtractFrameAsync(videoFilePath, seek, outputPath, cancellationToken);
     }
 
-    // Shared single-frame extract used by both whole-clip and moment thumbnails.
-    // Seeks (fast seek, before -i) to seekSeconds and writes one scaled JPEG to
-    // outputPath. The source file is only read, never written.
-    private async Task<string?> ExtractFrameAsync(string videoFilePath, double seekSeconds, string outputPath, CancellationToken cancellationToken)
+    // Shared single-frame extract used by whole-clip, moment, and hover-scrub
+    // thumbnails. Seeks (fast seek, before -i) to seekSeconds and writes one
+    // scaled JPEG to outputPath. The scaleFilter and JPEG quality are
+    // overridable so scrub frames can be smaller/cheaper than card thumbnails.
+    // The source file is only read, never written.
+    private async Task<string?> ExtractFrameAsync(
+        string videoFilePath,
+        double seekSeconds,
+        string outputPath,
+        CancellationToken cancellationToken,
+        string scaleFilter = "scale=640:-2",
+        int quality = 4)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
 
@@ -150,9 +245,9 @@ public class ThumbnailService : IThumbnailService
         psi.ArgumentList.Add("-frames:v");
         psi.ArgumentList.Add("1");
         psi.ArgumentList.Add("-vf");
-        psi.ArgumentList.Add("scale=640:-2");
+        psi.ArgumentList.Add(scaleFilter);
         psi.ArgumentList.Add("-q:v");
-        psi.ArgumentList.Add("4");
+        psi.ArgumentList.Add(quality.ToString(CultureInfo.InvariantCulture));
         psi.ArgumentList.Add(outputPath);
 
         try

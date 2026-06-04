@@ -18,4 +18,7 @@
     <!-- (value, max, trackWidth) → filled bar width. Drives the proportional
          breakdown bars in the catalog statistics dashboard. -->
     <conv:RatioToWidthConverter x:Key="RatioToWidth" />
+    <!-- intensity (0..1) → accent-tinted fill. Drives the calendar browse
+         year-month heatmap cells. -->
+    <conv:HeatIntensityToBrushConverter x:Key="HeatIntensityToBrush" />
 </ResourceDictionary>

@@ -112,6 +112,17 @@ Open **Catalog → Browse on map…** for a whole-archive map that turns locatio
 
 The window is read-only over the catalog and reuses the lightweight projection the grid already builds — plotting thousands of points stays cheap, and **no source video file is read, moved, or modified**.
 
+## Browse by date
+
+Open **Catalog → Browse by date…** for a whole-archive **year-by-month heatmap** that turns time into a navigation axis — the "when did I shoot that?" companion to *Browse on map*. Each year present in the catalog is a row of twelve month cells, tinted by clip volume (brighter = more clips) with the per-month count and per-year total shown inline. Clips are bucketed by **effective shoot date** — the parsed folder/shoot date when available, otherwise the file's modified date — so the heatmap reflects when footage was *captured*, not when it was imported.
+
+- **Scope.** By default the heatmap counts **every** clip in the catalog. Untick **Whole archive** to instead mirror the **current grid filters**.
+- **Click a month → list its clips.** Clicking a month fills the side panel with that month's clips (thumbnail, filename, date, online state, rating).
+- **Preview and jump.** Selecting a clip previews it; **Show in grid** brings it forward in the catalog and **Play in app** opens it in the in-app player.
+- **Filter grid to this month.** The toolbar button scopes the main catalog grid to the selected month's date range.
+
+The window is read-only over the catalog and reuses lightweight aggregate queries, so charting a large archive stays cheap and **no source video file is read, moved, or modified**.
+
 ## Finding duplicates
 
 Open **Catalog → Find duplicates…** to track down clips that exist in more than one place — typically the same footage copied to a backup or external drive. The finder groups clips by a **metadata fingerprint** the scanner already captured — **exact file size + duration + resolution** — so it's instant, needs nothing read off disk, and finds duplicates even among **offline** clips.

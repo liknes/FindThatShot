@@ -178,6 +178,105 @@ public class SearchService : ISearchService
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<MonthShootCount>> GetShootMonthCountsAsync(
+        SearchQuery? filter = null,
+        CancellationToken cancellationToken = default)
+    {
+        await using var ctx = await _contextFactory.CreateDbContextAsync(cancellationToken);
+
+        IQueryable<VideoItem> q = ctx.VideoItems.AsNoTracking();
+        if (filter is not null)
+        {
+            q = ApplyFilters(q, filter);
+        }
+
+        // Effective shoot date = FolderDate ?? ModifiedAtFile. Run as two grouped
+        // queries on a single DateTime member each so SQLite can translate the
+        // year/month extraction — a coalesce-then-.Month expression does not
+        // translate reliably (same split as CatalogStatisticsService.BuildByYear).
+        var folderMonths = await q
+            .Where(v => v.FolderDate != null)
+            .GroupBy(v => new { v.FolderDate!.Value.Year, v.FolderDate!.Value.Month })
+            .Select(g => new { g.Key.Year, g.Key.Month, Count = g.Count() })
+            .ToListAsync(cancellationToken);
+
+        var fileMonths = await q
+            .Where(v => v.FolderDate == null)
+            .GroupBy(v => new { v.ModifiedAtFile.Year, v.ModifiedAtFile.Month })
+            .Select(g => new { g.Key.Year, g.Key.Month, Count = g.Count() })
+            .ToListAsync(cancellationToken);
+
+        var merged = new Dictionary<(int Year, int Month), int>();
+        foreach (var m in folderMonths)
+        {
+            var key = (m.Year, m.Month);
+            merged[key] = merged.TryGetValue(key, out var c) ? c + m.Count : m.Count;
+        }
+        foreach (var m in fileMonths)
+        {
+            var key = (m.Year, m.Month);
+            merged[key] = merged.TryGetValue(key, out var c) ? c + m.Count : m.Count;
+        }
+
+        return merged
+            .OrderByDescending(kv => kv.Key.Year).ThenBy(kv => kv.Key.Month)
+            .Select(kv => new MonthShootCount(kv.Key.Year, kv.Key.Month, kv.Value))
+            .ToList();
+    }
+
+    public async Task<IReadOnlyList<CalendarClip>> GetClipsInMonthAsync(
+        int year,
+        int month,
+        SearchQuery? filter = null,
+        CancellationToken cancellationToken = default)
+    {
+        await using var ctx = await _contextFactory.CreateDbContextAsync(cancellationToken);
+
+        IQueryable<VideoItem> q = ctx.VideoItems.AsNoTracking();
+        if (filter is not null)
+        {
+            q = ApplyFilters(q, filter);
+        }
+
+        // Mirror the heatmap's effective-date bucketing: a clip belongs to the
+        // month if its FolderDate is in it, or (when it has none) its
+        // ModifiedAtFile is. Translates as Year/Month on a single member each.
+        q = q.Where(v =>
+            (v.FolderDate != null && v.FolderDate!.Value.Year == year && v.FolderDate!.Value.Month == month) ||
+            (v.FolderDate == null && v.ModifiedAtFile.Year == year && v.ModifiedAtFile.Month == month));
+
+        // Pull the scalar columns the list/preview need, then compute the
+        // effective date and order in memory (a single month is bounded).
+        var rows = await q
+            .Select(v => new
+            {
+                v.Id,
+                v.FileName,
+                v.FolderPath,
+                v.ThumbnailPath,
+                v.FileExists,
+                v.Rating,
+                v.FolderDate,
+                v.ModifiedAtFile
+            })
+            .ToListAsync(cancellationToken);
+
+        return rows
+            .Select(v => new CalendarClip
+            {
+                Id = v.Id,
+                FileName = v.FileName,
+                FolderPath = v.FolderPath,
+                ThumbnailPath = v.ThumbnailPath,
+                FileExists = v.FileExists,
+                Rating = v.Rating,
+                EffectiveDate = v.FolderDate ?? v.ModifiedAtFile
+            })
+            .OrderBy(v => v.EffectiveDate)
+            .ThenBy(v => v.FileName)
+            .ToList();
+    }
+
     public async Task<IReadOnlyList<string>> GetDistinctCamerasAsync(CancellationToken cancellationToken = default)
     {
         await using var ctx = await _contextFactory.CreateDbContextAsync(cancellationToken);

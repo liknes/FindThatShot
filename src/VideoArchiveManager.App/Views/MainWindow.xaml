@@ -123,6 +123,9 @@
                         <MenuItem Header="Browse on _map…"
                                   Click="Map_Click"
                                   ToolTip="See every geotagged clip clustered on a map. Click a cluster to scope the grid to it, click a marker to preview a clip, or filter the grid to whatever's in view. Read-only." />
+                        <MenuItem Header="Browse by da_te…"
+                                  Click="Calendar_Click"
+                                  ToolTip="See a year-by-month heatmap of when you shot. Click a month to list its clips, preview one, and jump to it in the grid or player, or scope the grid to that month. Read-only." />
                         <Separator />
                         <MenuItem Header="_Generate AI tags…"
                                   Click="GenerateAiTags_Click"
@@ -885,12 +888,25 @@
                             <!-- Double-clicking the thumbnail mirrors the sidebar
                                  "Play in app" button — see Thumbnail_OnMouseLeftButtonDown. -->
                             <Border Style="{StaticResource App.VideoCard.Thumbnail}"
-                                    MouseLeftButtonDown="Thumbnail_OnMouseLeftButtonDown">
+                                    MouseLeftButtonDown="Thumbnail_OnMouseLeftButtonDown"
+                                    MouseMove="Thumbnail_OnMouseMove"
+                                    MouseLeave="Thumbnail_OnMouseLeave">
                                 <Grid Height="{Binding ActualWidth, RelativeSource={RelativeSource Self}, Converter={StaticResource WidthTo16x9Height}}">
                                     <Image Source="{Binding Thumbnail}"
                                            Stretch="UniformToFill"
                                            HorizontalAlignment="Stretch"
                                            VerticalAlignment="Stretch" />
+                                    <!-- Hover-scrub overlay: when the pointer sweeps the card,
+                                         the code-behind sets ScrubFrame to the frame under the
+                                         cursor. Null (not scrubbing) collapses it so the static
+                                         thumbnail shows. IsHitTestVisible=False so it never
+                                         interferes with the Border's mouse tracking. -->
+                                    <Image Source="{Binding ScrubFrame}"
+                                           Stretch="UniformToFill"
+                                           HorizontalAlignment="Stretch"
+                                           VerticalAlignment="Stretch"
+                                           IsHitTestVisible="False"
+                                           Visibility="{Binding ScrubFrame, Converter={StaticResource NullToVisibility}}" />
                                     <!-- Subtle gradient at the bottom keeps the duration
                                          badge legible over light frames without a
                                          hard solid black bar. -->

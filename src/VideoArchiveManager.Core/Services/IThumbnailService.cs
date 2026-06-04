@@ -30,4 +30,23 @@ public interface IThumbnailService
     // Deletes cached "{momentId}.jpg" files for the given moment ids from the
     // "Moments" subfolder. Returns the number of files actually deleted.
     int DeleteForMoments(IEnumerable<int> momentIds);
+
+    // Per-video cache directory for lazily-generated hover-scrub frames: a
+    // "Scrub/{videoId}" subfolder of the configured thumbnail directory, kept
+    // separate from whole-clip and moment thumbnails.
+    string GetScrubDirectory(int videoId);
+
+    // Lazily generates up to frameCount evenly-spaced preview frames across the
+    // clip into GetScrubDirectory(videoId) as "0.jpg".."(n-1).jpg" for hover
+    // scrubbing on the catalog card. Idempotent: if the expected frames are
+    // already cached they're returned as-is without re-running ffmpeg. Returns
+    // the ordered list of frame paths that exist on disk (may be shorter than
+    // frameCount on partial failure). The source video file is only ever read,
+    // never modified.
+    Task<IReadOnlyList<string>> GenerateScrubFramesAsync(
+        int videoId,
+        string videoFilePath,
+        double? durationSeconds,
+        int frameCount,
+        CancellationToken cancellationToken = default);
 }

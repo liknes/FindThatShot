@@ -130,6 +130,14 @@ public partial class VideoItemViewModel : ObservableObject
 
     public void RefreshThumbnail() => OnPropertyChanged(nameof(Thumbnail));
 
+    // The current hover-scrub frame overlaid on the static thumbnail while the
+    // pointer sweeps across the card. Null = not scrubbing (the static
+    // thumbnail shows through). Driven entirely by the view's hover handlers;
+    // frame generation is lazy and cached on disk, so clips that are never
+    // hovered cost nothing.
+    [ObservableProperty]
+    private BitmapImage? _scrubFrame;
+
     // Raise change notifications for every GPS / location-derived property
     // after the underlying Model fields have been updated out-of-band (e.g.
     // by the manual GPS picker writing through VideoDetailViewModel). The

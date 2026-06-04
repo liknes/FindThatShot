@@ -55,6 +55,20 @@ public class AppSettings
 
     public int PageSize { get; set; } = 200;
 
+    // --- Hover-scrub previews (catalog cards) -----------------------------
+    // When true, hovering a catalog card and sweeping the pointer horizontally
+    // scrubs through a handful of preview frames sampled across the clip — fast
+    // visual triage without opening the player. Generation is LAZY: frames are
+    // extracted (via the same ffmpeg the thumbnail pipeline uses) the first
+    // time a clip is hovered and then cached on disk, so a clip you never hover
+    // costs nothing. Defaults ON; it's cheap because it never runs as a batch.
+    public bool EnableHoverScrubPreview { get; set; } = true;
+
+    // How many evenly-spaced frames to sample across a clip for the hover
+    // scrub. More frames = finer scrubbing at a higher one-time decode cost
+    // per hovered clip. Clamped to a sane band at use sites.
+    public int HoverScrubFrameCount { get; set; } = 12;
+
     // --- AI auto-tagging & natural-language search (opt-in) ---------------
     // Master switch for the whole CLIP subsystem. When false, no model is
     // downloaded or loaded, no scoring pass runs, the AI menu commands are

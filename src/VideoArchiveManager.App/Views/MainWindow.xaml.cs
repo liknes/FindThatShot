@@ -1,6 +1,8 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -8,7 +10,9 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Navigation;
+using VideoArchiveManager.App.Helpers;
 using VideoArchiveManager.App.ViewModels;
+using VideoArchiveManager.Core.Configuration;
 using VideoArchiveManager.Core.Models;
 using VideoArchiveManager.Core.Services;
 
@@ -18,6 +22,18 @@ public partial class MainWindow : Window
 {
     private readonly MainViewModel _viewModel;
     private readonly ISidecarService _sidecar;
+    private readonly IThumbnailService _thumbnailService;
+    private readonly ISettingsStore _settingsStore;
+
+    // --- Hover-scrub preview state ---------------------------------------
+    // The card currently being scrubbed (pointer is over it), the cached frame
+    // paths once generation completes, the latest pointer fraction (0..1) along
+    // the card, and a cancellation source so leaving a card / moving to another
+    // aborts any in-flight lazy generation. All touched only on the UI thread.
+    private VideoItemViewModel? _scrubVm;
+    private IReadOnlyList<string>? _scrubFrames;
+    private double _scrubFraction;
+    private CancellationTokenSource? _scrubCts;
 
     // Set while the user is interacting with the seek slider (dragging the
     // thumb OR pressing on the track) so the periodic position poller doesn't
@@ -58,11 +74,17 @@ public partial class MainWindow : Window
     // would just be visual clutter.
     private VideoInfoWindow? _infoWindow;
 
-    public MainWindow(MainViewModel viewModel, ISidecarService sidecar)
+    public MainWindow(
+        MainViewModel viewModel,
+        ISidecarService sidecar,
+        IThumbnailService thumbnailService,
+        ISettingsStore settingsStore)
     {
         InitializeComponent();
         _viewModel = viewModel;
         _sidecar = sidecar;
+        _thumbnailService = thumbnailService;
+        _settingsStore = settingsStore;
         DataContext = viewModel;
         Title = BuildWindowTitle();
 
@@ -595,6 +617,107 @@ public partial class MainWindow : Window
         {
             command.Execute(null);
         }
+    }
+
+    // --- Hover-scrub previews --------------------------------------------
+    // Sweeping the pointer across a card scrubs through a handful of frames
+    // sampled across the clip. Generation is lazy (Option B): the first hover
+    // on a clip kicks off a debounced background extract via ThumbnailService,
+    // the frames are cached on disk, and subsequent hovers are instant. Clips
+    // the user never hovers cost nothing — which is what makes this affordable
+    // across a 2000+ clip archive on mixed/external drives.
+    private void Thumbnail_OnMouseMove(object sender, MouseEventArgs e)
+    {
+        if (sender is not FrameworkElement element) return;
+        if (element.DataContext is not VideoItemViewModel vm) return;
+        if (!_settingsStore.Current.EnableHoverScrubPreview) return;
+        // Offline clips have no readable source; don't try to scrub them.
+        if (!vm.FileExists) return;
+
+        var width = element.ActualWidth;
+        if (width <= 0) return;
+
+        var x = e.GetPosition(element).X;
+        _scrubFraction = Math.Clamp(x / width, 0d, 0.99999d);
+
+        if (!ReferenceEquals(vm, _scrubVm))
+        {
+            BeginScrub(vm);
+        }
+
+        UpdateScrubFrame();
+    }
+
+    private void Thumbnail_OnMouseLeave(object sender, MouseEventArgs e) => EndScrub();
+
+    private void BeginScrub(VideoItemViewModel vm)
+    {
+        // Tear down any previous card's session (cancels in-flight generation
+        // and clears its overlay) before starting this one.
+        EndScrub();
+
+        _scrubVm = vm;
+        _scrubFrames = null;
+
+        var cts = new CancellationTokenSource();
+        _scrubCts = cts;
+        _ = GenerateScrubAsync(vm, cts.Token);
+    }
+
+    private async Task GenerateScrubAsync(VideoItemViewModel vm, CancellationToken token)
+    {
+        try
+        {
+            // Debounce: a brief delay means cards the pointer merely grazes on
+            // its way elsewhere never trigger an ffmpeg run.
+            await Task.Delay(160, token);
+
+            var count = Math.Clamp(_settingsStore.Current.HoverScrubFrameCount, 4, 40);
+            var frames = await _thumbnailService.GenerateScrubFramesAsync(
+                vm.Id, vm.FilePath, vm.Model.DurationSeconds, count, token);
+
+            if (token.IsCancellationRequested || !ReferenceEquals(vm, _scrubVm)) return;
+
+            _scrubFrames = frames;
+            UpdateScrubFrame();
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected when the pointer leaves the card before generation finishes.
+        }
+        catch
+        {
+            // A failed preview must never disrupt browsing; the static
+            // thumbnail simply stays in place.
+        }
+    }
+
+    private void UpdateScrubFrame()
+    {
+        var vm = _scrubVm;
+        var frames = _scrubFrames;
+        if (vm is null || frames is null || frames.Count == 0) return;
+
+        var index = (int)(_scrubFraction * frames.Count);
+        if (index < 0) index = 0;
+        if (index >= frames.Count) index = frames.Count - 1;
+
+        var bitmap = ThumbnailLoader.Load(frames[index]);
+        if (bitmap != null) vm.ScrubFrame = bitmap;
+    }
+
+    private void EndScrub()
+    {
+        _scrubCts?.Cancel();
+        _scrubCts?.Dispose();
+        _scrubCts = null;
+
+        if (_scrubVm != null)
+        {
+            _scrubVm.ScrubFrame = null;
+            _scrubVm = null;
+        }
+        _scrubFrames = null;
     }
 
     // Re-entrancy guard for the tag picker. Adding a chip mutates
@@ -1347,6 +1470,53 @@ public partial class MainWindow : Window
         };
         _mapWindow.Closed += (_, _) => _mapWindow = null;
         _mapWindow.Show();
+    }
+
+    // Single shared, non-modal calendar browse window. Mirrors the map browse
+    // window: resolved from DI, re-clicking brings the existing one forward (and
+    // refreshes the "current filters" scope source). Clicking a month lists its
+    // clips; "Show in grid" / "Play in app" act on a previewed clip, and "Filter
+    // grid to this month" scopes the grid to the month's date range.
+    private CalendarBrowseWindow? _calendarWindow;
+
+    private void Calendar_Click(object sender, RoutedEventArgs e)
+    {
+        if (_calendarWindow is not null && _calendarWindow.IsLoaded)
+        {
+            if (_calendarWindow.WindowState == WindowState.Minimized)
+                _calendarWindow.WindowState = WindowState.Normal;
+            _calendarWindow.SetCurrentFilter(_viewModel.BuildCurrentQuery(includeMapSelection: false));
+            _calendarWindow.Activate();
+            return;
+        }
+
+        _calendarWindow = App.GetService<CalendarBrowseWindow>();
+        _calendarWindow.Owner = this;
+        _calendarWindow.SetCurrentFilter(_viewModel.BuildCurrentQuery(includeMapSelection: false));
+
+        _calendarWindow.ClipSelected += async (_, id) =>
+        {
+            await _viewModel.SelectClipByIdAsync(id);
+            Activate();
+        };
+        _calendarWindow.PlayRequested += async (_, id) =>
+        {
+            await _viewModel.SelectClipByIdAsync(id);
+            // Setting SelectedVideo synchronously primes Detail.Current (see
+            // PlayRelative), so PlayInApp targets the just-selected clip.
+            if (_viewModel.Detail.PlayInAppCommand.CanExecute(null))
+            {
+                _viewModel.Detail.PlayInAppCommand.Execute(null);
+            }
+            Activate();
+        };
+        _calendarWindow.FilterToMonthRequested += async (_, range) =>
+        {
+            await _viewModel.ApplyDateRangeAsync(range.From, range.To);
+            Activate();
+        };
+        _calendarWindow.Closed += (_, _) => _calendarWindow = null;
+        _calendarWindow.Show();
     }
 
     // Runs the AI tagging pass (delegated to the view model so progress streams
