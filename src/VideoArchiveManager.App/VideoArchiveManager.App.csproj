@@ -115,4 +115,23 @@
           UseHardlinksIfPossible="true" />
   </Target>
 
+  <!-- Mirror a bundled CLIP ONNX model (tools/models/**) into the build output
+       for local debug runs, same pattern as the FFmpeg/mpv copies above. The
+       model files are NOT committed (they are large; tools/models/ is
+       .gitignored). Produce them once with scripts/export-clip-onnx.py (or drop
+       a bundle in) and AiModelProvider resolves tools/models/clip-vit-b32 with
+       zero configuration. Recursive so the clip-vit-b32 subfolder structure is
+       preserved. No-op when the folder is absent. -->
+  <Target Name="CopyBundledModels"
+          AfterTargets="Build"
+          Condition="Exists('..\..\tools\models') AND '$(IsPublishing)' != 'true'">
+    <ItemGroup>
+      <BundledModelFiles Include="..\..\tools\models\**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(BundledModelFiles)"
+          DestinationFiles="@(BundledModelFiles->'$(OutDir)tools\models\%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true"
+          UseHardlinksIfPossible="true" />
+  </Target>
+
 </Project>

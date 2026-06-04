@@ -58,6 +58,11 @@
                         <ui:FontIcon FontFamily="{StaticResource App.Icon.FontFamily}" Glyph="{StaticResource Icon.Tag}" />
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
+                <ui:NavigationViewItem Content="AI tagging" Tag="ai">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon FontFamily="{StaticResource App.Icon.FontFamily}" Glyph="{StaticResource Icon.Tag}" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
             </ui:NavigationView.MenuItems>
 
             <Grid>
@@ -337,6 +342,100 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- ============================== AI =============================== -->
+                <ScrollViewer x:Name="PageAi" Visibility="Collapsed"
+                              VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="24,16,20,16">
+
+                        <TextBlock Text="AI AUTO-TAGGING &amp; SEARCH" Style="{StaticResource App.Type.Section}" />
+                        <TextBlock TextWrapping="Wrap" Style="{StaticResource App.Type.BodyMuted}" Margin="0,0,0,12"
+                                   Text="Optional. Runs a local CLIP model over frames sampled across each clip to propose tags (sea, fog, ships, snow…) you accept or reject, and to enable natural-language search (e.g. &quot;drone shot over snowy mountains at sunset&quot;). All processing is local and offline; the model only ever reads frames — source files are never modified. Off by default; turning it on enables a one-time model download (~150 MB)." />
+                        <CheckBox IsChecked="{Binding EnableAiTagging}"
+                                  Content="Enable AI auto-tagging and natural-language search"
+                                  Margin="0,0,0,16" />
+
+                        <TextBlock Text="MODEL" Style="{StaticResource App.Type.Section}" />
+                        <TextBlock Text="{Binding AiModelStatus}"
+                                   TextWrapping="Wrap"
+                                   Style="{StaticResource App.Type.Caption}"
+                                   Margin="0,0,0,8" />
+
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8"
+                                    IsEnabled="{Binding EnableAiTagging}">
+                            <Button Content="Download model"
+                                    Style="{StaticResource App.Button.Secondary}"
+                                    helpers:Theme.Icon="{StaticResource Icon.Cloud}"
+                                    Command="{Binding DownloadModelCommand}"
+                                    IsEnabled="{Binding CanDownloadModel}" />
+                            <Button Content="Clear AI data"
+                                    Margin="8,0,0,0"
+                                    Style="{StaticResource App.Button.Ghost}"
+                                    Command="{Binding ClearAiDataCommand}"
+                                    ToolTip="Remove all embeddings and pending suggestions. Accepted tags and source files are kept." />
+                        </StackPanel>
+
+                        <ProgressBar Minimum="0" Maximum="1" Height="4"
+                                     Value="{Binding AiDownloadProgress}"
+                                     Margin="0,0,0,12"
+                                     Visibility="{Binding IsDownloadingModel, Converter={StaticResource BoolToVisibility}}" />
+
+                        <TextBlock Text="Model folder (optional — leave blank to use the managed download location)"
+                                   Style="{StaticResource App.Type.Caption}" TextWrapping="Wrap" />
+                        <Grid Margin="0,4,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Text="{Binding AiModelDirectory, UpdateSourceTrigger=LostFocus}" />
+                            <Button Grid.Column="1" Margin="8,0,0,0"
+                                    Content="Browse"
+                                    Style="{StaticResource App.Button.Secondary}"
+                                    helpers:Theme.Icon="{StaticResource Icon.Folder}"
+                                    Command="{Binding BrowseAiModelDirectoryCommand}" />
+                        </Grid>
+
+                        <TextBlock Text="TUNING" Style="{StaticResource App.Type.Section}" />
+
+                        <TextBlock Text="Sample one frame every N seconds (frame count scales with clip length, then clamps to the min/max below)"
+                                   Style="{StaticResource App.Type.Caption}" TextWrapping="Wrap" />
+                        <ui:NumberBox Value="{Binding AiSecondsPerFrame}" Minimum="2" Maximum="120"
+                                      SmallChange="1" LargeChange="5" Margin="0,4,0,12" />
+
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Min frames per clip"
+                                           Style="{StaticResource App.Type.Caption}" TextWrapping="Wrap" />
+                                <ui:NumberBox Value="{Binding AiMinFramesPerClip}" Minimum="1" Maximum="64" Margin="0,4,0,0" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Max frames per clip"
+                                           Style="{StaticResource App.Type.Caption}" TextWrapping="Wrap" />
+                                <ui:NumberBox Value="{Binding AiMaxFramesPerClip}" Minimum="1" Maximum="128" Margin="0,4,0,0" />
+                            </StackPanel>
+                        </Grid>
+
+                        <TextBlock Text="Suggestion confidence threshold (0.20–0.40; higher = fewer, cleaner suggestions)"
+                                   Style="{StaticResource App.Type.Caption}" TextWrapping="Wrap" />
+                        <ui:NumberBox Value="{Binding AiSuggestionThreshold}"
+                                      Minimum="0.10" Maximum="0.90"
+                                      SmallChange="0.01" LargeChange="0.05"
+                                      Margin="0,4,0,12" />
+
+                        <CheckBox Content="Adapt thresholds to my accept/reject history (per-label)"
+                                  IsChecked="{Binding AiAdaptiveThresholds}" Margin="0,0,0,4" />
+                        <TextBlock TextWrapping="Wrap" Style="{StaticResource App.Type.Caption}"
+                                   Text="Once a label has a few accepted/rejected suggestions, its confidence cutoff is learned from your decisions instead of the global value above — labels you keep rejecting are suppressed, labels you accept appear sooner. The CLIP model itself is never modified." />
+
+                        <TextBlock TextWrapping="Wrap" Style="{StaticResource App.Type.Caption}"
+                                   Text="After enabling and downloading, run Catalog → Generate AI tags…, then review proposals in Catalog → Review AI suggestions…." />
                     </StackPanel>
                 </ScrollViewer>
 

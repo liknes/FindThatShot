@@ -28,5 +28,6 @@ public partial class SettingsWindow : Window
         PageStorage.Visibility = tag == "storage" ? Visibility.Visible : Visibility.Collapsed;
         PagePlayback.Visibility = tag == "playback" ? Visibility.Visible : Visibility.Collapsed;
         PageReview.Visibility = tag == "review" ? Visibility.Visible : Visibility.Collapsed;
+        PageAi.Visibility = tag == "ai" ? Visibility.Visible : Visibility.Collapsed;
     }
 }

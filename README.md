@@ -13,6 +13,7 @@ A Windows desktop application for organizing a large local video archive across 
 - SQLite via `Microsoft.EntityFrameworkCore.Sqlite`
 - FFmpeg / FFprobe for metadata extraction, thumbnail generation, and in-app video playback (a single bundled FFmpeg used for both the CLI tools and the player's shared-library DLLs)
 - FFME (Sinaxxr fork tracking FFmpeg 8) as the WPF-native in-app video player
+- ONNX Runtime (CPU) for the optional, local CLIP-based AI auto-tagging and natural-language search (model produced via `scripts/export-clip-onnx.py` or dropped in; never committed)
 
 ## Solution layout
 
@@ -111,6 +112,46 @@ Each duplicate set is shown as a card listing its copies (thumbnail, filename, f
 - **Remove selected from database…** confirms first — and warns if you've selected *every* copy of a clip — then removes only those catalog entries and their cached thumbnails.
 
 As everywhere else in the app, this only ever edits the catalog: **your source video files are never moved, renamed, or deleted.** Removing duplicate entries just forgets them from the database; the files (including the copies you chose to "remove") remain untouched on disk.
+
+## AI auto-tagging & natural-language search (opt-in)
+
+The app can optionally use a local **CLIP** model to (a) propose subject tags for your clips and (b) let you search by plain-English description. Everything runs **locally and offline** on the CPU (ONNX Runtime); the model only ever **reads frames** — your source files are never modified.
+
+Because a single thumbnail is a weak signal for a whole video, the scoring pass **samples several frames across each clip** via the same ffmpeg pipeline that makes thumbnails, then **max-pools** results across those frames — so a tag or a search matches if the subject appears in *any* part of the clip, not just on average. Sampling is **duration-proportional**: it takes roughly one frame every N seconds (default 20s), clamped to a configurable min/max, so a 30-second clip gets a few frames while a 13-minute clip scales up to the cap instead of being under-sampled by a flat count.
+
+Two capabilities come from the one model:
+
+- **Auto-tag suggestions.** Each clip's frames are scored against a scene/subject vocabulary (sea, fog, ships, beach, forest, mountains, city, snow, sunset, plus coastal/drone/aerial terms like coastline, cliffs, marina, lighthouse, reef, kayak, and terrain/urban terms like canyon, glacier, skyscrapers, wind turbines, …). Above-threshold labels become suggestions you triage in **Catalog → Review AI suggestions…** as accept/reject chips. **Accept** promotes a suggestion to a real tag on the clip; **Reject** dismisses it (and is remembered, so a later re-run won't keep re-proposing it). Nothing is ever auto-applied. The candidate list lives in `AiLabelVocabulary` — add a row and **Re-score all clips** to detect new subjects. Optionally, **adaptive thresholds** (on by default) learn a per-label confidence cutoff from your accept/reject history, so suggestions sharpen toward your footage over time without ever changing the CLIP model.
+- **Natural-language search.** Turn on **View → Search by description (AI)** and type something like *"drone shot over snowy mountains at sunset"* — clips are ranked by visual similarity to your phrase rather than by literal text matching.
+
+### Enabling it
+
+The feature is **off by default**, and — like the bundled FFmpeg/mpv binaries — the **model is not shipped in the repo** (it's large, and gitignored under `tools/models/`). You supply it once; there is **no official hosted download**. Pick one of:
+
+- **Produce the bundle with the prep script (recommended).** Run the included exporter once to download the public `openai/clip-vit-base-patch32` weights and assemble the exact bundle the app expects into `tools/models/clip-vit-b32`:
+
+```bash
+python -m pip install "torch" "transformers" "onnx" "onnxscript"
+python scripts/export-clip-onnx.py
+```
+
+  The app resolves `tools/models/clip-vit-b32` automatically (it's also copied into the build/publish output, like FFmpeg), so it's then **zero-config**.
+
+- **Drop in a bundle you already have.** Put the files (below) in any folder and set **Settings → AI tagging → Model folder** to it (handy offline).
+
+- **Self-host + download-on-demand (recommended for distribution; the shipped default).** The default **AI model download URL** points at this repo's GitHub Release asset (`models-v1/clip-vit-b32.zip`), so the in-app **Download model** button fetches + extracts the bundle into `%LOCALAPPDATA%\VideoArchiveManager\Models\` on first use — no Python for end users. To (re)publish that asset: run `python scripts/export-clip-onnx.py --zip` (writes `tools/models/clip-vit-b32.zip`), then upload it to the GitHub Release under the **`models-v1`** tag with that exact filename. Publish the app with `-SkipBundleModel` to keep the installer small; the ~340 MB only downloads for users who actually opt in. (If you re-export the model, reuse the same tag/filename or bump `AppSettings.AiModelDownloadUrl`.)
+
+Then, in **Settings → AI tagging**:
+
+1. Tick **Enable AI auto-tagging and natural-language search**.
+2. Confirm the status shows the model as **Ready** (it resolves a configured **Model folder**, then a bundled `tools/models/clip-vit-b32`, then the managed app-data folder).
+3. Run **Catalog → Generate AI tags…** to score your clips (progress shows in the status bar), then open **Catalog → Review AI suggestions…**.
+
+**Catalog → Generate AI tags…** scores only clips that don't have AI embeddings yet (the incremental pass), while **Catalog → Re-score all clips with AI…** re-runs scoring on every clip — use it after changing the sampling settings, label vocabulary, or model. Re-scoring is idempotent: it replaces prior embeddings and refreshes pending suggestions, but never resurrects tags you've already accepted or rejected.
+
+Tuning (seconds-per-frame sampling interval, min/max frames per clip, suggestion confidence threshold) lives in the same Settings pane. **Clear AI data** purges all embeddings and pending suggestions to reclaim space — accepted tags and source files are untouched. Turning the feature back off makes the whole subsystem inert (no model load, no menu commands, no extra writes); existing data simply stops being read.
+
+A model bundle directory is expected to contain `image_encoder.onnx`, `text_encoder.onnx`, the CLIP BPE vocab (`bpe_simple_vocab_16e6.txt.gz`), and an optional `manifest.json` (tensor names, image size, normalization constants — sensible CLIP ViT-B/32 defaults are used when absent). `scripts/export-clip-onnx.py` writes all of these for you.
 
 ## Catalog backup
 
@@ -267,6 +308,7 @@ Find That Shot itself is licensed under the **GNU General Public License v3** (s
 - **FFME — Sinaxxr fork** — Ms-PL, https://github.com/sinaxxr/ffmediaelement (fork of https://github.com/unosquare/ffmediaelement). WPF-native video player control used for in-app playback.
 - **FFmpeg.AutoGen** — LGPLv3, https://github.com/Ruslan-B/FFmpeg.AutoGen. C# bindings FFME uses to call into the bundled FFmpeg shared libraries.
 - **Velopack** — MIT, https://github.com/velopack/velopack.
+- **ONNX Runtime** — MIT, https://github.com/microsoft/onnxruntime. Powers the optional local CLIP inference for AI auto-tagging / natural-language search. CLIP itself (the downloaded model weights) originates from OpenAI's CLIP; model files are fetched at runtime and are not distributed with the app.
 - **OpenStreetMap / Nominatim** — map data © OpenStreetMap contributors, ODbL.
 - Plus a number of MIT-licensed .NET libraries (CommunityToolkit.Mvvm, ModernWpfUI, Entity Framework Core, Microsoft.Data.Sqlite, Microsoft.Extensions.\*).
 
@@ -276,4 +318,4 @@ If you redistribute the app (e.g. by sharing the installer with others), keep `L
 
 ## Roadmap (not in v1)
 
-The database already contains an `AiTagSuggestions` table for future AI tagging (sea, fog, ships, birds, parrots, cars, people, beach, forest, mountains, city, snow, etc.). The current MVP focuses on manual tagging and searchable metadata only.
+AI auto-tagging (the `AiTagSuggestions` table) and natural-language search are now implemented as an opt-in, fully local CLIP feature — see [AI auto-tagging & natural-language search](#ai-auto-tagging--natural-language-search-opt-in) above. A natural next step is letting a strong per-frame search match spin directly into a timestamped **Moment** (jump-to-the-shot), since the per-frame embeddings and best-match timestamps are already captured.

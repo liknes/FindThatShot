@@ -12,6 +12,7 @@ using VideoArchiveManager.App.ViewModels;
 using VideoArchiveManager.App.Views;
 using VideoArchiveManager.Core.Configuration;
 using VideoArchiveManager.Core.Services;
+using VideoArchiveManager.Core.Services.Ai;
 using VideoArchiveManager.Data;
 using VideoArchiveManager.Data.Services;
 
@@ -188,6 +189,7 @@ public partial class App : Application
                 services.AddSingleton<IFileSystemService, FileSystemService>();
                 services.AddSingleton<IFfprobeService, FfprobeService>();
                 services.AddSingleton<IThumbnailService, ThumbnailService>();
+                services.AddSingleton<IFrameSampler, FfmpegFrameSampler>();
                 services.AddSingleton<IDjiSrtTelemetryReader, DjiSrtTelemetryReader>();
                 services.AddSingleton<ITagService, TagService>();
                 services.AddSingleton<IMomentService, MomentService>();
@@ -228,6 +230,27 @@ public partial class App : Application
                 });
                 services.AddSingleton<IVideoLocationService, VideoLocationService>();
 
+                // --- AI auto-tagging & natural-language search (opt-in) ------
+                // A dedicated HttpClient for the (large, one-time) model bundle
+                // download with a generous timeout.
+                services.AddHttpClient("AiModelDownload", c =>
+                {
+                    c.Timeout = TimeSpan.FromMinutes(30);
+                    c.DefaultRequestHeaders.UserAgent.ParseAdd(
+                        "VideoArchiveManager/0.1.0 (https://github.com/liknes/FindThatShot)");
+                });
+                services.AddSingleton<IAiModelProvider>(sp =>
+                {
+                    var httpFactory = sp.GetRequiredService<IHttpClientFactory>();
+                    return new AiModelProvider(
+                        sp.GetRequiredService<ISettingsStore>(),
+                        sp.GetRequiredService<ILogger<AiModelProvider>>(),
+                        () => httpFactory.CreateClient("AiModelDownload"));
+                });
+                services.AddSingleton<IAiSemanticSearchService, AiSemanticSearchService>();
+                services.AddSingleton<IAiTaggingService, AiTaggingService>();
+                services.AddSingleton<IAiSuggestionService, AiSuggestionService>();
+
                 services.AddTransient<MainViewModel>();
                 services.AddTransient<VideoDetailViewModel>();
                 services.AddTransient<SettingsViewModel>();
@@ -235,12 +258,14 @@ public partial class App : Application
                 services.AddTransient<CatalogStatsViewModel>();
                 services.AddTransient<DuplicatesViewModel>();
                 services.AddTransient<MomentSearchViewModel>();
+                services.AddTransient<AiReviewViewModel>();
 
                 services.AddTransient<MainWindow>();
                 services.AddTransient<DiagnosticsWindow>();
                 services.AddTransient<CatalogStatsWindow>();
                 services.AddTransient<DuplicatesWindow>();
                 services.AddTransient<MomentSearchWindow>();
+                services.AddTransient<AiReviewWindow>();
 
                 // In-app diagnostics buffer + rolling file log. A singleton so
                 // the buffer survives across Diagnostics window open/close, and

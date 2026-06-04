@@ -12,6 +12,7 @@ using VideoArchiveManager.Core.Configuration;
 using VideoArchiveManager.Core.Models;
 using VideoArchiveManager.Core.Models.Enums;
 using VideoArchiveManager.Core.Services;
+using VideoArchiveManager.Core.Services.Ai;
 using VideoArchiveManager.Data;
 
 namespace VideoArchiveManager.App.ViewModels;
@@ -29,10 +30,14 @@ public partial class MainViewModel : ObservableObject
     private readonly IVideoLocationService _locationService;
     private readonly ISettingsStore _settingsStore;
     private readonly IUpdateService _updateService;
+    private readonly IAiModelProvider _aiModelProvider;
+    private readonly IAiTaggingService _aiTaggingService;
+    private readonly IAiSemanticSearchService _aiSemanticSearch;
     private readonly IServiceProvider _services;
 
     private CancellationTokenSource? _scanCts;
     private CancellationTokenSource? _geocodeCts;
+    private CancellationTokenSource? _aiTaggingCts;
     private DispatcherTimer? _scanHeartbeatTimer;
     private DateTime _scanStartedAt;
     private DateTime _currentFileStartedAt;
@@ -50,6 +55,9 @@ public partial class MainViewModel : ObservableObject
         IVideoLocationService locationService,
         ISettingsStore settingsStore,
         IUpdateService updateService,
+        IAiModelProvider aiModelProvider,
+        IAiTaggingService aiTaggingService,
+        IAiSemanticSearchService aiSemanticSearch,
         IServiceProvider services,
         VideoDetailViewModel detail)
     {
@@ -64,6 +72,9 @@ public partial class MainViewModel : ObservableObject
         _locationService = locationService;
         _settingsStore = settingsStore;
         _updateService = updateService;
+        _aiModelProvider = aiModelProvider;
+        _aiTaggingService = aiTaggingService;
+        _aiSemanticSearch = aiSemanticSearch;
         _services = services;
         Detail = detail;
 
@@ -1056,6 +1067,133 @@ public partial class MainViewModel : ObservableObject
     // results can clobber the grid.
     private CancellationTokenSource? _searchCts;
 
+    // Whether the AI subsystem is usable right now (enabled in Settings AND a
+    // model is installed). Drives the visibility of the AI menu commands and
+    // the natural-language search toggle. Recomputed when Settings closes.
+    public bool IsAiEnabled =>
+        _settingsStore.Current.EnableAiTagging && _aiModelProvider.IsModelInstalled();
+
+    // When on, the search box is treated as a natural-language description and
+    // matched against CLIP clip embeddings instead of literal metadata tokens.
+    [ObservableProperty]
+    private bool _useSemanticSearch;
+
+    [ObservableProperty]
+    private bool _isAiTagging;
+
+    public void RefreshAiAvailability() => OnPropertyChanged(nameof(IsAiEnabled));
+
+    partial void OnUseSemanticSearchChanged(bool value) => OnFilterChanged();
+
+    // Scores clips that don't yet have an embedding (or all of them) with the
+    // CLIP model and writes tag suggestions for review. Progress streams to the
+    // status bar; never auto-applies tags and only reads source files.
+    // reprocessAll=false scores only clips without an embedding yet (the normal
+    // incremental pass); reprocessAll=true re-scores every clip, e.g. after
+    // changing the sampling settings, label vocabulary, or model. Re-scoring is
+    // idempotent: prior embeddings are replaced and pending suggestions refreshed,
+    // while already accepted/rejected suggestions are left untouched.
+    [RelayCommand]
+    private async Task GenerateAiTagsAsync(bool reprocessAll)
+    {
+        if (IsAiTagging) return;
+        if (!IsAiEnabled)
+        {
+            StatusMessage = "AI tagging is off or the model isn't installed — enable it in Settings → AI tagging.";
+            return;
+        }
+
+        _aiTaggingCts?.Cancel();
+        _aiTaggingCts?.Dispose();
+        var cts = new CancellationTokenSource();
+        _aiTaggingCts = cts;
+
+        IsAiTagging = true;
+        try
+        {
+            var pending = await _aiTaggingService.CountPendingAsync(reprocessAll, cts.Token);
+            if (pending == 0)
+            {
+                StatusMessage = reprocessAll
+                    ? "No clips in the catalog to score."
+                    : "All clips already have AI embeddings. Nothing to score.";
+                return;
+            }
+
+            StatusMessage = reprocessAll
+                ? $"Re-scoring all {pending} clip(s) with the AI model…"
+                : $"Scoring {pending} clip(s) with the AI model…";
+            var progress = new Progress<AiTaggingProgress>(p =>
+            {
+                if (!string.IsNullOrEmpty(p.Message)) StatusMessage = p.Message;
+            });
+            await _aiTaggingService.GenerateAsync(reprocessAll, progress, cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            StatusMessage = "AI tagging cancelled.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"AI tagging failed: {ex.Message}";
+        }
+        finally
+        {
+            IsAiTagging = false;
+            if (ReferenceEquals(_aiTaggingCts, cts))
+            {
+                cts.Dispose();
+                _aiTaggingCts = null;
+            }
+        }
+    }
+
+    [RelayCommand]
+    private void CancelAiTagging() => _aiTaggingCts?.Cancel();
+
+    // Runs the natural-language path: rank clips by CLIP similarity, hydrate the
+    // top hits from the catalog, and present them in score order. Other sidebar
+    // filters (availability) are still honoured.
+    private async Task<bool> TrySemanticSearchAsync(CancellationToken token)
+    {
+        if (!UseSemanticSearch || !IsAiEnabled || string.IsNullOrWhiteSpace(SearchText))
+            return false;
+        if (!_aiSemanticSearch.IsAvailable) return false;
+
+        var hits = await _aiSemanticSearch.SearchAsync(SearchText, maxResults: 500, minScore: 0.15, token);
+        if (token.IsCancellationRequested) return true;
+
+        var ids = hits.Select(h => h.VideoItemId).ToList();
+        if (ids.Count == 0)
+        {
+            Videos.Clear();
+            TotalCount = 0;
+            StatusMessage = $"No semantic matches for \u201c{SearchText}\u201d.";
+            return true;
+        }
+
+        await using var ctx = await _contextFactory.CreateDbContextAsync(token);
+        var items = await ctx.VideoItems
+            .AsNoTracking()
+            .Include(v => v.VideoTags).ThenInclude(vt => vt.Tag)
+            .Include(v => v.Moments)
+            .Where(v => ids.Contains(v.Id) && (!ShowOnlyAvailable || v.FileExists))
+            .ToListAsync(token);
+
+        if (token.IsCancellationRequested) return true;
+
+        // Re-order to match the ranked hit order (DB returns arbitrary order).
+        var rank = new Dictionary<int, int>();
+        for (var i = 0; i < ids.Count; i++) rank[ids[i]] = i;
+        items.Sort((a, b) => rank[a.Id].CompareTo(rank[b.Id]));
+
+        Videos.Clear();
+        foreach (var v in items) Videos.Add(new VideoItemViewModel(v));
+        TotalCount = items.Count;
+        StatusMessage = $"Showing {Videos.Count} semantic match(es) for \u201c{SearchText}\u201d";
+        return true;
+    }
+
     [RelayCommand]
     private async Task SearchAsync()
     {
@@ -1068,6 +1206,25 @@ public partial class MainViewModel : ObservableObject
         var cts = new CancellationTokenSource();
         _searchCts = cts;
         var token = cts.Token;
+
+        // Natural-language path short-circuits the literal metadata query.
+        try
+        {
+            if (await TrySemanticSearchAsync(token))
+            {
+                if (ReferenceEquals(_searchCts, cts)) { cts.Dispose(); _searchCts = null; }
+                return;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            if (ReferenceEquals(_searchCts, cts)) { cts.Dispose(); _searchCts = null; }
+            return;
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Semantic search failed: {ex.Message}";
+        }
 
         var query = new SearchQuery
         {
@@ -1559,6 +1716,11 @@ public partial class MainViewModel : ObservableObject
         // bar indicator regardless of how the window was closed (Save / X
         // / Cancel all funnel through this point).
         OnPropertyChanged(nameof(SidecarStatusText));
+
+        // Settings may also have enabled AI / installed a model; refresh so the
+        // AI menu commands and the semantic-search toggle appear without a
+        // restart.
+        RefreshAiAvailability();
     }
 
     [ObservableProperty]

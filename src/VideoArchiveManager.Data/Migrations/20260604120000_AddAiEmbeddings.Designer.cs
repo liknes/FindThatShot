@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using VideoArchiveManager.Data;
 
@@ -10,9 +11,11 @@ using VideoArchiveManager.Data;
 namespace VideoArchiveManager.Data.Migrations
 {
     [DbContext(typeof(VideoArchiveDbContext))]
-    partial class VideoArchiveDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260604120000_AddAiEmbeddings")]
+    partial class AddAiEmbeddings
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.10");

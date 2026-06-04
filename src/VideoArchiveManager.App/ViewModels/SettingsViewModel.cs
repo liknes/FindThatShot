@@ -8,6 +8,7 @@ using Microsoft.Win32;
 using VideoArchiveManager.Core.Configuration;
 using VideoArchiveManager.Core.Models;
 using VideoArchiveManager.Core.Services;
+using VideoArchiveManager.Core.Services.Ai;
 
 namespace VideoArchiveManager.App.ViewModels;
 
@@ -16,12 +17,21 @@ public partial class SettingsViewModel : ObservableObject
     private readonly ISettingsStore _store;
     private readonly ICatalogBackupService _backupService;
     private readonly ITagService _tagService;
+    private readonly IAiModelProvider _aiModelProvider;
+    private readonly IAiTaggingService _aiTaggingService;
 
-    public SettingsViewModel(ISettingsStore store, ICatalogBackupService backupService, ITagService tagService)
+    public SettingsViewModel(
+        ISettingsStore store,
+        ICatalogBackupService backupService,
+        ITagService tagService,
+        IAiModelProvider aiModelProvider,
+        IAiTaggingService aiTaggingService)
     {
         _store = store;
         _backupService = backupService;
         _tagService = tagService;
+        _aiModelProvider = aiModelProvider;
+        _aiTaggingService = aiTaggingService;
 
         // Ten fixed hotkey slots (digits 1-9 then 0). Built up front so the
         // Settings UI can bind immediately; the tag catalog + the user's
@@ -46,9 +56,17 @@ public partial class SettingsViewModel : ObservableObject
         _preferProxyForPlayback = current.PreferProxyForPlayback;
         _showDroneFlightPaths = current.ShowDroneFlightPaths;
         _showPlayerTelemetry = current.ShowPlayerTelemetry;
+        _enableAiTagging = current.EnableAiTagging;
+        _aiModelDirectory = current.AiModelDirectory ?? string.Empty;
+        _aiSecondsPerFrame = current.AiSecondsPerFrame;
+        _aiMinFramesPerClip = current.AiMinFramesPerClip;
+        _aiMaxFramesPerClip = current.AiMaxFramesPerClip;
+        _aiSuggestionThreshold = current.AiSuggestionThreshold;
+        _aiAdaptiveThresholds = current.AiAdaptiveThresholds;
 
         _ = RefreshBackupsAsync();
         _ = LoadPinnedTagsAsync();
+        RefreshAiModelStatus();
     }
 
     public ObservableCollection<CatalogBackupInfo> Backups { get; } = new();
@@ -112,6 +130,44 @@ public partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _isBackingUp;
+
+    // --- AI auto-tagging & semantic search -------------------------------
+    [ObservableProperty]
+    private bool _enableAiTagging;
+
+    [ObservableProperty]
+    private string _aiModelDirectory;
+
+    [ObservableProperty]
+    private double _aiSecondsPerFrame;
+
+    [ObservableProperty]
+    private int _aiMinFramesPerClip;
+
+    [ObservableProperty]
+    private int _aiMaxFramesPerClip;
+
+    [ObservableProperty]
+    private double _aiSuggestionThreshold;
+
+    [ObservableProperty]
+    private bool _aiAdaptiveThresholds;
+
+    [ObservableProperty]
+    private string _aiModelStatus = string.Empty;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanDownloadModel))]
+    private bool _aiModelInstalled;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanDownloadModel))]
+    private bool _isDownloadingModel;
+
+    [ObservableProperty]
+    private double _aiDownloadProgress;
+
+    public bool CanDownloadModel => !AiModelInstalled && !IsDownloadingModel;
 
     public event Action? Saved;
     public event Action? Cancelled;
@@ -344,6 +400,15 @@ public partial class SettingsViewModel : ObservableObject
             PreferProxyForPlayback = PreferProxyForPlayback,
             ShowDroneFlightPaths = ShowDroneFlightPaths,
             ShowPlayerTelemetry = ShowPlayerTelemetry,
+            EnableAiTagging = EnableAiTagging,
+            AiModelDirectory = string.IsNullOrWhiteSpace(AiModelDirectory) ? null : AiModelDirectory,
+            AiModelDownloadUrl = _store.Current.AiModelDownloadUrl,
+            AiSecondsPerFrame = AiSecondsPerFrame is > 0 and <= 600 ? AiSecondsPerFrame : 20d,
+            AiMinFramesPerClip = AiMinFramesPerClip is > 0 and <= 128 ? AiMinFramesPerClip : 4,
+            AiMaxFramesPerClip = AiMaxFramesPerClip is > 0 and <= 128 ? AiMaxFramesPerClip : 24,
+            AiSuggestionThreshold = AiSuggestionThreshold is > 0 and < 1 ? AiSuggestionThreshold : 0.26,
+            AiAdaptiveThresholds = AiAdaptiveThresholds,
+            AiMaxSuggestionsPerClip = _store.Current.AiMaxSuggestionsPerClip,
             MaxScanParallelism = MaxScanParallelism > 0 ? MaxScanParallelism : 4,
             PageSize = _store.Current.PageSize,
             SupportedExtensions = _store.Current.SupportedExtensions,
@@ -395,6 +460,96 @@ public partial class SettingsViewModel : ObservableObject
         var i = -1;
         do { v /= 1024; i++; } while (v >= 1024 && i < units.Length - 1);
         return $"{v:0.##} {units[i]}";
+    }
+
+    private void RefreshAiModelStatus()
+    {
+        // Persist the latest enable/path choice into the live store first so
+        // the provider resolves against what the user currently sees.
+        AiModelInstalled = _aiModelProvider.IsModelInstalled();
+        if (!EnableAiTagging)
+        {
+            AiModelStatus = "Disabled. Turn on to enable AI tagging and natural-language search.";
+        }
+        else if (AiModelInstalled)
+        {
+            AiModelStatus = $"Model ready ({_aiModelProvider.ModelDirectory}).";
+        }
+        else
+        {
+            AiModelStatus = "Model not installed. Download it, or point at a folder containing the CLIP ONNX bundle.";
+        }
+    }
+
+    partial void OnEnableAiTaggingChanged(bool value) => RefreshAiModelStatus();
+
+    partial void OnAiModelDirectoryChanged(string value)
+    {
+        // Reflect a freshly-typed/picked drop-in folder immediately by saving
+        // it to the live store so the provider resolves there.
+        var settings = BuildSettings();
+        _store.SaveAsync(settings);
+        RefreshAiModelStatus();
+    }
+
+    [RelayCommand]
+    private void BrowseAiModelDirectory()
+    {
+        var dialog = new OpenFolderDialog
+        {
+            Title = "Select the CLIP model folder",
+            InitialDirectory = string.IsNullOrWhiteSpace(AiModelDirectory) ? null! : AiModelDirectory
+        };
+        if (dialog.ShowDialog() == true && !string.IsNullOrWhiteSpace(dialog.FolderName))
+        {
+            AiModelDirectory = dialog.FolderName;
+        }
+    }
+
+    [RelayCommand]
+    private async Task DownloadModelAsync()
+    {
+        if (IsDownloadingModel || AiModelInstalled) return;
+
+        // Make sure the enable flag / paths are persisted before downloading.
+        await _store.SaveAsync(BuildSettings());
+
+        IsDownloadingModel = true;
+        AiDownloadProgress = 0;
+        AiModelStatus = "Downloading model…";
+        try
+        {
+            var progress = new Progress<double>(p => AiDownloadProgress = p);
+            var ok = await _aiModelProvider.EnsureDownloadedAsync(progress);
+            AiModelStatus = ok
+                ? "Model downloaded and ready."
+                : "Download failed. Check the model URL / your connection, or supply the bundle manually.";
+        }
+        catch (Exception ex)
+        {
+            AiModelStatus = $"Download failed: {ex.Message}";
+        }
+        finally
+        {
+            IsDownloadingModel = false;
+            RefreshAiModelStatus();
+        }
+    }
+
+    [RelayCommand]
+    private async Task ClearAiDataAsync()
+    {
+        var confirm = MessageBox.Show(
+            "Remove all AI-generated data (embeddings and pending tag suggestions) from the catalog?\n\n" +
+            "Tags you've already accepted stay. Source files are never touched. You can regenerate later.",
+            "Clear AI data",
+            MessageBoxButton.OKCancel,
+            MessageBoxImage.Question,
+            MessageBoxResult.Cancel);
+        if (confirm != MessageBoxResult.OK) return;
+
+        var removed = await _aiTaggingService.ClearAllAiDataAsync();
+        AiModelStatus = $"Cleared {removed:N0} AI row(s).";
     }
 
     [RelayCommand]

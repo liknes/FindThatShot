@@ -452,6 +452,12 @@ tools/ffmpeg/swscale-9.dll
 # into tools/mpv/ to enable the GPU player locally. See docs/in-app-player.md.
 tools/mpv/libmpv-2.dll
 
+# CLIP model bundle for the optional AI auto-tagging / natural-language search
+# feature — large ONNX weights + BPE vocab. Never committed; downloaded on
+# demand into %LOCALAPPDATA% at runtime, or dropped into tools/models/ as a
+# local override (the path can also be set in Settings → AI tagging).
+tools/models/
+
 # Release-process scratch files (multi-line git commit / tag / release-note
 # bodies written to disk then passed via -F, and removed after each release).
 # Ignored so a forgotten cleanup can never accidentally land one in a commit.

@@ -1300,6 +1300,57 @@ public partial class MainWindow : Window
         _momentSearchWindow.Show();
     }
 
+    // Runs the AI tagging pass (delegated to the view model so progress streams
+    // to the status bar). The menu item is only visible when AI is enabled and
+    // a model is installed.
+    private void GenerateAiTags_Click(object sender, RoutedEventArgs e)
+    {
+        _ = _viewModel.GenerateAiTagsCommand.ExecuteAsync(false);
+    }
+
+    // Re-scores EVERY clip (not just ones missing an embedding) — used after
+    // changing sampling settings, the label vocabulary, or the model. Confirmed
+    // first because it can be a long CPU pass on a big catalog.
+    private void ReprocessAiTags_Click(object sender, RoutedEventArgs e)
+    {
+        var answer = MessageBox.Show(
+            "Re-score every clip with the AI model?\n\n" +
+            "This re-runs frame sampling and CLIP inference on all clips (not just new ones), " +
+            "so it can take a while on a large catalog. Existing accepted/rejected tags are kept; " +
+            "pending suggestions are refreshed.",
+            "Re-score all clips",
+            MessageBoxButton.OKCancel,
+            MessageBoxImage.Question);
+        if (answer == MessageBoxResult.OK)
+        {
+            _ = _viewModel.GenerateAiTagsCommand.ExecuteAsync(true);
+        }
+    }
+
+    // Single shared, non-modal AI suggestion review queue. Mirrors the other
+    // catalog windows: resolved from DI, re-clicking brings it forward. When a
+    // suggestion is accepted (creating a real tag) we re-run the current search
+    // so the new tag chips show up in the grid.
+    private AiReviewWindow? _aiReviewWindow;
+
+    private void AiReview_Click(object sender, RoutedEventArgs e)
+    {
+        if (_aiReviewWindow is not null && _aiReviewWindow.IsLoaded)
+        {
+            if (_aiReviewWindow.WindowState == WindowState.Minimized)
+                _aiReviewWindow.WindowState = WindowState.Normal;
+            _aiReviewWindow.Activate();
+            return;
+        }
+
+        _aiReviewWindow = App.GetService<AiReviewWindow>();
+        _aiReviewWindow.Owner = this;
+        _aiReviewWindow.TagsChanged += async (_, _) =>
+            await _viewModel.SearchCommand.ExecuteAsync(null);
+        _aiReviewWindow.Closed += (_, _) => _aiReviewWindow = null;
+        _aiReviewWindow.Show();
+    }
+
     // Opens the non-modal clip-info popup. Reuses an existing window if one
     // is already open (refreshes its contents by recreating + replacing) so
     // power users mashing Alt+Enter don't end up with a stack of dialogs.

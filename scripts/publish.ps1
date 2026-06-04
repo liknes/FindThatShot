@@ -24,6 +24,9 @@
 .PARAMETER SkipBundleMpv
     Do not copy bundled libmpv from .\tools\mpv even if present.
 
+.PARAMETER SkipBundleModel
+    Do not copy a bundled CLIP ONNX model from .\tools\models even if present.
+
 .EXAMPLE
     pwsh ./scripts/publish.ps1
     pwsh ./scripts/publish.ps1 -Version 0.2.0
@@ -33,7 +36,8 @@ param(
     [string]$Version,
     [string]$Runtime = 'win-x64',
     [switch]$SkipBundleFfmpeg,
-    [switch]$SkipBundleMpv
+    [switch]$SkipBundleMpv,
+    [switch]$SkipBundleModel
 )
 
 $ErrorActionPreference = 'Stop'
@@ -47,6 +51,7 @@ $PublishDir = Join-Path $RepoRoot 'publish'
 $ReleaseDir = Join-Path $RepoRoot 'releases'
 $ToolsDir   = Join-Path $RepoRoot 'tools\ffmpeg'
 $MpvDir     = Join-Path $RepoRoot 'tools\mpv'
+$ModelsDir  = Join-Path $RepoRoot 'tools\models'
 $AppIcon    = Join-Path $RepoRoot 'src\VideoArchiveManager.App\Assets\AppIcon.ico'
 
 if (-not (Test-Path $AppProj)) {
@@ -105,6 +110,20 @@ if (-not $SkipBundleMpv -and (Test-Path $MpvDir)) {
     Copy-Item -Path (Join-Path $MpvDir '*') -Destination $destMpv -Recurse -Force
 } else {
     Write-Host "[publish] No bundled libmpv (looked in $MpvDir). The GPU player will be disabled; FFME is used instead." -ForegroundColor Yellow
+}
+
+# 5c. Optionally bundle a CLIP ONNX model into the publish output. This is what
+#     makes the opt-in AI tagging / natural-language search work out of the box
+#     for end users; without it the feature stays dark until a user supplies a
+#     model directory themselves. The model files are NOT committed to the repo
+#     (tools/models is .gitignored); produce them with scripts/export-clip-onnx.py.
+if (-not $SkipBundleModel -and (Test-Path $ModelsDir)) {
+    $destModels = Join-Path $PublishDir 'tools\models'
+    Write-Host "[publish] Bundling CLIP model from $ModelsDir" -ForegroundColor Cyan
+    New-Item -ItemType Directory -Path $destModels -Force | Out-Null
+    Copy-Item -Path (Join-Path $ModelsDir '*') -Destination $destModels -Recurse -Force
+} else {
+    Write-Host "[publish] No bundled CLIP model (looked in $ModelsDir). AI tagging stays off unless the user supplies a model." -ForegroundColor Yellow
 }
 
 # 5b. Ensure attribution files ship next to the executable, even if MSBuild Content copy
