@@ -86,7 +86,14 @@ The installed application bundles or links to several third-party components. Th
 - **Version:** 1.9.4
 - **License:** BSD 2-Clause, https://github.com/Leaflet/Leaflet/blob/main/LICENSE
 - **Project home:** https://leafletjs.com/
-- **How it is used:** Open-source JavaScript map library used by the embedded `LocationMapView` to render the interactive OpenStreetMap tile pane and the GPS marker. **Bundled, not fetched from a CDN:** the library's CSS and JS (and the default marker PNG images) are embedded in the application assembly and inlined into the WebView2 page at runtime, so the map library works fully offline. Only the OpenStreetMap *tiles* require network access. Shipped unmodified from the upstream 1.9.4 `dist/` distribution.
+- **How it is used:** Open-source JavaScript map library used by the embedded `LocationMapView` (per-clip GPS preview) and `GlobalMapView` (whole-archive map browse view) to render the interactive OpenStreetMap tile pane and the GPS markers. **Bundled, not fetched from a CDN:** the library's CSS and JS (and the default marker PNG images) are embedded in the application assembly and inlined into the WebView2 page at runtime, so the map library works fully offline. Only the OpenStreetMap *tiles* require network access. Shipped unmodified from the upstream 1.9.4 `dist/` distribution.
+
+## Leaflet.markercluster
+
+- **Version:** 1.5.3
+- **License:** MIT, https://github.com/Leaflet/Leaflet.markercluster/blob/master/MIT-LICENCE.txt
+- **Project home:** https://github.com/Leaflet/Leaflet.markercluster
+- **How it is used:** Leaflet plugin that clusters nearby markers. Used by the **Browse on map** window's `GlobalMapView` to cluster every geotagged clip so a large, geo-heavy archive plots without a wall of overlapping pins. **Bundled, not fetched from a CDN:** the plugin's JS and CSS are embedded in the application assembly and inlined into the WebView2 page at runtime alongside Leaflet, so clustering works fully offline. Shipped unmodified from the upstream 1.5.3 `dist/` distribution.
 
 ## OpenStreetMap / Nominatim
 

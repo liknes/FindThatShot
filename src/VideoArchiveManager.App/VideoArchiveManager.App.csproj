@@ -56,6 +56,13 @@
     <EmbeddedResource Include="Helpers\Controls\Leaflet\images\marker-icon.png" LogicalName="Leaflet.marker-icon.png" />
     <EmbeddedResource Include="Helpers\Controls\Leaflet\images\marker-icon-2x.png" LogicalName="Leaflet.marker-icon-2x.png" />
     <EmbeddedResource Include="Helpers\Controls\Leaflet\images\marker-shadow.png" LogicalName="Leaflet.marker-shadow.png" />
+    <!-- Leaflet.markercluster 1.5.3, same offline posture: the global map
+         browse view (GlobalMapView) inlines these to cluster every geotagged
+         clip without a CDN. MarkerCluster.Default.css uses CSS-only bubbles,
+         so no extra image assets are needed. -->
+    <EmbeddedResource Include="Helpers\Controls\Leaflet\leaflet.markercluster.js" LogicalName="Leaflet.markercluster.js" />
+    <EmbeddedResource Include="Helpers\Controls\Leaflet\MarkerCluster.css" LogicalName="Leaflet.MarkerCluster.css" />
+    <EmbeddedResource Include="Helpers\Controls\Leaflet\MarkerCluster.Default.css" LogicalName="Leaflet.MarkerCluster.Default.css" />
   </ItemGroup>
 
   <ItemGroup>

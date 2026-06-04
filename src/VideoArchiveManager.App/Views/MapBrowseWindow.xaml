@@ -1,0 +1,154 @@
+<Window x:Class="VideoArchiveManager.App.Views.MapBrowseWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.modernwpf.com/2019"
+        xmlns:helpers="clr-namespace:VideoArchiveManager.App.Helpers.Controls"
+        xmlns:vm="clr-namespace:VideoArchiveManager.App.ViewModels"
+        Title="Browse on map"
+        Width="1100" Height="760"
+        MinWidth="720" MinHeight="480"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource App.Background.Base}"
+        ui:WindowHelper.UseModernWindowStyle="True"
+        ui:TitleBar.Background="{DynamicResource App.Background.Base}"
+        ui:TitleBar.InactiveBackground="{DynamicResource App.Background.Base}"
+        ui:TitleBar.Foreground="{DynamicResource App.Foreground.Primary}"
+        ui:TitleBar.InactiveForeground="{DynamicResource App.Foreground.Tertiary}"
+        Icon="pack://application:,,,/Assets/AppIcon.png"
+        d:DataContext="{d:DesignInstance Type=vm:MapBrowseViewModel}"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        mc:Ignorable="d"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0">
+            <TextBlock Text="Browse on map" Style="{StaticResource App.Type.Display}" />
+            <TextBlock Margin="0,4,0,0"
+                       Text="Every geotagged clip in your archive, clustered by location. Click a cluster to scope the catalog grid to it, click a marker to preview a clip, or filter the grid to whatever's in view."
+                       TextWrapping="Wrap"
+                       Style="{StaticResource App.Type.Caption}" />
+        </StackPanel>
+
+        <!-- Toolbar: scope toggle, filter-to-view, summary -->
+        <Grid Grid.Row="1" Margin="0,16,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <CheckBox Grid.Column="0"
+                      VerticalAlignment="Center"
+                      Content="Whole archive"
+                      IsChecked="{Binding ScopeWholeArchive}"
+                      ToolTip="On: plot every geotagged clip in the catalog. Off: plot only the clips matching the current grid filters." />
+
+            <TextBlock Grid.Column="2"
+                       Margin="16,0,16,0"
+                       VerticalAlignment="Center"
+                       Text="{Binding ResultSummary}"
+                       Foreground="{DynamicResource App.Foreground.Secondary}" />
+
+            <Button Grid.Column="3"
+                    Content="Filter grid to this view"
+                    Click="FilterToView_Click"
+                    Style="{StaticResource App.Button.Secondary}"
+                    helpers:Theme.Icon="{StaticResource Icon.Filter}"
+                    ToolTip="Scope the catalog grid to every clip currently inside the map viewport." />
+        </Grid>
+
+        <!-- Map + side preview panel -->
+        <Grid Grid.Row="2" Margin="0,12,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0"
+                    CornerRadius="6"
+                    ClipToBounds="True"
+                    Background="{DynamicResource App.Background.Inset}">
+                <helpers:GlobalMapView x:Name="MapView" />
+            </Border>
+
+            <Border Grid.Column="1"
+                    Width="300"
+                    Margin="12,0,0,0"
+                    Padding="14"
+                    CornerRadius="6"
+                    Background="{DynamicResource App.Background.Inset}">
+                <Grid>
+                    <!-- Placeholder when nothing is selected -->
+                    <TextBlock VerticalAlignment="Center"
+                               HorizontalAlignment="Center"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap"
+                               Text="Click a marker to preview the clip here."
+                               Foreground="{DynamicResource App.Foreground.Tertiary}"
+                               Visibility="{Binding SelectedClip, Converter={StaticResource NullToVisibilityInverted}}" />
+
+                    <!-- Clip preview -->
+                    <StackPanel Visibility="{Binding SelectedClip, Converter={StaticResource NullToVisibility}}">
+                        <Border CornerRadius="4"
+                                ClipToBounds="True"
+                                Height="158"
+                                Background="{DynamicResource App.Background.Base}">
+                            <Image Source="{Binding SelectedClip.Thumbnail}" Stretch="UniformToFill" />
+                        </Border>
+
+                        <TextBlock Margin="0,12,0,0"
+                                   Text="{Binding SelectedClip.FileName}"
+                                   FontWeight="SemiBold"
+                                   TextWrapping="Wrap" />
+
+                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                            <TextBlock Text="{Binding SelectedClip.AvailabilityText}"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource App.Foreground.Secondary}" />
+                            <TextBlock Text="{Binding SelectedClip.RatingText}"
+                                       Margin="8,0,0,0"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource App.Accent}" />
+                        </StackPanel>
+
+                        <TextBlock Margin="0,8,0,0"
+                                   Text="{Binding SelectedClip.LocationText}"
+                                   TextWrapping="Wrap"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource App.Foreground.Secondary}" />
+                        <TextBlock Margin="0,2,0,0"
+                                   Text="{Binding SelectedClip.CoordinatesText}"
+                                   FontFamily="Consolas"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource App.Foreground.Tertiary}" />
+                        <TextBlock Margin="0,2,0,0"
+                                   Text="{Binding SelectedClip.FolderPath}"
+                                   TextWrapping="Wrap"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource App.Foreground.Tertiary}" />
+
+                        <Button Margin="0,14,0,0"
+                                HorizontalAlignment="Stretch"
+                                Content="Show in grid"
+                                Command="{Binding ShowInGridCommand}"
+                                Style="{StaticResource App.Button.Primary}"
+                                helpers:Theme.Icon="{StaticResource Icon.Map}" />
+                        <Button Margin="0,8,0,0"
+                                HorizontalAlignment="Stretch"
+                                Content="Play in app"
+                                Command="{Binding PlayCommand}"
+                                Style="{StaticResource App.Button.Secondary}"
+                                helpers:Theme.Icon="{StaticResource Icon.Play}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

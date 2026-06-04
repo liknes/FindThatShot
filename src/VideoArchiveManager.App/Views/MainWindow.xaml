@@ -120,6 +120,9 @@
                         <MenuItem Header="Find _moments…"
                                   Click="Moments_Click"
                                   ToolTip="Search across every timestamped moment (sub-clip) you've marked — by label, note, tag, or rating — and jump straight to the shot in the player." />
+                        <MenuItem Header="Browse on _map…"
+                                  Click="Map_Click"
+                                  ToolTip="See every geotagged clip clustered on a map. Click a cluster to scope the grid to it, click a marker to preview a clip, or filter the grid to whatever's in view. Read-only." />
                         <Separator />
                         <MenuItem Header="_Generate AI tags…"
                                   Click="GenerateAiTags_Click"
@@ -1840,6 +1843,7 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
                 <!-- Status message (left). One line, ellipsised, secondary tier. -->
@@ -2102,6 +2106,54 @@
                                    Foreground="{DynamicResource App.Foreground.Secondary}" />
                     </StackPanel>
                 </Border>
+
+                <!-- Map-selection pill (far right). Visible only while the grid
+                     is scoped to a set of clips picked on the map browse view.
+                     Clicking clears the map selection and re-runs the search;
+                     any normal filter change clears it automatically too. -->
+                <Button Grid.Column="5"
+                        Margin="8,0,0,0"
+                        Padding="0"
+                        BorderThickness="0"
+                        Background="Transparent"
+                        Cursor="Hand"
+                        Command="{Binding ClearMapSelectionCommand}"
+                        Visibility="{Binding HasMapSelection, Converter={StaticResource BoolToVisibility}}"
+                        ToolTip="The catalog grid is scoped to clips picked on the map. Click to clear and show all matches again.">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="MapBd"
+                                    Padding="10,3"
+                                    CornerRadius="12"
+                                    Height="24"
+                                    Background="{DynamicResource App.Accent.Subtle}"
+                                    BorderBrush="{DynamicResource App.Accent}"
+                                    BorderThickness="1"
+                                    TextElement.Foreground="{DynamicResource App.Accent}">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock FontFamily="{StaticResource App.Icon.FontFamily}"
+                                               FontSize="11"
+                                               Text="{StaticResource Icon.Map}"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,6,0" />
+                                    <TextBlock Text="{Binding MapSelectionText}"
+                                               FontSize="11"
+                                               FontWeight="Medium"
+                                               VerticalAlignment="Center" />
+                                    <TextBlock Text="  ✕"
+                                               FontSize="11"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="MapBd" Property="Background" Value="{DynamicResource App.Accent}" />
+                                    <Setter TargetName="MapBd" Property="TextElement.Foreground" Value="{DynamicResource App.Accent.OnAccent}" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
             </Grid>
         </Border>
 

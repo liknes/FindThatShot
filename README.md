@@ -101,6 +101,17 @@ Open **Catalog → Catalog statistics…** for a read-only dashboard that summar
 
 The numbers are computed on demand straight from the catalog database (a **Refresh** button recomputes them). Like the rest of the app, building the dashboard never reads, moves, or modifies any source video file.
 
+## Browse on map
+
+Open **Catalog → Browse on map…** for a whole-archive map that turns location into a primary navigation axis — the "where did I shoot that?" entry point for a geo-heavy drone archive. Every geotagged clip is plotted as a clustered marker on the same bundled-offline Leaflet stack the per-clip map uses (only the OpenStreetMap tiles need a connection; the map chrome, markers, and clustering all work offline).
+
+- **Scope.** By default the map plots **every** geotagged clip in the catalog. Untick **Whole archive** to instead mirror the **current grid filters**, so the map shows only the clips your sidebar search/filters are currently matching.
+- **Click a cluster → scope the grid.** Clicking a cluster zooms into it *and* scopes the main catalog grid to exactly those clips. A **Map selection: N clips** pill appears in the status bar; click it (or change any normal filter) to clear the scoping and show all matches again.
+- **Filter grid to this view.** The toolbar button scopes the grid to every clip currently inside the map viewport — pan/zoom to a region, then filter to it.
+- **Click a marker → preview a clip.** Clicking a single marker fills the side panel with that clip's thumbnail, location, coordinates, and online state, and selects it in the grid. From there, **Show in grid** brings it forward in the catalog and **Play in app** opens it in the in-app player.
+
+The window is read-only over the catalog and reuses the lightweight projection the grid already builds — plotting thousands of points stays cheap, and **no source video file is read, moved, or modified**.
+
 ## Finding duplicates
 
 Open **Catalog → Find duplicates…** to track down clips that exist in more than one place — typically the same footage copied to a backup or external drive. The finder groups clips by a **metadata fingerprint** the scanner already captured — **exact file size + duration + resolution** — so it's instant, needs nothing read off disk, and finds duplicates even among **offline** clips.

@@ -1300,6 +1300,55 @@ public partial class MainWindow : Window
         _momentSearchWindow.Show();
     }
 
+    // Single shared, non-modal global map browse window. Like the other
+    // catalog windows it's resolved from DI and re-clicking brings the existing
+    // one forward. Marker clicks select / play a clip in the grid; cluster
+    // clicks and the "Filter grid to this view" button scope the grid to the
+    // chosen clips via the map-selection pill.
+    private MapBrowseWindow? _mapWindow;
+
+    private void Map_Click(object sender, RoutedEventArgs e)
+    {
+        if (_mapWindow is not null && _mapWindow.IsLoaded)
+        {
+            if (_mapWindow.WindowState == WindowState.Minimized)
+                _mapWindow.WindowState = WindowState.Normal;
+            // Refresh the "current filters" scope source in case the grid
+            // filters changed since the window was opened.
+            _mapWindow.SetCurrentFilter(_viewModel.BuildCurrentQuery(includeMapSelection: false));
+            _mapWindow.Activate();
+            return;
+        }
+
+        _mapWindow = App.GetService<MapBrowseWindow>();
+        _mapWindow.Owner = this;
+        _mapWindow.SetCurrentFilter(_viewModel.BuildCurrentQuery(includeMapSelection: false));
+
+        _mapWindow.ClipSelected += async (_, id) =>
+        {
+            await _viewModel.SelectClipByIdAsync(id);
+            Activate();
+        };
+        _mapWindow.PlayRequested += async (_, id) =>
+        {
+            await _viewModel.SelectClipByIdAsync(id);
+            // Setting SelectedVideo synchronously primes Detail.Current (see
+            // PlayRelative), so PlayInApp targets the just-selected clip.
+            if (_viewModel.Detail.PlayInAppCommand.CanExecute(null))
+            {
+                _viewModel.Detail.PlayInAppCommand.Execute(null);
+            }
+            Activate();
+        };
+        _mapWindow.FilterToClipsRequested += async (_, ids) =>
+        {
+            await _viewModel.ApplyMapSelectionAsync(ids);
+            Activate();
+        };
+        _mapWindow.Closed += (_, _) => _mapWindow = null;
+        _mapWindow.Show();
+    }
+
     // Runs the AI tagging pass (delegated to the view model so progress streams
     // to the status bar). The menu item is only visible when AI is enabled and
     // a model is installed.

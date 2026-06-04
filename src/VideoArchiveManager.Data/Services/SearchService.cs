@@ -24,6 +24,33 @@ public class SearchService : ISearchService
                 .ThenInclude(vt => vt.Tag)
             .Include(v => v.Moments);
 
+        q = ApplyFilters(q, query);
+
+        var total = await q.CountAsync(cancellationToken);
+
+        q = query.SortBy switch
+        {
+            SearchSortField.ModifiedDescending => q.OrderByDescending(v => v.ModifiedAtFile),
+            SearchSortField.ModifiedAscending => q.OrderBy(v => v.ModifiedAtFile),
+            SearchSortField.FileNameAscending => q.OrderBy(v => v.FileName),
+            SearchSortField.FileNameDescending => q.OrderByDescending(v => v.FileName),
+            SearchSortField.RatingDescending => q.OrderByDescending(v => v.Rating).ThenByDescending(v => v.ModifiedAtFile),
+            SearchSortField.FolderDateDescending => q.OrderByDescending(v => v.FolderDate).ThenByDescending(v => v.ModifiedAtFile),
+            _ => q.OrderByDescending(v => v.ModifiedAtFile)
+        };
+
+        if (query.Skip > 0) q = q.Skip(query.Skip);
+        if (query.Take > 0) q = q.Take(query.Take);
+
+        var items = await q.ToListAsync(cancellationToken);
+        return new SearchResult { Items = items, TotalCount = total };
+    }
+
+    // Shared WHERE-clause pipeline used by both the grid search and the global
+    // map projection so the two stay perfectly in sync (a clip the grid would
+    // show under a filter is exactly a clip the map plots under that filter).
+    private static IQueryable<VideoItem> ApplyFilters(IQueryable<VideoItem> q, SearchQuery query)
+    {
         if (!string.IsNullOrWhiteSpace(query.Text))
         {
             var tokens = query.Text
@@ -99,6 +126,12 @@ public class SearchService : ISearchService
             q = q.Where(v => v.FileExists == fe);
         }
 
+        if (query.VideoIds is { Count: > 0 })
+        {
+            var ids = query.VideoIds as IReadOnlyCollection<int> ?? query.VideoIds.ToArray();
+            q = q.Where(v => ids.Contains(v.Id));
+        }
+
         // Union semantics: a video is "unreviewed" if EITHER the user has
         // never bumped its status off the default, OR they've never tagged
         // it. Catches forgetful workflows (status untouched) and behavioural
@@ -109,24 +142,40 @@ public class SearchService : ISearchService
             q = q.Where(v => v.Status == VideoStatus.Unreviewed || !v.VideoTags.Any());
         }
 
-        var total = await q.CountAsync(cancellationToken);
+        return q;
+    }
 
-        q = query.SortBy switch
+    public async Task<IReadOnlyList<MapClipPoint>> GetGeotaggedClipsAsync(
+        SearchQuery? filter = null,
+        CancellationToken cancellationToken = default)
+    {
+        await using var ctx = await _contextFactory.CreateDbContextAsync(cancellationToken);
+
+        // No tag/moment includes here: the projection below pulls only the
+        // handful of scalar columns the map + side panel need, so plotting
+        // thousands of points stays cheap.
+        IQueryable<VideoItem> q = ctx.VideoItems.AsNoTracking();
+
+        if (filter is not null)
         {
-            SearchSortField.ModifiedDescending => q.OrderByDescending(v => v.ModifiedAtFile),
-            SearchSortField.ModifiedAscending => q.OrderBy(v => v.ModifiedAtFile),
-            SearchSortField.FileNameAscending => q.OrderBy(v => v.FileName),
-            SearchSortField.FileNameDescending => q.OrderByDescending(v => v.FileName),
-            SearchSortField.RatingDescending => q.OrderByDescending(v => v.Rating).ThenByDescending(v => v.ModifiedAtFile),
-            SearchSortField.FolderDateDescending => q.OrderByDescending(v => v.FolderDate).ThenByDescending(v => v.ModifiedAtFile),
-            _ => q.OrderByDescending(v => v.ModifiedAtFile)
-        };
+            q = ApplyFilters(q, filter);
+        }
 
-        if (query.Skip > 0) q = q.Skip(query.Skip);
-        if (query.Take > 0) q = q.Take(query.Take);
-
-        var items = await q.ToListAsync(cancellationToken);
-        return new SearchResult { Items = items, TotalCount = total };
+        return await q
+            .Where(v => v.GpsLatitude != null && v.GpsLongitude != null)
+            .Select(v => new MapClipPoint
+            {
+                Id = v.Id,
+                Latitude = v.GpsLatitude!.Value,
+                Longitude = v.GpsLongitude!.Value,
+                FileName = v.FileName,
+                FolderPath = v.FolderPath,
+                LocationText = v.LocationText,
+                ThumbnailPath = v.ThumbnailPath,
+                FileExists = v.FileExists,
+                Rating = v.Rating
+            })
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<IReadOnlyList<string>> GetDistinctCamerasAsync(CancellationToken cancellationToken = default)

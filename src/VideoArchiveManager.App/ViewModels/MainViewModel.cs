@@ -493,7 +493,87 @@ public partial class MainViewModel : ObservableObject
     private void OnFilterChanged()
     {
         if (_suppressFilterSearch) return;
+        // A normal filter change supersedes any transient map-browse scoping
+        // (the user is now driving the grid from the sidebar, not the map).
+        ClearMapSelectionState();
         _ = SearchAsync();
+    }
+
+    // --- Map browse scoping ---------------------------------------------
+    //
+    // When the user clicks a cluster / "Filter grid to this view" in the map
+    // browse window, the grid is scoped to exactly those clip ids. The scoping
+    // is transient: it lives until the user clears it or touches any normal
+    // filter. The status-bar pill (HasMapSelection) shows it and clears it.
+    private IReadOnlyCollection<int>? _mapSelectionIds;
+
+    [ObservableProperty]
+    private bool _hasMapSelection;
+
+    [ObservableProperty]
+    private string _mapSelectionText = string.Empty;
+
+    // Scope the grid to a set of clips picked on the map. Bypasses
+    // OnFilterChanged (which would clear the very selection we're applying) and
+    // re-runs the search directly.
+    public async Task ApplyMapSelectionAsync(IReadOnlyList<int> ids)
+    {
+        if (ids is null || ids.Count == 0)
+        {
+            await ClearMapSelectionAsync();
+            return;
+        }
+
+        _mapSelectionIds = ids.Distinct().ToArray();
+        HasMapSelection = true;
+        MapSelectionText = $"Map selection: {_mapSelectionIds.Count} clip{(_mapSelectionIds.Count == 1 ? "" : "s")}";
+        await SearchAsync();
+    }
+
+    // Selects a clip in the grid by id (e.g. a marker click in the map window),
+    // inserting it at the top if the current filter would otherwise hide it.
+    // Does not start playback. Mirrors the insert-if-missing pattern used by
+    // JumpToMomentAsync.
+    public async Task SelectClipByIdAsync(int videoItemId)
+    {
+        var target = Videos.FirstOrDefault(v => v.Id == videoItemId);
+        if (target is null)
+        {
+            VideoItem? entity;
+            await using (var ctx = await _contextFactory.CreateDbContextAsync())
+            {
+                entity = await ctx.VideoItems
+                    .AsNoTracking()
+                    .Include(v => v.VideoTags)
+                        .ThenInclude(vt => vt.Tag)
+                    .Include(v => v.Moments)
+                    .FirstOrDefaultAsync(v => v.Id == videoItemId);
+            }
+            if (entity is null) return;
+
+            target = new VideoItemViewModel(entity);
+            Videos.Insert(0, target);
+        }
+
+        SelectedVideo = target;
+    }
+
+    [RelayCommand]
+    private async Task ClearMapSelectionAsync()
+    {
+        if (!HasMapSelection) return;
+        ClearMapSelectionState();
+        await SearchAsync();
+    }
+
+    // Drops the map scoping without re-searching — used by OnFilterChanged and
+    // ClearFiltersAsync, which run their own search afterwards.
+    private void ClearMapSelectionState()
+    {
+        if (_mapSelectionIds is null && !HasMapSelection) return;
+        _mapSelectionIds = null;
+        HasMapSelection = false;
+        MapSelectionText = string.Empty;
     }
 
     // Auto-search whenever any filter changes via UI (combo boxes, date
@@ -1231,6 +1311,38 @@ public partial class MainViewModel : ObservableObject
         return true;
     }
 
+    // Builds the SearchQuery for the current sidebar/search filter state.
+    // <paramref name="includeMapSelection"/> controls whether the transient
+    // map-browse scoping (VideoIds) is folded in: the grid search includes it,
+    // but the map window asks for the underlying filters without it so its
+    // "current filters" scope reflects the real filter state, not a circular
+    // map-of-the-map.
+    public SearchQuery BuildCurrentQuery(bool includeMapSelection = true)
+    {
+        return new SearchQuery
+        {
+            Text = SearchText,
+            Status = StatusFilter,
+            MinRating = MinRatingFilter > 0 ? MinRatingFilter : null,
+            Camera = string.IsNullOrWhiteSpace(CameraFilter) ? null : CameraFilter,
+            TagIds = SelectedTagFilters.Count == 0
+                ? null
+                : SelectedTagFilters.Select(t => t.Id).ToArray(),
+            DateFrom = DateFrom,
+            DateTo = DateTo,
+            // The folder tree feeds the path prefix now. EnsureTrailingSeparator
+            // turns "E:\20070101 - Brasil" into "E:\20070101 - Brasil\" so
+            // SearchService's StartsWith match doesn't accidentally pick up
+            // sibling folders like "E:\20070101 - Brasilia" — a latent bug
+            // when the old SelectedRootFolder path was passed in raw.
+            RootFolderPath = NormalizeFolderPrefix(SelectedFolderNode?.FullPath),
+            FileExists = ShowOnlyAvailable ? true : null,
+            OnlyUnreviewed = OnlyUnreviewed ? true : null,
+            VideoIds = includeMapSelection ? _mapSelectionIds : null,
+            Take = 500
+        };
+    }
+
     [RelayCommand]
     private async Task SearchAsync()
     {
@@ -1263,27 +1375,7 @@ public partial class MainViewModel : ObservableObject
             StatusMessage = $"Semantic search failed: {ex.Message}";
         }
 
-        var query = new SearchQuery
-        {
-            Text = SearchText,
-            Status = StatusFilter,
-            MinRating = MinRatingFilter > 0 ? MinRatingFilter : null,
-            Camera = string.IsNullOrWhiteSpace(CameraFilter) ? null : CameraFilter,
-            TagIds = SelectedTagFilters.Count == 0
-                ? null
-                : SelectedTagFilters.Select(t => t.Id).ToArray(),
-            DateFrom = DateFrom,
-            DateTo = DateTo,
-            // The folder tree feeds the path prefix now. EnsureTrailingSeparator
-            // turns "E:\20070101 - Brasil" into "E:\20070101 - Brasil\" so
-            // SearchService's StartsWith match doesn't accidentally pick up
-            // sibling folders like "E:\20070101 - Brasilia" — a latent bug
-            // when the old SelectedRootFolder path was passed in raw.
-            RootFolderPath = NormalizeFolderPrefix(SelectedFolderNode?.FullPath),
-            FileExists = ShowOnlyAvailable ? true : null,
-            OnlyUnreviewed = OnlyUnreviewed ? true : null,
-            Take = 500
-        };
+        var query = BuildCurrentQuery();
 
         try
         {
@@ -2007,6 +2099,7 @@ public partial class MainViewModel : ObservableObject
             DateFrom = null;
             DateTo = null;
             OnlyUnreviewed = false;
+            ClearMapSelectionState();
         }
         finally
         {

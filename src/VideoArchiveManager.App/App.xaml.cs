@@ -258,6 +258,7 @@ public partial class App : Application
                 services.AddTransient<CatalogStatsViewModel>();
                 services.AddTransient<DuplicatesViewModel>();
                 services.AddTransient<MomentSearchViewModel>();
+                services.AddTransient<MapBrowseViewModel>();
                 services.AddTransient<AiReviewViewModel>();
 
                 services.AddTransient<MainWindow>();
@@ -265,6 +266,7 @@ public partial class App : Application
                 services.AddTransient<CatalogStatsWindow>();
                 services.AddTransient<DuplicatesWindow>();
                 services.AddTransient<MomentSearchWindow>();
+                services.AddTransient<MapBrowseWindow>();
                 services.AddTransient<AiReviewWindow>();
 
                 // In-app diagnostics buffer + rolling file log. A singleton so
