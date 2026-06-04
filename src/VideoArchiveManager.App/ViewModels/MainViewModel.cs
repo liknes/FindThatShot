@@ -1088,8 +1088,13 @@ public partial class MainViewModel : ObservableObject
     // Scores clips that don't yet have an embedding (or all of them) with the
     // CLIP model and writes tag suggestions for review. Progress streams to the
     // status bar; never auto-applies tags and only reads source files.
+    // reprocessAll=false scores only clips without an embedding yet (the normal
+    // incremental pass); reprocessAll=true re-scores every clip, e.g. after
+    // changing the sampling settings, label vocabulary, or model. Re-scoring is
+    // idempotent: prior embeddings are replaced and pending suggestions refreshed,
+    // while already accepted/rejected suggestions are left untouched.
     [RelayCommand]
-    private async Task GenerateAiTagsAsync()
+    private async Task GenerateAiTagsAsync(bool reprocessAll)
     {
         if (IsAiTagging) return;
         if (!IsAiEnabled)
@@ -1106,19 +1111,23 @@ public partial class MainViewModel : ObservableObject
         IsAiTagging = true;
         try
         {
-            var pending = await _aiTaggingService.CountPendingAsync(reprocessAll: false, cts.Token);
+            var pending = await _aiTaggingService.CountPendingAsync(reprocessAll, cts.Token);
             if (pending == 0)
             {
-                StatusMessage = "All clips already have AI embeddings. Nothing to score.";
+                StatusMessage = reprocessAll
+                    ? "No clips in the catalog to score."
+                    : "All clips already have AI embeddings. Nothing to score.";
                 return;
             }
 
-            StatusMessage = $"Scoring {pending} clip(s) with the AI model…";
+            StatusMessage = reprocessAll
+                ? $"Re-scoring all {pending} clip(s) with the AI model…"
+                : $"Scoring {pending} clip(s) with the AI model…";
             var progress = new Progress<AiTaggingProgress>(p =>
             {
                 if (!string.IsNullOrEmpty(p.Message)) StatusMessage = p.Message;
             });
-            await _aiTaggingService.GenerateAsync(reprocessAll: false, progress, cts.Token);
+            await _aiTaggingService.GenerateAsync(reprocessAll, progress, cts.Token);
         }
         catch (OperationCanceledException)
         {

@@ -65,7 +65,45 @@ public static class AiLabelVocabulary
             ("farm", "farmland"),
             ("industrial", "an industrial site"),
             ("stadium", "a stadium"),
-            ("market", "a street market")
+            ("market", "a street market"),
+
+            // Coastal / drone / aerial-oriented additions.
+            ("coastline", "a coastline seen from above"),
+            ("cliffs", "coastal cliffs"),
+            ("bay", "a bay or cove"),
+            ("lagoon", "a lagoon"),
+            ("peninsula", "a peninsula"),
+            ("reef", "a coral reef"),
+            ("sandbar", "a sandbar or shoal"),
+            ("marina", "a marina full of boats"),
+            ("pier", "a pier or jetty"),
+            ("lighthouse", "a lighthouse"),
+            ("port", "a shipping port with containers"),
+            ("kayak", "a kayak or canoe"),
+            ("surfer", "a surfer riding a wave"),
+            ("swimming pool", "a swimming pool"),
+            ("palm trees", "palm trees"),
+            ("tropical", "a tropical landscape"),
+
+            // Landscape / terrain.
+            ("valley", "a valley"),
+            ("canyon", "a canyon or gorge"),
+            ("hills", "rolling hills"),
+            ("glacier", "a glacier"),
+            ("volcano", "a volcano"),
+            ("countryside", "the countryside"),
+            ("vineyard", "a vineyard"),
+
+            // Urban / man-made.
+            ("skyscrapers", "skyscrapers"),
+            ("suburb", "a suburban neighborhood"),
+            ("highway", "a highway interchange"),
+            ("parking lot", "a parking lot"),
+            ("construction", "a construction site"),
+            ("solar panels", "a solar panel farm"),
+            ("wind turbines", "wind turbines"),
+            ("sports field", "a sports field"),
+            ("fireworks", "fireworks at night")
         };
 
         var labels = new List<AiLabel>(entries.Length);

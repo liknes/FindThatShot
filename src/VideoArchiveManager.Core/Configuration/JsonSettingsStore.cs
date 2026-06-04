@@ -85,9 +85,12 @@ public class JsonSettingsStore : ISettingsStore
                 EnableAiTagging = loaded.EnableAiTagging,
                 AiModelDirectory = !string.IsNullOrWhiteSpace(loaded.AiModelDirectory) ? loaded.AiModelDirectory : baseline.AiModelDirectory,
                 AiModelDownloadUrl = !string.IsNullOrWhiteSpace(loaded.AiModelDownloadUrl) ? loaded.AiModelDownloadUrl : baseline.AiModelDownloadUrl,
-                AiFramesPerClip = loaded.AiFramesPerClip is > 0 and <= 64 ? loaded.AiFramesPerClip : baseline.AiFramesPerClip,
+                AiSecondsPerFrame = loaded.AiSecondsPerFrame is > 0 and <= 600 ? loaded.AiSecondsPerFrame : baseline.AiSecondsPerFrame,
+                AiMinFramesPerClip = loaded.AiMinFramesPerClip is > 0 and <= 128 ? loaded.AiMinFramesPerClip : baseline.AiMinFramesPerClip,
+                AiMaxFramesPerClip = loaded.AiMaxFramesPerClip is > 0 and <= 128 ? loaded.AiMaxFramesPerClip : baseline.AiMaxFramesPerClip,
                 AiSuggestionThreshold = loaded.AiSuggestionThreshold is > 0 and < 1 ? loaded.AiSuggestionThreshold : baseline.AiSuggestionThreshold,
                 AiMaxSuggestionsPerClip = loaded.AiMaxSuggestionsPerClip > 0 ? loaded.AiMaxSuggestionsPerClip : baseline.AiMaxSuggestionsPerClip,
+                AiAdaptiveThresholds = loaded.AiAdaptiveThresholds,
                 // Sidebar width: clamp to a sane range so a corrupted /
                 // hand-edited settings.json can't shove the rail off-screen
                 // or down to a single-pixel slit.

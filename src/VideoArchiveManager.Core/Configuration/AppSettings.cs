@@ -80,11 +80,22 @@ public class AppSettings
     public string? AiModelDownloadUrl { get; set; } =
         "https://github.com/liknes/FindThatShot/releases/download/models-v1/clip-vit-b32.zip";
 
-    // How many frames to sample across each clip when building its embedding.
-    // A single thumbnail is a poor signal for a whole video, so we decode N
-    // evenly-spaced frames and max-pool tag/search scores across them. More
-    // frames = better recall on what a clip "ever shows" at higher cost.
-    public int AiFramesPerClip { get; set; } = 9;
+    // Frame sampling is duration-proportional: we aim for one sampled frame
+    // every AiSecondsPerFrame seconds of footage, then clamp the count to
+    // [AiMinFramesPerClip, AiMaxFramesPerClip]. A single thumbnail is a poor
+    // signal for a whole video, and a flat frame count under-samples long clips
+    // while over-sampling short ones, so a 30s clip lands on the floor and a
+    // 13-minute clip scales up to the cap. Frames are max-pooled for tag/search
+    // scores, so more frames = better recall on what a clip "ever shows" at
+    // higher decode/inference cost.
+    public double AiSecondsPerFrame { get; set; } = 20d;
+
+    // Lower bound so even very short clips get a few viewpoints (start/mid/end).
+    public int AiMinFramesPerClip { get; set; } = 4;
+
+    // Upper bound so a feature-length clip can't explode the per-clip cost
+    // (each frame is one ffmpeg decode + one CLIP image inference).
+    public int AiMaxFramesPerClip { get; set; } = 24;
 
     // Cosine-similarity floor (CLIP image↔text) above which a vocabulary label
     // becomes an AiTagSuggestion. CLIP matches typically score ~0.22–0.35, so
@@ -94,6 +105,15 @@ public class AppSettings
     // Cap on how many suggestions a single clip can produce (the top-N labels
     // by confidence above the threshold), so the review queue stays focused.
     public int AiMaxSuggestionsPerClip { get; set; } = 6;
+
+    // When true, the scoring pass learns a per-label confidence threshold from
+    // your own accept/reject history instead of applying the single global
+    // AiSuggestionThreshold to every label. Labels you keep rejecting get a
+    // higher bar (suppressed), labels you consistently accept get a lower one
+    // (surfaced sooner) — so suggestions sharpen toward your footage over time.
+    // Inert until a label has enough decided suggestions; falls back to the
+    // global threshold otherwise. CLIP weights are never touched.
+    public bool AiAdaptiveThresholds { get; set; } = true;
 
     // Persisted main-window sidebar layout. Width is the user's last
     // dragged width of the FOLDERS / TAGS / CAMERAS rail; the three

@@ -124,7 +124,11 @@
                         <MenuItem Header="_Generate AI tags…"
                                   Click="GenerateAiTags_Click"
                                   Visibility="{Binding IsAiEnabled, Converter={StaticResource BoolToVisibility}}"
-                                  ToolTip="Score clips with a local CLIP model (sampling frames across each clip) to propose tags. Nothing is auto-applied; review proposals afterwards. Source files are only read." />
+                                  ToolTip="Score clips that don't have AI embeddings yet with a local CLIP model (sampling frames across each clip) to propose tags. Nothing is auto-applied; review proposals afterwards. Source files are only read." />
+                        <MenuItem Header="Re-score _all clips with AI…"
+                                  Click="ReprocessAiTags_Click"
+                                  Visibility="{Binding IsAiEnabled, Converter={StaticResource BoolToVisibility}}"
+                                  ToolTip="Re-run AI scoring on EVERY clip (not just new ones) — use after changing the sampling settings, label vocabulary, or model. Accepted/rejected tags are kept; pending suggestions are refreshed." />
                         <MenuItem Header="Review _AI suggestions…"
                                   Click="AiReview_Click"
                                   Visibility="{Binding IsAiEnabled, Converter={StaticResource BoolToVisibility}}"

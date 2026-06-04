@@ -117,11 +117,11 @@ As everywhere else in the app, this only ever edits the catalog: **your source v
 
 The app can optionally use a local **CLIP** model to (a) propose subject tags for your clips and (b) let you search by plain-English description. Everything runs **locally and offline** on the CPU (ONNX Runtime); the model only ever **reads frames** — your source files are never modified.
 
-Because a single thumbnail is a weak signal for a whole video, the scoring pass **samples several frames across each clip** (default 9, configurable) via the same ffmpeg pipeline that makes thumbnails, then **max-pools** results across those frames — so a tag or a search matches if the subject appears in *any* part of the clip, not just on average.
+Because a single thumbnail is a weak signal for a whole video, the scoring pass **samples several frames across each clip** via the same ffmpeg pipeline that makes thumbnails, then **max-pools** results across those frames — so a tag or a search matches if the subject appears in *any* part of the clip, not just on average. Sampling is **duration-proportional**: it takes roughly one frame every N seconds (default 20s), clamped to a configurable min/max, so a 30-second clip gets a few frames while a 13-minute clip scales up to the cap instead of being under-sampled by a flat count.
 
 Two capabilities come from the one model:
 
-- **Auto-tag suggestions.** Each clip's frames are scored against a scene/subject vocabulary (sea, fog, ships, birds, beach, forest, mountains, city, snow, sunset, …). Above-threshold labels become suggestions you triage in **Catalog → Review AI suggestions…** as accept/reject chips. **Accept** promotes a suggestion to a real tag on the clip; **Reject** dismisses it (and is remembered, so a later re-run won't keep re-proposing it). Nothing is ever auto-applied.
+- **Auto-tag suggestions.** Each clip's frames are scored against a scene/subject vocabulary (sea, fog, ships, beach, forest, mountains, city, snow, sunset, plus coastal/drone/aerial terms like coastline, cliffs, marina, lighthouse, reef, kayak, and terrain/urban terms like canyon, glacier, skyscrapers, wind turbines, …). Above-threshold labels become suggestions you triage in **Catalog → Review AI suggestions…** as accept/reject chips. **Accept** promotes a suggestion to a real tag on the clip; **Reject** dismisses it (and is remembered, so a later re-run won't keep re-proposing it). Nothing is ever auto-applied. The candidate list lives in `AiLabelVocabulary` — add a row and **Re-score all clips** to detect new subjects. Optionally, **adaptive thresholds** (on by default) learn a per-label confidence cutoff from your accept/reject history, so suggestions sharpen toward your footage over time without ever changing the CLIP model.
 - **Natural-language search.** Turn on **View → Search by description (AI)** and type something like *"drone shot over snowy mountains at sunset"* — clips are ranked by visual similarity to your phrase rather than by literal text matching.
 
 ### Enabling it
@@ -147,7 +147,9 @@ Then, in **Settings → AI tagging**:
 2. Confirm the status shows the model as **Ready** (it resolves a configured **Model folder**, then a bundled `tools/models/clip-vit-b32`, then the managed app-data folder).
 3. Run **Catalog → Generate AI tags…** to score your clips (progress shows in the status bar), then open **Catalog → Review AI suggestions…**.
 
-Tuning (frames sampled per clip, suggestion confidence threshold) lives in the same Settings pane. **Clear AI data** purges all embeddings and pending suggestions to reclaim space — accepted tags and source files are untouched. Turning the feature back off makes the whole subsystem inert (no model load, no menu commands, no extra writes); existing data simply stops being read.
+**Catalog → Generate AI tags…** scores only clips that don't have AI embeddings yet (the incremental pass), while **Catalog → Re-score all clips with AI…** re-runs scoring on every clip — use it after changing the sampling settings, label vocabulary, or model. Re-scoring is idempotent: it replaces prior embeddings and refreshes pending suggestions, but never resurrects tags you've already accepted or rejected.
+
+Tuning (seconds-per-frame sampling interval, min/max frames per clip, suggestion confidence threshold) lives in the same Settings pane. **Clear AI data** purges all embeddings and pending suggestions to reclaim space — accepted tags and source files are untouched. Turning the feature back off makes the whole subsystem inert (no model load, no menu commands, no extra writes); existing data simply stops being read.
 
 A model bundle directory is expected to contain `image_encoder.onnx`, `text_encoder.onnx`, the CLIP BPE vocab (`bpe_simple_vocab_16e6.txt.gz`), and an optional `manifest.json` (tensor names, image size, normalization constants — sensible CLIP ViT-B/32 defaults are used when absent). `scripts/export-clip-onnx.py` writes all of these for you.
 

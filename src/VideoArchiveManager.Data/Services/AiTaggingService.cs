@@ -58,9 +58,17 @@ public class AiTaggingService : IAiTaggingService
     {
         var model = _modelProvider.GetModel();
         var settings = _settings.Current;
-        var framesPerClip = Math.Clamp(settings.AiFramesPerClip, 1, 64);
+        var secondsPerFrame = settings.AiSecondsPerFrame > 0 ? settings.AiSecondsPerFrame : 20d;
+        var minFrames = Math.Clamp(settings.AiMinFramesPerClip, 1, 128);
+        var maxFrames = Math.Clamp(settings.AiMaxFramesPerClip, minFrames, 128);
         var threshold = settings.AiSuggestionThreshold;
         var maxSuggestions = Math.Max(1, settings.AiMaxSuggestionsPerClip);
+
+        // Optionally learn a per-label threshold from prior accept/reject
+        // decisions; labels with too little history fall back to the global one.
+        var labelThresholds = settings.AiAdaptiveThresholds
+            ? await BuildLabelThresholdsAsync(threshold, cancellationToken).ConfigureAwait(false)
+            : new Dictionary<string, double>();
 
         // Precompute one ensembled, normalized text embedding per label.
         var labels = AiLabelVocabulary.Default;
@@ -92,7 +100,7 @@ public class AiTaggingService : IAiTaggingService
             try
             {
                 var result = await ProcessClipAsync(
-                    id, model, labels, labelVectors, framesPerClip, threshold, maxSuggestions, cancellationToken)
+                    id, model, labels, labelVectors, secondsPerFrame, minFrames, maxFrames, threshold, labelThresholds, maxSuggestions, cancellationToken)
                     .ConfigureAwait(false);
                 currentFile = result.FileName;
                 processed++;
@@ -147,6 +155,89 @@ public class AiTaggingService : IAiTaggingService
         return await q.OrderBy(v => v.Id).Select(v => v.Id).ToListAsync(cancellationToken);
     }
 
+    // Duration-proportional frame count: ~one frame per secondsPerFrame of
+    // footage, clamped to [min, max]. Unknown/zero duration falls back to the
+    // floor so a clip we can't measure still gets a handful of viewpoints.
+    private static int ResolveFrameCount(double? durationSeconds, double secondsPerFrame, int minFrames, int maxFrames)
+    {
+        if (durationSeconds is not > 0 || secondsPerFrame <= 0)
+            return minFrames;
+        var n = (int)Math.Ceiling(durationSeconds.Value / secondsPerFrame);
+        return Math.Clamp(n, minFrames, maxFrames);
+    }
+
+    // Minimum number of decided (accepted/rejected) suggestions a label needs
+    // before we trust a learned threshold over the global one.
+    private const int MinDecisionsForCalibration = 4;
+
+    // Hard band any learned threshold is clamped into, so a quirky run of
+    // decisions can't drive a label to never-suggest or always-suggest.
+    private const double CalibrationFloor = 0.18;
+    private const double CalibrationCeil = 0.45;
+
+    // Learns a per-label confidence threshold from the user's accept/reject
+    // history (the decided AiTagSuggestion rows + their stored confidence).
+    private async Task<Dictionary<string, double>> BuildLabelThresholdsAsync(
+        double globalThreshold, CancellationToken cancellationToken)
+    {
+        await using var ctx = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var decided = await ctx.AiTagSuggestions
+            .AsNoTracking()
+            .Where(s => s.State == AiSuggestionState.Accepted || s.State == AiSuggestionState.Rejected)
+            .Select(s => new { s.TagName, s.Confidence, s.State })
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        var result = new Dictionary<string, double>();
+        foreach (var group in decided.GroupBy(d => d.TagName))
+        {
+            if (group.Count() < MinDecisionsForCalibration) continue;
+            var pos = group.Where(d => d.State == AiSuggestionState.Accepted).Select(d => d.Confidence).ToList();
+            var neg = group.Where(d => d.State == AiSuggestionState.Rejected).Select(d => d.Confidence).ToList();
+            result[group.Key] = ComputeLabelThreshold(pos, neg, globalThreshold);
+        }
+        return result;
+    }
+
+    // Picks the threshold that best separates accepted (positive) from rejected
+    // (negative) confidences for one label:
+    //   * both classes present -> maximize Youden's J (TPR - FPR), favouring
+    //     recall on ties (lower threshold), clamped to the calibration band;
+    //   * only accepts -> lower the bar toward the lowest score they accepted
+    //     (never above the global threshold), so we surface this liked label sooner;
+    //   * only rejects -> raise the bar just above the highest score they
+    //     rejected, effectively suppressing a label they never want.
+    private static double ComputeLabelThreshold(List<double> pos, List<double> neg, double globalThreshold)
+    {
+        if (pos.Count == 0 && neg.Count == 0) return globalThreshold;
+        if (pos.Count == 0)
+            return Math.Clamp(neg.Max() + 0.005, globalThreshold, CalibrationCeil);
+        if (neg.Count == 0)
+            return Math.Clamp(pos.Min() - 0.005, CalibrationFloor, globalThreshold);
+
+        var candidates = pos.Concat(neg).Distinct().OrderBy(v => v).ToList();
+        var bestT = globalThreshold;
+        var bestJ = double.NegativeInfinity;
+        foreach (var t in candidates)
+        {
+            var tp = pos.Count(p => p >= t);
+            var fn = pos.Count - tp;
+            var fp = neg.Count(n => n >= t);
+            var tn = neg.Count - fp;
+            var tpr = tp + fn == 0 ? 0 : (double)tp / (tp + fn);
+            var fpr = fp + tn == 0 ? 0 : (double)fp / (fp + tn);
+            var j = tpr - fpr;
+            // Strictly-greater keeps the first (lowest) threshold among ties,
+            // which favours recall — missed tags never reach the review queue.
+            if (j > bestJ)
+            {
+                bestJ = j;
+                bestT = t;
+            }
+        }
+        return Math.Clamp(bestT, CalibrationFloor, CalibrationCeil);
+    }
+
     private readonly record struct ClipResult(string? FileName, bool Skipped, int SuggestionsWritten);
 
     private async Task<ClipResult> ProcessClipAsync(
@@ -154,8 +245,11 @@ public class AiTaggingService : IAiTaggingService
         IClipModel model,
         IReadOnlyList<AiLabel> labels,
         float[][] labelVectors,
-        int framesPerClip,
-        double threshold,
+        double secondsPerFrame,
+        int minFrames,
+        int maxFrames,
+        double globalThreshold,
+        IReadOnlyDictionary<string, double> labelThresholds,
         int maxSuggestions,
         CancellationToken cancellationToken)
     {
@@ -164,6 +258,7 @@ public class AiTaggingService : IAiTaggingService
         if (entity == null) return new ClipResult(null, true, 0);
         if (!_fileSystem.FileExists(entity.FilePath)) return new ClipResult(entity.FileName, true, 0);
 
+        var framesPerClip = ResolveFrameCount(entity.DurationSeconds, secondsPerFrame, minFrames, maxFrames);
         var frames = await _sampler
             .SampleAsync(entity.FilePath, entity.DurationSeconds, framesPerClip, model.ImageSize, cancellationToken)
             .ConfigureAwait(false);
@@ -220,7 +315,9 @@ public class AiTaggingService : IAiTaggingService
                     bestTime = frameTimes[fi];
                 }
             }
-            if (best >= threshold) scored.Add((labels[li].TagName, best, bestTime));
+            var tagName = labels[li].TagName;
+            var labelThreshold = labelThresholds.TryGetValue(tagName, out var t) ? t : globalThreshold;
+            if (best >= labelThreshold) scored.Add((tagName, best, bestTime));
         }
 
         var top = scored.OrderByDescending(s => s.Sim).Take(maxSuggestions).ToList();

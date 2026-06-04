@@ -58,8 +58,11 @@ public partial class SettingsViewModel : ObservableObject
         _showPlayerTelemetry = current.ShowPlayerTelemetry;
         _enableAiTagging = current.EnableAiTagging;
         _aiModelDirectory = current.AiModelDirectory ?? string.Empty;
-        _aiFramesPerClip = current.AiFramesPerClip;
+        _aiSecondsPerFrame = current.AiSecondsPerFrame;
+        _aiMinFramesPerClip = current.AiMinFramesPerClip;
+        _aiMaxFramesPerClip = current.AiMaxFramesPerClip;
         _aiSuggestionThreshold = current.AiSuggestionThreshold;
+        _aiAdaptiveThresholds = current.AiAdaptiveThresholds;
 
         _ = RefreshBackupsAsync();
         _ = LoadPinnedTagsAsync();
@@ -136,10 +139,19 @@ public partial class SettingsViewModel : ObservableObject
     private string _aiModelDirectory;
 
     [ObservableProperty]
-    private int _aiFramesPerClip;
+    private double _aiSecondsPerFrame;
+
+    [ObservableProperty]
+    private int _aiMinFramesPerClip;
+
+    [ObservableProperty]
+    private int _aiMaxFramesPerClip;
 
     [ObservableProperty]
     private double _aiSuggestionThreshold;
+
+    [ObservableProperty]
+    private bool _aiAdaptiveThresholds;
 
     [ObservableProperty]
     private string _aiModelStatus = string.Empty;
@@ -391,8 +403,11 @@ public partial class SettingsViewModel : ObservableObject
             EnableAiTagging = EnableAiTagging,
             AiModelDirectory = string.IsNullOrWhiteSpace(AiModelDirectory) ? null : AiModelDirectory,
             AiModelDownloadUrl = _store.Current.AiModelDownloadUrl,
-            AiFramesPerClip = AiFramesPerClip is > 0 and <= 64 ? AiFramesPerClip : 9,
+            AiSecondsPerFrame = AiSecondsPerFrame is > 0 and <= 600 ? AiSecondsPerFrame : 20d,
+            AiMinFramesPerClip = AiMinFramesPerClip is > 0 and <= 128 ? AiMinFramesPerClip : 4,
+            AiMaxFramesPerClip = AiMaxFramesPerClip is > 0 and <= 128 ? AiMaxFramesPerClip : 24,
             AiSuggestionThreshold = AiSuggestionThreshold is > 0 and < 1 ? AiSuggestionThreshold : 0.26,
+            AiAdaptiveThresholds = AiAdaptiveThresholds,
             AiMaxSuggestionsPerClip = _store.Current.AiMaxSuggestionsPerClip,
             MaxScanParallelism = MaxScanParallelism > 0 ? MaxScanParallelism : 4,
             PageSize = _store.Current.PageSize,

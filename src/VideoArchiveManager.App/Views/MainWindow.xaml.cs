@@ -1305,7 +1305,26 @@ public partial class MainWindow : Window
     // a model is installed.
     private void GenerateAiTags_Click(object sender, RoutedEventArgs e)
     {
-        _ = _viewModel.GenerateAiTagsCommand.ExecuteAsync(null);
+        _ = _viewModel.GenerateAiTagsCommand.ExecuteAsync(false);
+    }
+
+    // Re-scores EVERY clip (not just ones missing an embedding) — used after
+    // changing sampling settings, the label vocabulary, or the model. Confirmed
+    // first because it can be a long CPU pass on a big catalog.
+    private void ReprocessAiTags_Click(object sender, RoutedEventArgs e)
+    {
+        var answer = MessageBox.Show(
+            "Re-score every clip with the AI model?\n\n" +
+            "This re-runs frame sampling and CLIP inference on all clips (not just new ones), " +
+            "so it can take a while on a large catalog. Existing accepted/rejected tags are kept; " +
+            "pending suggestions are refreshed.",
+            "Re-score all clips",
+            MessageBoxButton.OKCancel,
+            MessageBoxImage.Question);
+        if (answer == MessageBoxResult.OK)
+        {
+            _ = _viewModel.GenerateAiTagsCommand.ExecuteAsync(true);
+        }
     }
 
     // Single shared, non-modal AI suggestion review queue. Mirrors the other
