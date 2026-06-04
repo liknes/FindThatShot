@@ -5,6 +5,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Navigation;
 using VideoArchiveManager.App.ViewModels;
 using VideoArchiveManager.Core.Models;
@@ -88,6 +90,11 @@ public partial class MainWindow : Window
         _normalSplitterWidth = LeftSplitterColumn.Width;
         _normalListWidth = VideoListColumn.Width;
         _normalEditorWidth = EditorColumn.Width;
+
+        // The marker overlay floats at the top-centre of the video; a custom
+        // placement callback centres it horizontally regardless of its (dynamic)
+        // width and pins it just below the top edge so it never covers the frame.
+        MarkerOverlayPopup.CustomPopupPlacementCallback = MarkerOverlayPlacement;
 
         if (App.UseMpvPlayer)
         {
@@ -211,6 +218,14 @@ public partial class MainWindow : Window
         await _viewModel.InitializeAsync();
         _viewModel.Detail.PropertyChanged += Detail_PropertyChanged;
         _viewModel.Detail.ShowInfoRequested += Detail_ShowInfoRequested;
+        _viewModel.Detail.SeekRequested += Detail_SeekRequested;
+    }
+
+    // The detail VM asks the host to seek when the user jumps to a moment while
+    // the player is already open (the VM has no handle on the player surface).
+    private void Detail_SeekRequested(object? sender, double seconds)
+    {
+        _ = SeekToSecondsAsync(seconds);
     }
 
     private async void MainWindow_Closed(object? sender, EventArgs e)
@@ -221,6 +236,7 @@ public partial class MainWindow : Window
             _mpvTimer = null;
 
             _viewModel.Detail.ShowInfoRequested -= Detail_ShowInfoRequested;
+            _viewModel.Detail.SeekRequested -= Detail_SeekRequested;
 
             if (_infoWindow is not null)
             {
@@ -261,7 +277,15 @@ public partial class MainWindow : Window
     // the mpv instance) has been created — we stash the path and load it the
     // moment the player signals ready.
     private System.Windows.Threading.DispatcherTimer? _mpvTimer;
+
+    // Auto-dismiss timer for the "moment saved" / "marker set" overlay flash.
+    private System.Windows.Threading.DispatcherTimer? _markerOverlayHideTimer;
     private string? _pendingMpvSource;
+
+    // One-shot seek (seconds) applied once mpv reports a valid duration after a
+    // "jump to moment" open. mpv loads asynchronously, so a SeekAbsolute issued
+    // immediately after Load can be dropped; we defer to the poll tick instead.
+    private double? _pendingMpvSeek;
 
     private void ConfigureMpvPlayer()
     {
@@ -301,6 +325,13 @@ public partial class MainWindow : Window
         if (pos < 0) pos = 0;
         var dur = player.GetDuration();
 
+        // Apply a staged "jump to moment" seek once the file has a duration.
+        if (_pendingMpvSeek is double seekTo && dur > 0)
+        {
+            player.SeekAbsolute(seekTo);
+            _pendingMpvSeek = null;
+        }
+
         PlayerCurrentTimeText.Text = FormatTimecode(TimeSpan.FromSeconds(pos));
         PlayerDurationText.Text = dur > 0 ? FormatTimecode(TimeSpan.FromSeconds(dur)) : "00:00";
 
@@ -332,6 +363,7 @@ public partial class MainWindow : Window
         {
             ApplyReviewModeLayout(detail.IsPlayerVisible);
             UpdateClosePlayerOverlay();
+            RefreshMarkerOverlayForState();
         }
 
         if (!App.IsPlayerAvailable) return;
@@ -387,6 +419,13 @@ public partial class MainWindow : Window
                 await VideoPlayer.Play();
                 _playerPlaying = true;
                 UpdatePlayPauseLabel();
+
+                // If this open was triggered by "jump to moment", seek to the
+                // moment's in-point now that the media is decoded and seekable.
+                if (detail.ConsumePendingSeek() is double seekSeconds)
+                {
+                    await SeekToSecondsAsync(seekSeconds);
+                }
             }
             else
             {
@@ -425,6 +464,10 @@ public partial class MainWindow : Window
                 ? detail.MediaSource.LocalPath
                 : detail.MediaSource.ToString();
 
+            // Stage any "jump to moment" seek; UpdateMpvTime applies it once the
+            // freshly-loaded file reports a duration.
+            _pendingMpvSeek = detail.ConsumePendingSeek();
+
             var player = MpvPlayer.Player;
             if (player is null)
             {
@@ -460,7 +503,11 @@ public partial class MainWindow : Window
     // mpv child window, which would hide any in-grid WPF overlay (airspace).
     // We open it only while the player is visible AND this window is active, so
     // the floating button never lingers on top of other apps after an alt-tab.
-    private void Window_ActivationChanged(object? sender, EventArgs e) => UpdateClosePlayerOverlay();
+    private void Window_ActivationChanged(object? sender, EventArgs e)
+    {
+        UpdateClosePlayerOverlay();
+        RefreshMarkerOverlayForState();
+    }
 
     private void UpdateClosePlayerOverlay()
     {
@@ -794,6 +841,171 @@ public partial class MainWindow : Window
         }
     }
 
+    private void PlayerMarkIn_Click(object sender, RoutedEventArgs e) => DoMarkIn();
+
+    private void PlayerMarkOut_Click(object sender, RoutedEventArgs e) => DoMarkOut();
+
+    // ===== Marker capture + on-video overlay ================================
+    // Single entry points for both the toolbar buttons and the I / O keys, so
+    // the capture call and its big, unmistakable on-video feedback always stay
+    // in lock-step. The overlay pulses while an in-point is armed and flashes a
+    // green confirmation on save — the fix for "I can't tell my O registered".
+
+    private void DoMarkIn()
+    {
+        var pos = GetCurrentPlayerPosition();
+        _viewModel.Detail.MarkInPoint(pos);
+        ShowMarkerOverlayArmed(FormatTimecode(pos));
+    }
+
+    private void DoMarkOut()
+    {
+        var detail = _viewModel.Detail;
+        var pos = GetCurrentPlayerPosition();
+
+        // Capture the staged in-point BEFORE the async save clears it, so the
+        // confirmation can show the full range the instant the key is pressed.
+        var hadIn = detail.HasPendingInPoint;
+        string? inText = detail.PendingInPoint is double s
+            ? FormatTimecode(TimeSpan.FromSeconds(s))
+            : null;
+
+        _ = detail.MarkOutPointAsync(pos);
+
+        var outText = FormatTimecode(pos);
+        if (hadIn && inText is not null)
+        {
+            ShowMarkerOverlaySaved("MOMENT SAVED", $"{inText} \u2192 {outText}");
+        }
+        else
+        {
+            ShowMarkerOverlaySaved("MARKER SET", outText);
+        }
+    }
+
+    private CustomPopupPlacement[] MarkerOverlayPlacement(Size popupSize, Size targetSize, Point offset)
+    {
+        var x = (targetSize.Width - popupSize.Width) / 2;
+        return new[] { new CustomPopupPlacement(new Point(x, 24), PopupPrimaryAxis.Horizontal) };
+    }
+
+    // In-point armed: red "record"-style pill that pulses until the out-point
+    // arrives, so it's obvious the system is waiting for O.
+    private void ShowMarkerOverlayArmed(string timeText)
+    {
+        if (MarkerOverlayPopup is null) return;
+        _markerOverlayHideTimer?.Stop();
+
+        var accent = (Brush)FindResource("App.Accent");
+        MarkerOverlayPill.BorderBrush = accent;
+        MarkerOverlayGlyph.Foreground = accent;
+        MarkerOverlayGlyph.Text = "\u25CF"; // ●
+        MarkerOverlayTitle.Text = "IN POINT SET";
+        MarkerOverlaySubtitle.Text = $"{timeText}  ·  press O to set OUT";
+
+        MarkerOverlayPill.Opacity = 1;
+        MarkerOverlayPopup.IsOpen = true;
+        PopMarkerOverlay();
+        StartMarkerOverlayPulse();
+    }
+
+    // Out-point / marker saved: green confirmation that pops and auto-dismisses.
+    private void ShowMarkerOverlaySaved(string title, string subtitle)
+    {
+        if (MarkerOverlayPopup is null) return;
+
+        StopMarkerOverlayPulse();
+        var success = (Brush)FindResource("App.Success");
+        MarkerOverlayPill.BorderBrush = success;
+        MarkerOverlayGlyph.Foreground = success;
+        MarkerOverlayGlyph.Text = "\u2713"; // ✓
+        MarkerOverlayTitle.Text = title;
+        MarkerOverlaySubtitle.Text = subtitle;
+
+        MarkerOverlayPill.Opacity = 1;
+        MarkerOverlayPopup.IsOpen = true;
+        PopMarkerOverlay();
+
+        _markerOverlayHideTimer ??= CreateMarkerHideTimer();
+        _markerOverlayHideTimer.Stop();
+        _markerOverlayHideTimer.Start();
+    }
+
+    private System.Windows.Threading.DispatcherTimer CreateMarkerHideTimer()
+    {
+        var t = new System.Windows.Threading.DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(1300)
+        };
+        t.Tick += (_, _) =>
+        {
+            t.Stop();
+            HideMarkerOverlay();
+        };
+        return t;
+    }
+
+    private void PopMarkerOverlay()
+    {
+        var pop = new DoubleAnimation
+        {
+            From = 0.82,
+            To = 1.0,
+            Duration = TimeSpan.FromMilliseconds(180),
+            EasingFunction = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.4 }
+        };
+        MarkerOverlayScale.BeginAnimation(ScaleTransform.ScaleXProperty, pop);
+        MarkerOverlayScale.BeginAnimation(ScaleTransform.ScaleYProperty, pop);
+    }
+
+    private void StartMarkerOverlayPulse()
+    {
+        var pulse = new DoubleAnimation
+        {
+            From = 1.0,
+            To = 0.5,
+            Duration = TimeSpan.FromMilliseconds(650),
+            AutoReverse = true,
+            RepeatBehavior = RepeatBehavior.Forever,
+            // Let the entrance pop settle before the pulse takes over.
+            BeginTime = TimeSpan.FromMilliseconds(180)
+        };
+        MarkerOverlayPill.BeginAnimation(UIElement.OpacityProperty, pulse);
+    }
+
+    private void StopMarkerOverlayPulse()
+    {
+        MarkerOverlayPill.BeginAnimation(UIElement.OpacityProperty, null);
+        MarkerOverlayPill.Opacity = 1;
+    }
+
+    private void HideMarkerOverlay()
+    {
+        if (MarkerOverlayPopup is null) return;
+        _markerOverlayHideTimer?.Stop();
+        StopMarkerOverlayPulse();
+        MarkerOverlayScale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+        MarkerOverlayScale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+        MarkerOverlayPopup.IsOpen = false;
+    }
+
+    // Keeps the overlay consistent with player visibility / window activation:
+    // re-shows the armed pill after an alt-tab so it isn't stranded closed, and
+    // hides everything when the player isn't the active surface.
+    private void RefreshMarkerOverlayForState()
+    {
+        if (MarkerOverlayPopup is null) return;
+        var d = _viewModel.Detail;
+        if (d.IsPlayerVisible && IsActive && d.HasPendingInPoint && d.PendingInPoint is double s)
+        {
+            ShowMarkerOverlayArmed(FormatTimecode(TimeSpan.FromSeconds(s)));
+        }
+        else
+        {
+            HideMarkerOverlay();
+        }
+    }
+
     private void PlayerSkipBack_Click(object sender, RoutedEventArgs e)
     {
         _ = SeekRelativeAsync(TimeSpan.FromSeconds(-5));
@@ -928,6 +1140,55 @@ public partial class MainWindow : Window
         }
     }
 
+    // Current playback position of whichever engine is active, clamped to >= 0.
+    // Used to stamp moment in/out points from the I/O keys and the toolbar.
+    private TimeSpan GetCurrentPlayerPosition()
+    {
+        if (App.UseMpvPlayer)
+        {
+            var p = MpvPlayer.Player;
+            if (p is null) return TimeSpan.Zero;
+            var s = p.GetTimePosition();
+            return s > 0 ? TimeSpan.FromSeconds(s) : TimeSpan.Zero;
+        }
+
+        if (!App.IsPlayerAvailable) return TimeSpan.Zero;
+        var pos = VideoPlayer.Position;
+        return pos < TimeSpan.Zero ? TimeSpan.Zero : pos;
+    }
+
+    // Absolute seek shared by "jump to moment" and the SeekRequested event.
+    // Engine-agnostic; clamps shy of the natural end on FFME to avoid tripping
+    // MediaEnded on a deliberate seek near the tail.
+    private async Task SeekToSecondsAsync(double seconds)
+    {
+        if (seconds < 0) seconds = 0;
+
+        if (App.UseMpvPlayer)
+        {
+            MpvPlayer.Player?.SeekAbsolute(seconds);
+            return;
+        }
+
+        if (!App.IsPlayerAvailable) return;
+        if (!VideoPlayer.IsSeekable) return;
+        try
+        {
+            var target = TimeSpan.FromSeconds(seconds);
+            var duration = VideoPlayer.NaturalDuration ?? TimeSpan.Zero;
+            if (duration > TimeSpan.Zero && target >= duration)
+            {
+                target = duration - TimeSpan.FromMilliseconds(100);
+            }
+            if (target < TimeSpan.Zero) target = TimeSpan.Zero;
+            await VideoPlayer.Seek(target);
+        }
+        catch
+        {
+            // see PlayerPlayPause_Click rationale.
+        }
+    }
+
     private void ExitMenu_Click(object sender, RoutedEventArgs e)
     {
         Close();
@@ -1010,6 +1271,33 @@ public partial class MainWindow : Window
             await _viewModel.SearchCommand.ExecuteAsync(null);
         _duplicatesWindow.Closed += (_, _) => _duplicatesWindow = null;
         _duplicatesWindow.Show();
+    }
+
+    // Single shared, non-modal moment finder. Like the other catalog windows
+    // it's resolved from DI and re-clicking brings the existing one forward.
+    // "Jump to" on a result selects the parent clip in the grid and seeks the
+    // player to the moment's in-point.
+    private MomentSearchWindow? _momentSearchWindow;
+
+    private void Moments_Click(object sender, RoutedEventArgs e)
+    {
+        if (_momentSearchWindow is not null && _momentSearchWindow.IsLoaded)
+        {
+            if (_momentSearchWindow.WindowState == WindowState.Minimized)
+                _momentSearchWindow.WindowState = WindowState.Normal;
+            _momentSearchWindow.Activate();
+            return;
+        }
+
+        _momentSearchWindow = App.GetService<MomentSearchWindow>();
+        _momentSearchWindow.Owner = this;
+        _momentSearchWindow.JumpRequested += async (_, args) =>
+        {
+            await _viewModel.JumpToMomentAsync(args.VideoItemId, args.StartSeconds);
+            Activate();
+        };
+        _momentSearchWindow.Closed += (_, _) => _momentSearchWindow = null;
+        _momentSearchWindow.Show();
     }
 
     // Opens the non-modal clip-info popup. Reuses an existing window if one
@@ -1112,6 +1400,28 @@ public partial class MainWindow : Window
             var digitFocus = Keyboard.FocusedElement;
             if (digitFocus is TextBoxBase or PasswordBox or ComboBox) return;
             _ = _viewModel.Detail.ToggleTagBySlotAsync(slot);
+            e.Handled = true;
+            return;
+        }
+
+        // I / O mark the in / out points of a moment at the current playback
+        // position — the core "find that shot" capture gesture. Plain keys only,
+        // never while typing in the editor (so labels/notes still accept the
+        // letters), and only when a player engine is live.
+        if (Keyboard.Modifiers == ModifierKeys.None && e.Key is Key.I or Key.O)
+        {
+            var ioFocus = Keyboard.FocusedElement;
+            if (ioFocus is TextBoxBase or PasswordBox or ComboBox) return;
+            if (!App.IsPlayerAvailable && !App.UseMpvPlayer) return;
+
+            if (e.Key == Key.I)
+            {
+                DoMarkIn();
+            }
+            else
+            {
+                DoMarkOut();
+            }
             e.Handled = true;
             return;
         }

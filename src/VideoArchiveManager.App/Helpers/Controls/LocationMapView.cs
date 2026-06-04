@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Threading;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.Wpf;
@@ -58,6 +59,15 @@ public class LocationMapView : UserControl
     private bool _firstNavigationDone;
     private bool _updatePending;
     private bool _pickModePending;
+
+    // The ScrollViewer this control lives inside, if any. WebView2 hosts a
+    // windowed (HWND) Chromium surface that WPF cannot clip to an intermediate
+    // element, so when the editor panel scrolls the map would otherwise keep
+    // painting at its old rectangle and bleed over content above/below the
+    // scroll viewport (the classic WPF "airspace" issue). We watch the host's
+    // scroll offset and simply hide the WebView2 whenever the map is not fully
+    // inside the viewport, then show it again once it's back in view.
+    private ScrollViewer? _scrollHost;
 
     // Regional-view fallback used when the bound clip has no GPS — keeps
     // the sidebar layout stable instead of collapsing the map area on
@@ -518,6 +528,8 @@ public class LocationMapView : UserControl
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
+        HookScrollHost();
+
         if (_coreInitialized) return;
         try
         {
@@ -587,6 +599,8 @@ public class LocationMapView : UserControl
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
+        UnhookScrollHost();
+
         try
         {
             _webView.Dispose();
@@ -596,6 +610,72 @@ public class LocationMapView : UserControl
             // Disposal can race with pending navigations on tear-down;
             // swallow rather than crash the editor pane.
         }
+    }
+
+    // Find the containing ScrollViewer (if the control is hosted inside one)
+    // and track its scrolling so we can keep the windowed WebView2 from
+    // bleeding outside the viewport.
+    private void HookScrollHost()
+    {
+        if (_scrollHost != null) return;
+
+        _scrollHost = FindAncestorScrollViewer(this);
+        if (_scrollHost == null) return;
+
+        _scrollHost.ScrollChanged += OnHostScrollChanged;
+        UpdateClipVisibility();
+    }
+
+    private void UnhookScrollHost()
+    {
+        if (_scrollHost == null) return;
+
+        _scrollHost.ScrollChanged -= OnHostScrollChanged;
+        _scrollHost = null;
+    }
+
+    private void OnHostScrollChanged(object sender, ScrollChangedEventArgs e) => UpdateClipVisibility();
+
+    // Hide the WebView2 unless the control is fully within the scroll host's
+    // viewport. Partial visibility isn't an option for a windowed control
+    // (it can't be clipped), so "fully visible or hidden" is the safe choice
+    // that prevents the map painting over the rest of the app while scrolling.
+    private void UpdateClipVisibility()
+    {
+        if (_scrollHost == null || !IsLoaded) return;
+
+        try
+        {
+            var transform = TransformToAncestor(_scrollHost);
+            var top = transform.Transform(new Point(0, 0)).Y;
+            var bottom = top + ActualHeight;
+
+            const double tolerance = 0.5;
+            var fullyVisible = top >= -tolerance && bottom <= _scrollHost.ViewportHeight + tolerance;
+
+            var desired = fullyVisible ? Visibility.Visible : Visibility.Hidden;
+            if (_webView.Visibility != desired)
+            {
+                _webView.Visibility = desired;
+            }
+        }
+        catch
+        {
+            // TransformToAncestor throws if the visual tree is mid-teardown
+            // or the control isn't connected; leave visibility as-is.
+        }
+    }
+
+    private static ScrollViewer? FindAncestorScrollViewer(DependencyObject start)
+    {
+        var current = VisualTreeHelper.GetParent(start);
+        while (current != null)
+        {
+            if (current is ScrollViewer scrollViewer) return scrollViewer;
+            current = VisualTreeHelper.GetParent(current);
+        }
+
+        return null;
     }
 
     private static void OnNewWindowRequested(object? sender, CoreWebView2NewWindowRequestedEventArgs e)

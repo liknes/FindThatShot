@@ -13,6 +13,8 @@ public class VideoArchiveDbContext : DbContext
     public DbSet<VideoItem> VideoItems => Set<VideoItem>();
     public DbSet<Tag> Tags => Set<Tag>();
     public DbSet<VideoTag> VideoTags => Set<VideoTag>();
+    public DbSet<VideoMoment> VideoMoments => Set<VideoMoment>();
+    public DbSet<MomentTag> MomentTags => Set<MomentTag>();
     public DbSet<RootFolder> RootFolders => Set<RootFolder>();
     public DbSet<AiTagSuggestion> AiTagSuggestions => Set<AiTagSuggestion>();
     public DbSet<GeocodeCacheEntry> GeocodeCacheEntries => Set<GeocodeCacheEntry>();

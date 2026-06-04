@@ -20,7 +20,7 @@ A Windows desktop application for organizing a large local video archive across 
 FindThatShot.sln
 src/
   VideoArchiveManager.Core/   Models, enums, service interfaces, FfprobeService, ThumbnailService, FileSystemService, FolderNameParser, AppSettings
-  VideoArchiveManager.Data/   EF Core DbContext, entity configurations, migrations, TagService, SearchService, VideoScannerService, VideoLibraryService
+  VideoArchiveManager.Data/   EF Core DbContext, entity configurations, migrations, TagService, SearchService, MomentService, VideoScannerService, VideoLibraryService
   VideoArchiveManager.App/    WPF UI, Views, ViewModels, App startup, DI container
 ```
 
@@ -63,6 +63,7 @@ If FFmpeg / FFprobe is not on `PATH`, open **Settings** and point the app at `ff
    Review-mode controls:
    - **Play / Pause** toggle button (or press **Space** when keyboard focus is not in a text box).
    - **Stop**, **−5s** / **+5s** skip, draggable **seek slider** with current time and duration.
+   - **Mark in** / **Mark out** buttons — or press **I** then **O** while watching — to capture a timestamped moment (see **Moments** below).
    - **Close player** restores the normal three-pane layout.
    - The right-hand editor stays fully functional — add tags, type notes, change rating or status, click **Save** without leaving Review mode.
 
@@ -75,6 +76,20 @@ If FFmpeg / FFprobe is not on `PATH`, open **Settings** and point the app at `ff
    - **Remove a root folder**: in the sidebar, select a root folder and click *Remove selected…*. The dialog tells you how many imported videos are under it and removes them along with the folder entry.
 
    All three flows only affect the catalog database and the app's thumbnail cache — **source video files on disk are never touched**.
+
+## Moments (in/out markers & sub-clips)
+
+The app is called *Find That Shot* — and a shot is rarely a whole file. **Moments** let you mark a timestamped in/out range inside a clip and give it its own label, rating, notes, and tags, completely independent of the parent file's metadata.
+
+**Capturing moments** happens in **Review mode** while a clip is playing:
+
+- Press **I** to drop an in-point at the current playhead, then **O** to set the out-point and create the moment (the **Mark in** / **Mark out** transport buttons do the same thing). Press **O** without an in-point to record a single-timestamp marker.
+- A thumbnail is grabbed at the in-point automatically, so every moment has a visual at the exact frame you marked.
+- New moments appear in the **MOMENTS** list in the right-hand editor. Select one to edit its label, rating (0–5), notes, and tags in the compact moment editor; **Jump to** seeks the player straight to that timestamp, and **Delete** removes just the moment (never the file). Cards in the grid show a small badge with each clip's moment count.
+
+**Finding moments** across the whole archive: open **Catalog → Find moments…** for a dedicated search window. It matches on moment label, notes, and tags, with a minimum-rating filter and an online-only toggle. Each result shows the in-point thumbnail, the time range, the parent file, and its tags — click **Jump to** to open the parent clip in Review mode and seek directly to that moment (e.g. *jump to 00:01:32*).
+
+Moments are stored in the catalog alongside everything else and, when sidecars are enabled, travel with the footage too (see below). As with all curation data, capturing or deleting a moment only ever edits the catalog and the thumbnail cache — **the source video file is never modified**.
 
 ## Catalog statistics
 
@@ -119,7 +134,7 @@ D:\Footage\2025-05-20 City flight\clip.mov
 D:\Footage\2025-05-20 City flight\clip.mov.findthatshot.json   <-- sidecar
 ```
 
-The JSON contains your tags, rating (0-5), status, notes, location/context text, folder date, and a small snapshot of the technical metadata (codec, resolution, duration, camera).
+The JSON contains your tags, rating (0-5), status, notes, location/context text, folder date, any **moments** (timestamped in/out ranges with their own label, rating, notes, and tags), and a small snapshot of the technical metadata (codec, resolution, duration, camera). The sidecar schema is `findthatshot/v2`; older `v1` sidecars without moments are still read.
 
 Behavior:
 

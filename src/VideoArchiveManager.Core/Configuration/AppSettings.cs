@@ -72,6 +72,19 @@ public class AppSettings
 
     public bool SidebarSavedSearchesExpanded { get; set; } = true;
 
+    // Persisted collapse state for the right-hand clip editor's Lightroom-style
+    // panels (MAP / TAGS / NOTES & RATING / MOMENTS). The map opens by default
+    // because it's the at-a-glance "where was this shot" panel; the rest start
+    // collapsed so the editor opens compact and the user reveals what they
+    // work with, after which their choices survive a restart.
+    public bool DetailMapPanelExpanded { get; set; } = true;
+
+    public bool DetailTagsPanelExpanded { get; set; } = false;
+
+    public bool DetailNotesPanelExpanded { get; set; } = false;
+
+    public bool DetailMomentsPanelExpanded { get; set; } = false;
+
     // Persisted main-window placement so the window reopens at the size and
     // position the user left it. All four geometry values are nullable: null
     // means "never saved" and the XAML defaults (1400x880, centered) apply.

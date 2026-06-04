@@ -240,11 +240,30 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private bool _isSavedSearchesPanelExpanded = true;
 
+    // Right-hand clip editor panel collapse state (same Lightroom-style
+    // pattern as the left filter rail). Map opens by default; the rest start
+    // collapsed. Mirrored back into settings via PersistSidebarPanelState.
+    [ObservableProperty]
+    private bool _isDetailMapPanelExpanded = true;
+
+    [ObservableProperty]
+    private bool _isDetailTagsPanelExpanded;
+
+    [ObservableProperty]
+    private bool _isDetailNotesPanelExpanded;
+
+    [ObservableProperty]
+    private bool _isDetailMomentsPanelExpanded;
+
     partial void OnIsFoldersPanelExpandedChanged(bool value) => PersistSidebarPanelState();
     partial void OnIsTagsPanelExpandedChanged(bool value) => PersistSidebarPanelState();
     partial void OnIsCamerasPanelExpandedChanged(bool value) => PersistSidebarPanelState();
     partial void OnIsDatePanelExpandedChanged(bool value) => PersistSidebarPanelState();
     partial void OnIsSavedSearchesPanelExpandedChanged(bool value) => PersistSidebarPanelState();
+    partial void OnIsDetailMapPanelExpandedChanged(bool value) => PersistSidebarPanelState();
+    partial void OnIsDetailTagsPanelExpandedChanged(bool value) => PersistSidebarPanelState();
+    partial void OnIsDetailNotesPanelExpandedChanged(bool value) => PersistSidebarPanelState();
+    partial void OnIsDetailMomentsPanelExpandedChanged(bool value) => PersistSidebarPanelState();
 
     private void PersistSidebarPanelState()
     {
@@ -259,6 +278,10 @@ public partial class MainViewModel : ObservableObject
         s.SidebarCamerasExpanded = IsCamerasPanelExpanded;
         s.SidebarDateExpanded = IsDatePanelExpanded;
         s.SidebarSavedSearchesExpanded = IsSavedSearchesPanelExpanded;
+        s.DetailMapPanelExpanded = IsDetailMapPanelExpanded;
+        s.DetailTagsPanelExpanded = IsDetailTagsPanelExpanded;
+        s.DetailNotesPanelExpanded = IsDetailNotesPanelExpanded;
+        s.DetailMomentsPanelExpanded = IsDetailMomentsPanelExpanded;
         _ = SaveSettingsSilentlyAsync(s);
     }
 
@@ -278,6 +301,10 @@ public partial class MainViewModel : ObservableObject
             IsCamerasPanelExpanded = s.SidebarCamerasExpanded;
             IsDatePanelExpanded = s.SidebarDateExpanded;
             IsSavedSearchesPanelExpanded = s.SidebarSavedSearchesExpanded;
+            IsDetailMapPanelExpanded = s.DetailMapPanelExpanded;
+            IsDetailTagsPanelExpanded = s.DetailTagsPanelExpanded;
+            IsDetailNotesPanelExpanded = s.DetailNotesPanelExpanded;
+            IsDetailMomentsPanelExpanded = s.DetailMomentsPanelExpanded;
         }
         finally
         {
@@ -357,7 +384,49 @@ public partial class MainViewModel : ObservableObject
 
     partial void OnSelectedVideoChanged(VideoItemViewModel? value)
     {
+        // JumpToMomentAsync drives the load itself (and then seeks), so it
+        // suppresses the auto-load here to avoid a duplicate, racing LoadAsync.
+        if (_suppressDetailLoad) return;
         _ = Detail.LoadAsync(value);
+    }
+
+    // Set while JumpToMomentAsync owns the detail load so the SelectedVideo
+    // change handler doesn't kick a second, competing LoadAsync.
+    private bool _suppressDetailLoad;
+
+    // Open a specific moment in the player from anywhere (the moment-search
+    // window). Brings its parent clip into the grid + selection if it isn't
+    // already there, loads the editor, then opens the player and seeks to the
+    // moment's in-point. Never touches the source file.
+    public async Task JumpToMomentAsync(int videoItemId, double startSeconds)
+    {
+        var target = Videos.FirstOrDefault(v => v.Id == videoItemId);
+        if (target is null)
+        {
+            VideoItem? entity;
+            await using (var ctx = await _contextFactory.CreateDbContextAsync())
+            {
+                entity = await ctx.VideoItems
+                    .AsNoTracking()
+                    .Include(v => v.VideoTags)
+                        .ThenInclude(vt => vt.Tag)
+                    .Include(v => v.Moments)
+                    .FirstOrDefaultAsync(v => v.Id == videoItemId);
+            }
+            if (entity is null) return;
+
+            target = new VideoItemViewModel(entity);
+            // Surface it at the top of the grid so the selection is visible even
+            // if the current filter would otherwise exclude it.
+            Videos.Insert(0, target);
+        }
+
+        _suppressDetailLoad = true;
+        SelectedVideo = target;
+        _suppressDetailLoad = false;
+
+        await Detail.LoadAsync(target);
+        Detail.PlayAt(startSeconds);
     }
 
     // In-app player "previous / next clip" navigation. Steps the catalog

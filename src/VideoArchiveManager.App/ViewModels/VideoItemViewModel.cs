@@ -14,6 +14,7 @@ public partial class VideoItemViewModel : ObservableObject
     {
         Model = model;
         _tagSummary = string.Join(", ", model.VideoTags.Select(vt => vt.Tag?.Name).Where(n => !string.IsNullOrEmpty(n)));
+        _momentCount = model.Moments?.Count ?? 0;
     }
 
     public int Id => Model.Id;
@@ -86,6 +87,18 @@ public partial class VideoItemViewModel : ObservableObject
 
     [ObservableProperty]
     private string _tagSummary = string.Empty;
+
+    // Number of timestamped moments (sub-clips) marked inside this clip. Drives
+    // a small "N" badge on the catalog card so clips with marked shots stand
+    // out. Populated at search time and kept live while the clip is selected.
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasMoments))]
+    [NotifyPropertyChangedFor(nameof(MomentBadgeText))]
+    private int _momentCount;
+
+    public bool HasMoments => MomentCount > 0;
+
+    public string MomentBadgeText => MomentCount.ToString();
 
     public int Rating
     {

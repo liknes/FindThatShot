@@ -13,4 +13,6 @@ public class Tag
     public TagType Type { get; set; } = TagType.Subject;
 
     public ICollection<VideoTag> VideoTags { get; set; } = new List<VideoTag>();
+
+    public ICollection<MomentTag> MomentTags { get; set; } = new List<MomentTag>();
 }
