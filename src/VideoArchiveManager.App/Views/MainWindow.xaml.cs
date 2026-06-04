@@ -1333,7 +1333,21 @@ public partial class MainWindow : Window
     // so the new tag chips show up in the grid.
     private AiReviewWindow? _aiReviewWindow;
 
+    // The status-bar AI pill (both the running and the finished states) opens
+    // the review queue. Clicking also clears the "finished" pill state so it
+    // doesn't linger after the user has acted on it.
+    private void AiPill_Click(object sender, RoutedEventArgs e)
+    {
+        _viewModel.DismissAiTaggingResult();
+        OpenAiReviewWindow();
+    }
+
     private void AiReview_Click(object sender, RoutedEventArgs e)
+    {
+        OpenAiReviewWindow();
+    }
+
+    private void OpenAiReviewWindow()
     {
         if (_aiReviewWindow is not null && _aiReviewWindow.IsLoaded)
         {

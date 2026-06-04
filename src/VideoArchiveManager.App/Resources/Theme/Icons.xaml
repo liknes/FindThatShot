@@ -46,6 +46,7 @@
     <sys:String x:Key="Icon.Time">&#xE823;</sys:String>
 
     <!-- Actions -->
+    <sys:String x:Key="Icon.Accept">&#xE73E;</sys:String>
     <sys:String x:Key="Icon.Add">&#xE710;</sys:String>
     <sys:String x:Key="Icon.Save">&#xE74E;</sys:String>
     <sys:String x:Key="Icon.Trash">&#xE74D;</sys:String>

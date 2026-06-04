@@ -33,6 +33,7 @@ public partial class MainViewModel : ObservableObject
     private readonly IAiModelProvider _aiModelProvider;
     private readonly IAiTaggingService _aiTaggingService;
     private readonly IAiSemanticSearchService _aiSemanticSearch;
+    private readonly IAiSuggestionService _aiSuggestionService;
     private readonly IServiceProvider _services;
 
     private CancellationTokenSource? _scanCts;
@@ -58,6 +59,7 @@ public partial class MainViewModel : ObservableObject
         IAiModelProvider aiModelProvider,
         IAiTaggingService aiTaggingService,
         IAiSemanticSearchService aiSemanticSearch,
+        IAiSuggestionService aiSuggestionService,
         IServiceProvider services,
         VideoDetailViewModel detail)
     {
@@ -75,6 +77,7 @@ public partial class MainViewModel : ObservableObject
         _aiModelProvider = aiModelProvider;
         _aiTaggingService = aiTaggingService;
         _aiSemanticSearch = aiSemanticSearch;
+        _aiSuggestionService = aiSuggestionService;
         _services = services;
         Detail = detail;
 
@@ -1081,6 +1084,17 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private bool _isAiTagging;
 
+    // After a scoring pass finishes, the status-bar pill switches to a clickable
+    // "done — review" state until the user opens the review window or dismisses
+    // it (e.g. by starting another pass). Carries the result summary text.
+    [ObservableProperty]
+    private bool _aiTaggingFinished;
+
+    [ObservableProperty]
+    private string _aiTaggingResultText = string.Empty;
+
+    public void DismissAiTaggingResult() => AiTaggingFinished = false;
+
     public void RefreshAiAvailability() => OnPropertyChanged(nameof(IsAiEnabled));
 
     partial void OnUseSemanticSearchChanged(bool value) => OnFilterChanged();
@@ -1109,6 +1123,8 @@ public partial class MainViewModel : ObservableObject
         _aiTaggingCts = cts;
 
         IsAiTagging = true;
+        AiTaggingFinished = false;
+        var ranToSomeResult = false;
         try
         {
             var pending = await _aiTaggingService.CountPendingAsync(reprocessAll, cts.Token);
@@ -1127,11 +1143,18 @@ public partial class MainViewModel : ObservableObject
             {
                 if (!string.IsNullOrEmpty(p.Message)) StatusMessage = p.Message;
             });
-            await _aiTaggingService.GenerateAsync(reprocessAll, progress, cts.Token);
+            // Offload to a worker thread so the synchronous prologue of the pass
+            // (first-time model load + label-vector precompute) doesn't block the
+            // UI thread. Progress marshals back via the captured context, so the
+            // status bar still updates and the window stays responsive throughout.
+            await Task.Run(() => _aiTaggingService.GenerateAsync(reprocessAll, progress, cts.Token), cts.Token);
+            ranToSomeResult = true;
         }
         catch (OperationCanceledException)
         {
             StatusMessage = "AI tagging cancelled.";
+            // Clips processed before cancel still produced suggestions worth a look.
+            ranToSomeResult = true;
         }
         catch (Exception ex)
         {
@@ -1145,6 +1168,20 @@ public partial class MainViewModel : ObservableObject
                 cts.Dispose();
                 _aiTaggingCts = null;
             }
+        }
+
+        // Switch the status-bar pill to its clickable "done — review N" state so
+        // the user notices the pass finished and can jump straight to triage.
+        if (ranToSomeResult)
+        {
+            var pendingSuggestions = 0;
+            try { pendingSuggestions = await _aiSuggestionService.CountPendingAsync(); }
+            catch { /* best effort — fall back to a count-less label */ }
+
+            AiTaggingResultText = pendingSuggestions > 0
+                ? $"Review {pendingSuggestions} AI suggestion(s)"
+                : "AI tagging done";
+            AiTaggingFinished = true;
         }
     }
 

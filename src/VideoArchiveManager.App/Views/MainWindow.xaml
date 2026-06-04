@@ -1839,6 +1839,7 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
                 <!-- Status message (left). One line, ellipsised, secondary tier. -->
@@ -1903,6 +1904,105 @@
                     </StackPanel>
                 </Border>
 
+                <!-- AI tagging pill (running). Visible only while a CLIP scoring
+                     pass is running (Generate / Re-score). Mirrors the scan
+                     pill's accent chrome and rotating glyph; clicking opens the
+                     review window so the user can triage clips already scored.
+                     The X / Y count itself lives in the StatusMessage on the left. -->
+                <Button Grid.Column="2"
+                        Margin="8,0,0,0"
+                        Padding="0"
+                        BorderThickness="0"
+                        Background="Transparent"
+                        Cursor="Hand"
+                        Click="AiPill_Click"
+                        Visibility="{Binding IsAiTagging, Converter={StaticResource BoolToVisibility}}"
+                        ToolTip="A local AI scoring pass is running. You can keep working; click to open the review window and triage clips already scored.">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Padding="10,3"
+                                    CornerRadius="12"
+                                    Height="24"
+                                    Background="{DynamicResource App.Accent.Subtle}"
+                                    BorderBrush="{DynamicResource App.Accent}"
+                                    BorderThickness="1">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock FontFamily="{StaticResource App.Icon.FontFamily}"
+                                               FontSize="11"
+                                               Text="{StaticResource Icon.Sync}"
+                                               Foreground="{DynamicResource App.Accent}"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,6,0">
+                                        <TextBlock.RenderTransform>
+                                            <RotateTransform CenterX="5.5" CenterY="5.5" />
+                                        </TextBlock.RenderTransform>
+                                        <TextBlock.Triggers>
+                                            <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                                                <BeginStoryboard>
+                                                    <Storyboard RepeatBehavior="Forever">
+                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                                                         From="0" To="360"
+                                                                         Duration="0:0:1.6" />
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </EventTrigger>
+                                        </TextBlock.Triggers>
+                                    </TextBlock>
+                                    <TextBlock Text="AI tagging"
+                                               FontSize="11"
+                                               FontWeight="Medium"
+                                               Foreground="{DynamicResource App.Accent}"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
+                <!-- AI tagging pill (finished). Replaces the running pill once a
+                     pass completes: a static check glyph + "Review N suggestions"
+                     in success green. Clicking opens the review window and
+                     dismisses the pill. Hidden while a pass is running. -->
+                <Button Grid.Column="2"
+                        Margin="8,0,0,0"
+                        Padding="0"
+                        BorderThickness="0"
+                        Background="Transparent"
+                        Cursor="Hand"
+                        Click="AiPill_Click"
+                        Visibility="{Binding AiTaggingFinished, Converter={StaticResource BoolToVisibility}}"
+                        ToolTip="The AI scoring pass finished. Click to open the review window and accept/reject the proposed tags.">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="DoneBd"
+                                    Padding="10,3"
+                                    CornerRadius="12"
+                                    Height="24"
+                                    Background="{DynamicResource App.Background.Highest}"
+                                    BorderBrush="{DynamicResource App.Success}"
+                                    BorderThickness="1"
+                                    TextElement.Foreground="{DynamicResource App.Success}">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock FontFamily="{StaticResource App.Icon.FontFamily}"
+                                               FontSize="11"
+                                               Text="{StaticResource Icon.Accept}"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,6,0" />
+                                    <TextBlock Text="{Binding AiTaggingResultText}"
+                                               FontSize="11"
+                                               FontWeight="Medium"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="DoneBd" Property="Background" Value="{DynamicResource App.Accent.Subtle}" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
                 <!-- Update-available pill (middle-right). Visible only when
                      the silent startup update check (or a manual recheck via
                      Help → Check for updates…) has found a newer release on
@@ -1913,7 +2013,7 @@
                      same 24h pill geometry — so the status bar reads as one
                      consistent affordance rail rather than three random
                      widgets. -->
-                <Button Grid.Column="2"
+                <Button Grid.Column="3"
                         Margin="12,0,0,0"
                         Padding="0"
                         BorderThickness="0"
@@ -1972,7 +2072,7 @@
 
                 <!-- Sidecars pill (right). Always visible. Green dot when on,
                      tertiary dot when off. Two clean lines of state in 24h. -->
-                <Border Grid.Column="3"
+                <Border Grid.Column="4"
                         Margin="8,0,0,0"
                         Padding="10,3"
                         CornerRadius="12"
