@@ -21,7 +21,8 @@ public class SearchService : ISearchService
         IQueryable<VideoItem> q = ctx.VideoItems
             .AsNoTracking()
             .Include(v => v.VideoTags)
-                .ThenInclude(vt => vt.Tag);
+                .ThenInclude(vt => vt.Tag)
+            .Include(v => v.Moments);
 
         if (!string.IsNullOrWhiteSpace(query.Text))
         {

@@ -6,9 +6,14 @@ public interface ISidecarService
 {
     bool IsEnabled { get; }
 
+    // Writes the sidecar for a clip. When <paramref name="moments"/> is non-null
+    // the moments section is rewritten from it; when null, any moments already
+    // present in the on-disk sidecar are preserved (so a whole-clip save or a
+    // bulk edit never silently drops the portable moment record).
     Task<SidecarWriteResult> WriteAsync(
         VideoItem video,
         IEnumerable<Tag> tags,
+        IReadOnlyList<VideoMoment>? moments = null,
         CancellationToken cancellationToken = default);
 
     Task<SidecarBatchResult> WriteManyAsync(
@@ -88,6 +93,8 @@ public sealed class SidecarData
     public DateTime? FolderDate { get; init; }
 
     public IReadOnlyList<SidecarTagData> Tags { get; init; } = Array.Empty<SidecarTagData>();
+
+    public IReadOnlyList<SidecarMomentData> Moments { get; init; } = Array.Empty<SidecarMomentData>();
 }
 
 public sealed class SidecarTagData
@@ -95,4 +102,21 @@ public sealed class SidecarTagData
     public string Name { get; init; } = string.Empty;
 
     public string? Type { get; init; }
+}
+
+// A timestamped moment as carried in a sidecar — enough to rehydrate it (and
+// regenerate its thumbnail from the in-point) on a fresh import.
+public sealed class SidecarMomentData
+{
+    public double StartSeconds { get; init; }
+
+    public double? EndSeconds { get; init; }
+
+    public string? Label { get; init; }
+
+    public string? Notes { get; init; }
+
+    public int Rating { get; init; }
+
+    public IReadOnlyList<SidecarTagData> Tags { get; init; } = Array.Empty<SidecarTagData>();
 }

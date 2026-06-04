@@ -3,6 +3,7 @@ using System.Globalization;
 using System.IO;
 using System.Windows;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.EntityFrameworkCore;
@@ -15,10 +16,22 @@ using VideoArchiveManager.Data;
 
 namespace VideoArchiveManager.App.ViewModels;
 
+// Severity tiers for the transient inline tag-feedback line in the editor's
+// TAGS panel. Drives the message colour: Success (green) for a clean add /
+// remove, Warning (amber) when the catalog write succeeded but the sidecar
+// couldn't be written, Error (red) when the catalog write itself failed.
+public enum FeedbackSeverity
+{
+    Success,
+    Warning,
+    Error
+}
+
 public partial class VideoDetailViewModel : ObservableObject
 {
     private readonly IDbContextFactory<VideoArchiveDbContext> _contextFactory;
     private readonly ITagService _tagService;
+    private readonly IMomentService _momentService;
     private readonly IFileSystemService _fileSystem;
     private readonly ISidecarService _sidecar;
     private readonly IProxyResolver _proxyResolver;
@@ -26,9 +39,20 @@ public partial class VideoDetailViewModel : ObservableObject
     private readonly IReverseGeocodingService _reverseGeocoder;
     private readonly IDjiSrtTelemetryReader _srtReader;
 
+    // Drives the auto-clear of the inline TAGS-panel feedback line. 2s after the
+    // last add / remove the message fades out (see ShowTagFeedback). Created on
+    // the UI thread with the VM, so its Tick fires on the dispatcher.
+    private readonly DispatcherTimer _tagFeedbackTimer =
+        new() { Interval = TimeSpan.FromSeconds(2) };
+
+    // Same idea for the moment editor's "Save moment" confirmation.
+    private readonly DispatcherTimer _momentFeedbackTimer =
+        new() { Interval = TimeSpan.FromSeconds(2) };
+
     public VideoDetailViewModel(
         IDbContextFactory<VideoArchiveDbContext> contextFactory,
         ITagService tagService,
+        IMomentService momentService,
         IFileSystemService fileSystem,
         ISidecarService sidecar,
         IProxyResolver proxyResolver,
@@ -38,6 +62,7 @@ public partial class VideoDetailViewModel : ObservableObject
     {
         _contextFactory = contextFactory;
         _tagService = tagService;
+        _momentService = momentService;
         _fileSystem = fileSystem;
         _sidecar = sidecar;
         _proxyResolver = proxyResolver;
@@ -50,6 +75,18 @@ public partial class VideoDetailViewModel : ObservableObject
         // (rather than the property) avoids the change handler firing a
         // redundant save during construction.
         _showTelemetryOverlay = settings.Current.ShowPlayerTelemetry;
+
+        _tagFeedbackTimer.Tick += (_, _) =>
+        {
+            _tagFeedbackTimer.Stop();
+            TagFeedback = null;
+        };
+
+        _momentFeedbackTimer.Tick += (_, _) =>
+        {
+            _momentFeedbackTimer.Stop();
+            MomentFeedback = null;
+        };
     }
 
     [ObservableProperty]
@@ -206,6 +243,25 @@ public partial class VideoDetailViewModel : ObservableObject
     [ObservableProperty]
     private string? _lastSaveStatus;
 
+    // Transient, colour-coded confirmation shown inline in the editor's TAGS
+    // panel right after an add / remove (the bottom status bar keeps the
+    // persistent, detailed record via LastSaveStatus). Null when nothing is
+    // showing; the 2-second _tagFeedbackTimer clears it. Severity drives the
+    // message colour in the XAML (green / amber / red).
+    [ObservableProperty]
+    private string? _tagFeedback;
+
+    [ObservableProperty]
+    private FeedbackSeverity _tagFeedbackSeverity;
+
+    // Transient confirmation shown inline under the moment editor's Save moment
+    // button. Same auto-clearing, colour-coded treatment as the tag feedback.
+    [ObservableProperty]
+    private string? _momentFeedback;
+
+    [ObservableProperty]
+    private FeedbackSeverity _momentFeedbackSeverity;
+
     // Manual GPS picker state. The right-sidebar map enters pick mode when
     // the user clicks the "+ Set location" CTA (or "Edit location" on a
     // clip that already has GPS). While IsPickingLocation is true, the
@@ -248,6 +304,63 @@ public partial class VideoDetailViewModel : ObservableObject
     // formatting concerns.
     public event EventHandler<VideoItemViewModel>? ShowInfoRequested;
 
+    // Raised when the user jumps to a moment while the player is already open on
+    // the current clip. The host (MainWindow code-behind) seeks the active
+    // engine — the VM has no reference to the player surface itself.
+    public event EventHandler<double>? SeekRequested;
+
+    // === Timestamped moments (sub-clips / "the shot") ========================
+
+    // Moments attached to the currently-selected clip, ordered by in-point.
+    public ObservableCollection<MomentViewModel> Moments { get; } = new();
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasMoments))]
+    [NotifyPropertyChangedFor(nameof(MomentCountText))]
+    private int _momentCount;
+
+    public bool HasMoments => MomentCount > 0;
+
+    public string MomentCountText => MomentCount == 1 ? "1 moment" : $"{MomentCount} moments";
+
+    // The moment whose compact editor (label / rating / notes / tags) is shown
+    // below the list. Null when nothing is selected.
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSelectedMoment))]
+    private MomentViewModel? _selectedMoment;
+
+    public bool HasSelectedMoment => SelectedMoment is not null;
+
+    // The pending in-point captured by the "I" key (or the Mark in button),
+    // awaiting an out-point. Null when no in-point is staged.
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasPendingInPoint))]
+    private double? _pendingInPoint;
+
+    public bool HasPendingInPoint => PendingInPoint.HasValue;
+
+    // Transient one-line status for the marker workflow ("In point 00:01:12 —
+    // press O to set the out point", "Moment added", etc.).
+    [ObservableProperty]
+    private string? _momentMarkStatus;
+
+    [ObservableProperty]
+    private string _newMomentTagName = string.Empty;
+
+    [ObservableProperty]
+    private TagType _newMomentTagType = TagType.Subject;
+
+    // Consumed by the player host after a clip is opened via JumpToMoment so it
+    // can seek to the moment's in-point once the media is ready. Read-and-clear.
+    private double? _pendingSeekSeconds;
+
+    public double? ConsumePendingSeek()
+    {
+        var v = _pendingSeekSeconds;
+        _pendingSeekSeconds = null;
+        return v;
+    }
+
     [RelayCommand]
     private void ShowInfo()
     {
@@ -273,6 +386,8 @@ public partial class VideoDetailViewModel : ObservableObject
         // Drop any telemetry track from the previous clip immediately (the
         // fresh one is loaded lazily on PlayInApp, not here).
         ResetTelemetry();
+
+        ClearMomentState();
 
         if (item is null)
         {
@@ -307,6 +422,38 @@ public partial class VideoDetailViewModel : ObservableObject
         // single-table query and the user is likely about to start
         // tagging this clip.
         await RefreshTagCatalogAsync();
+
+        await LoadMomentsAsync(item.Id);
+    }
+
+    // Loads the moments for a clip into the editor list. Cheap join query;
+    // re-run whenever the selection changes or a moment is added/removed.
+    private async Task LoadMomentsAsync(int videoItemId)
+    {
+        var moments = await _momentService.GetForVideoAsync(videoItemId);
+
+        // Guard against a selection that moved on while we were loading.
+        if (Current is null || Current.Id != videoItemId) return;
+
+        Moments.Clear();
+        foreach (var m in moments)
+        {
+            Moments.Add(new MomentViewModel(m, m.MomentTags.Select(mt => mt.Tag)));
+        }
+        MomentCount = Moments.Count;
+        Current.MomentCount = MomentCount;
+    }
+
+    // Resets all per-clip moment UI state. Called on every selection change so
+    // a pending in-point or selected moment can't leak across clips.
+    private void ClearMomentState()
+    {
+        Moments.Clear();
+        MomentCount = 0;
+        SelectedMoment = null;
+        PendingInPoint = null;
+        MomentMarkStatus = null;
+        NewMomentTagName = string.Empty;
     }
 
     // Parses the clip's sibling DJI ".SRT" companion (if any) into a flight
@@ -623,6 +770,11 @@ public partial class VideoDetailViewModel : ObservableObject
         IsPlayingProxy = false;
         IsPlayerVisible = false;
         ResetTelemetry();
+
+        // A staged in-point only makes sense while the player is open; drop it
+        // so reopening the player doesn't resurrect a stale half-marked range.
+        PendingInPoint = null;
+        MomentMarkStatus = null;
     }
 
     [RelayCommand]
@@ -647,8 +799,8 @@ public partial class VideoDetailViewModel : ObservableObject
         Current.Rating = Rating;
         Current.Status = Status;
 
-        var sidecarStatus = await WriteSidecarStatusAsync(entity);
-        LastSaveStatus = $"Saved · {sidecarStatus}";
+        var (_, sidecarText) = await WriteSidecarStatusAsync(entity);
+        LastSaveStatus = $"Saved · {sidecarText}";
     }
 
     [RelayCommand]
@@ -669,35 +821,57 @@ public partial class VideoDetailViewModel : ObservableObject
     {
         if (Current is null) return;
 
-        await _tagService.AttachAsync(Current.Id, tag.Id);
-        if (!Tags.Any(t => t.Id == tag.Id))
+        try
         {
-            Tags.Add(tag);
-        }
-        Current.TagSummary = string.Join(", ", Tags.Select(t => t.Name));
+            await _tagService.AttachAsync(Current.Id, tag.Id);
+            if (!Tags.Any(t => t.Id == tag.Id))
+            {
+                Tags.Add(tag);
+            }
+            Current.TagSummary = string.Join(", ", Tags.Select(t => t.Name));
 
-        // Keep the suggestion cache fresh if this was a brand-new tag —
-        // otherwise the next "Add" would miss it until a video reload.
-        if (!_allTagsCache.Any(t => t.Id == tag.Id))
+            // Keep the suggestion cache fresh if this was a brand-new tag —
+            // otherwise the next "Add" would miss it until a video reload.
+            if (!_allTagsCache.Any(t => t.Id == tag.Id))
+            {
+                _allTagsCache.Add(tag);
+            }
+
+            // Notify the main window so the sidebar tag picker can pick up a
+            // brand-new tag without waiting for the next ReloadFiltersAsync.
+            TagCatalogChanged?.Invoke(this, tag);
+
+            // Tagging is the clearest behavioural signal that a clip has been
+            // looked at, so the first tag promotes the default Unreviewed status
+            // to Keep automatically. This keeps the catalog's review queue
+            // (StartReviewSession / OnlyUnreviewed filter) honest without
+            // forcing the user to remember to flip Status manually.
+            var statusBumped = await TryAutoBumpFromUnreviewedAsync();
+
+            var (sidecarFailed, sidecarText) = await WriteSidecarStatusAsync();
+            LastSaveStatus = statusBumped
+                ? $"Tag added · status → Keep · {sidecarText}"
+                : $"Tag added · {sidecarText}";
+
+            // The catalog write succeeded by the time we get here; a sidecar
+            // failure is a partial success (curation is safe in the DB), so it's
+            // surfaced as a warning rather than a hard error.
+            if (sidecarFailed)
+            {
+                ShowTagFeedback($"Tag added: {tag.Name} — sidecar write failed", FeedbackSeverity.Warning);
+            }
+            else
+            {
+                ShowTagFeedback(
+                    statusBumped ? $"Tag added: {tag.Name} · status → Keep" : $"Tag added: {tag.Name}",
+                    FeedbackSeverity.Success);
+            }
+        }
+        catch (Exception ex)
         {
-            _allTagsCache.Add(tag);
+            LastSaveStatus = $"Tag add failed: {ex.Message}";
+            ShowTagFeedback($"Couldn't add tag: {ex.Message}", FeedbackSeverity.Error);
         }
-
-        // Notify the main window so the sidebar tag picker can pick up a
-        // brand-new tag without waiting for the next ReloadFiltersAsync.
-        TagCatalogChanged?.Invoke(this, tag);
-
-        // Tagging is the clearest behavioural signal that a clip has been
-        // looked at, so the first tag promotes the default Unreviewed status
-        // to Keep automatically. This keeps the catalog's review queue
-        // (StartReviewSession / OnlyUnreviewed filter) honest without
-        // forcing the user to remember to flip Status manually.
-        var statusBumped = await TryAutoBumpFromUnreviewedAsync();
-
-        var sidecarStatus = await WriteSidecarStatusAsync();
-        LastSaveStatus = statusBumped
-            ? $"Tag added · status → Keep · {sidecarStatus}"
-            : $"Tag added · {sidecarStatus}";
     }
 
     // Toggles a tag (identified by name + type, the catalog's natural key) on
@@ -769,12 +943,35 @@ public partial class VideoDetailViewModel : ObservableObject
     private async Task RemoveTagAsync(Tag? tag)
     {
         if (tag is null || Current is null) return;
-        await _tagService.DetachAsync(Current.Id, tag.Id);
-        Tags.Remove(tag);
-        Current.TagSummary = string.Join(", ", Tags.Select(t => t.Name));
+        try
+        {
+            await _tagService.DetachAsync(Current.Id, tag.Id);
+            Tags.Remove(tag);
+            Current.TagSummary = string.Join(", ", Tags.Select(t => t.Name));
 
-        var sidecarStatus = await WriteSidecarStatusAsync();
-        LastSaveStatus = $"Tag removed · {sidecarStatus}";
+            var (sidecarFailed, sidecarText) = await WriteSidecarStatusAsync();
+            LastSaveStatus = $"Tag removed · {sidecarText}";
+            ShowTagFeedback(
+                sidecarFailed ? $"Tag removed: {tag.Name} — sidecar write failed" : $"Tag removed: {tag.Name}",
+                sidecarFailed ? FeedbackSeverity.Warning : FeedbackSeverity.Success);
+        }
+        catch (Exception ex)
+        {
+            LastSaveStatus = $"Tag remove failed: {ex.Message}";
+            ShowTagFeedback($"Couldn't remove tag: {ex.Message}", FeedbackSeverity.Error);
+        }
+    }
+
+    // Shows a short, colour-coded message inline in the editor's TAGS panel and
+    // starts (or restarts) the 2-second auto-clear timer. Reused by every tag
+    // entry point — the Add button, chip remove, and the review-mode pinned-tag
+    // hotkeys — since they all funnel through AttachTagCoreAsync / RemoveTagAsync.
+    private void ShowTagFeedback(string message, FeedbackSeverity severity)
+    {
+        TagFeedbackSeverity = severity;
+        TagFeedback = message;
+        _tagFeedbackTimer.Stop();
+        _tagFeedbackTimer.Start();
     }
 
     // Writes a sidecar and returns a short human-readable status of what
@@ -782,34 +979,37 @@ public partial class VideoDetailViewModel : ObservableObject
     // already exists for the clip (so an existing file stays in sync even
     // when "write new sidecars" is off). NEVER throws; the caller is
     // responsible for user-visible labelling around the returned text.
-    private async Task<string> WriteSidecarStatusAsync(VideoItem? entity = null)
+    private async Task<(bool Failed, string Text)> WriteSidecarStatusAsync(VideoItem? entity = null)
     {
         if (Current is null)
         {
-            return "sidecar skipped (no video selected)";
+            return (false, "sidecar skipped (no video selected)");
         }
         if (!_sidecar.ShouldWriteFor(Current.FilePath))
         {
-            return "sidecar disabled";
+            return (false, "sidecar disabled");
         }
 
         if (entity is null)
         {
             await using var ctx = await _contextFactory.CreateDbContextAsync();
             entity = await ctx.VideoItems.FirstOrDefaultAsync(v => v.Id == Current.Id);
-            if (entity is null) return "sidecar skipped (video not found in catalog)";
+            if (entity is null) return (true, "sidecar skipped (video not found in catalog)");
         }
 
-        var result = await _sidecar.WriteAsync(entity, Tags.ToArray());
+        // Always carry the clip's current moments into the sidecar so the
+        // portable record stays complete and in sync with the catalog.
+        var moments = await _momentService.GetForVideoAsync(Current.Id);
+        var result = await _sidecar.WriteAsync(entity, Tags.ToArray(), moments);
         if (result.Written && !string.IsNullOrEmpty(result.Path))
         {
-            return $"sidecar written: {result.Path}";
+            return (false, $"sidecar written: {result.Path}");
         }
         if (result.Skipped)
         {
-            return "sidecar disabled";
+            return (false, "sidecar disabled");
         }
-        return $"sidecar FAILED: {result.ErrorMessage ?? "unknown error"}";
+        return (true, $"sidecar FAILED: {result.ErrorMessage ?? "unknown error"}");
     }
 
     [RelayCommand]
@@ -942,8 +1142,8 @@ public partial class VideoDetailViewModel : ObservableObject
             geoStatus = "geocode failed";
         }
 
-        var sidecarStatus = await WriteSidecarStatusAsync(entity);
-        LastSaveStatus = $"Location saved · {geoStatus} · {sidecarStatus}";
+        var (_, sidecarText) = await WriteSidecarStatusAsync(entity);
+        LastSaveStatus = $"Location saved · {geoStatus} · {sidecarText}";
 
         ResetPickState();
     }
@@ -974,8 +1174,8 @@ public partial class VideoDetailViewModel : ObservableObject
         Current.Model.GpsLongitude = null;
         Current.RefreshLocation();
 
-        var sidecarStatus = await WriteSidecarStatusAsync(entity);
-        LastSaveStatus = $"Location cleared · {sidecarStatus}";
+        var (_, sidecarText) = await WriteSidecarStatusAsync(entity);
+        LastSaveStatus = $"Location cleared · {sidecarText}";
 
         ResetPickState();
     }
@@ -993,5 +1193,205 @@ public partial class VideoDetailViewModel : ObservableObject
         {
             // Clipboard can intermittently fail on locked / RDP sessions; ignore.
         }
+    }
+
+    // === Moment capture, jump, and editing ===================================
+
+    // "I" key / Mark in button: stage the current playback position as the
+    // in-point of a moment-to-be. The out-point arrives with "O".
+    public void MarkInPoint(TimeSpan position)
+    {
+        if (Current is null) return;
+        PendingInPoint = Math.Max(0, position.TotalSeconds);
+        MomentMarkStatus = $"In point {FormatSeconds(PendingInPoint!.Value)} — press O to set the out point";
+    }
+
+    // "O" key / Mark out button: close the staged range into a saved moment. If
+    // no in-point is staged, capture a single-point marker at the current
+    // position instead (so a lone "O" still flags the instant).
+    public async Task MarkOutPointAsync(TimeSpan position)
+    {
+        if (Current is null) return;
+        var outSeconds = Math.Max(0, position.TotalSeconds);
+
+        if (PendingInPoint is double inSeconds)
+        {
+            await CreateMomentAsync(inSeconds, outSeconds);
+            PendingInPoint = null;
+        }
+        else
+        {
+            await CreateMomentAsync(outSeconds, null);
+        }
+    }
+
+    // Drops a single-point marker at the current position (toolbar button), with
+    // no range. Handy for "mark this frame" without an in/out gesture.
+    public Task AddPointMomentAsync(TimeSpan position)
+    {
+        if (Current is null) return Task.CompletedTask;
+        return CreateMomentAsync(Math.Max(0, position.TotalSeconds), null);
+    }
+
+    private async Task CreateMomentAsync(double startSeconds, double? endSeconds)
+    {
+        if (Current is null) return;
+        var videoId = Current.Id;
+
+        var moment = await _momentService.AddAsync(videoId, startSeconds, endSeconds, null);
+
+        // The selection may have moved while ffmpeg grabbed the frame.
+        if (Current is null || Current.Id != videoId) return;
+
+        var vm = new MomentViewModel(moment);
+        InsertMomentSorted(vm);
+        MomentCount = Moments.Count;
+        SelectedMoment = vm;
+        Current.MomentCount = MomentCount;
+
+        MomentMarkStatus = endSeconds is null
+            ? $"Marker added at {vm.StartText}"
+            : $"Moment added {vm.TimeRangeText}";
+
+        await WriteSidecarStatusAsync();
+    }
+
+    // Keeps the Moments collection sorted by in-point as new ones arrive, so the
+    // list always reads chronologically regardless of capture order.
+    private void InsertMomentSorted(MomentViewModel vm)
+    {
+        int i = 0;
+        while (i < Moments.Count && Moments[i].StartSeconds <= vm.StartSeconds) i++;
+        Moments.Insert(i, vm);
+    }
+
+    // Open the player on the current clip and seek to an arbitrary position.
+    // Used by the moment-search window's "jump to" after the clip is selected.
+    public void PlayAt(double startSeconds)
+    {
+        if (Current is null) return;
+        if (IsPlayerVisible && MediaSource is not null)
+        {
+            SeekRequested?.Invoke(this, startSeconds);
+        }
+        else
+        {
+            _pendingSeekSeconds = startSeconds;
+            PlayInApp();
+        }
+    }
+
+    // Seek to a moment. If the player is already open on this clip, just seek;
+    // otherwise open it and let the host apply the pending seek once ready.
+    [RelayCommand]
+    private void PlayMoment(MomentViewModel? moment)
+    {
+        if (moment is null || Current is null) return;
+        SelectedMoment = moment;
+
+        if (IsPlayerVisible && MediaSource is not null)
+        {
+            SeekRequested?.Invoke(this, moment.StartSeconds);
+        }
+        else
+        {
+            _pendingSeekSeconds = moment.StartSeconds;
+            PlayInApp();
+        }
+    }
+
+    [RelayCommand]
+    private async Task SaveMomentAsync(MomentViewModel? moment)
+    {
+        moment ??= SelectedMoment;
+        if (moment is null) return;
+
+        try
+        {
+            moment.Model.Label = moment.Label;
+            moment.Model.Notes = moment.Notes;
+            moment.Model.Rating = moment.Rating;
+            await _momentService.UpdateAsync(moment.Model);
+            moment.RefreshTagSummary();
+
+            var (sidecarFailed, _) = await WriteSidecarStatusAsync();
+            MomentMarkStatus = $"Changes saved · {moment.DisplayLabel}";
+            ShowMomentFeedback(
+                sidecarFailed ? "Changes saved — sidecar write failed" : "Changes saved",
+                sidecarFailed ? FeedbackSeverity.Warning : FeedbackSeverity.Success);
+        }
+        catch (Exception ex)
+        {
+            ShowMomentFeedback($"Couldn't save changes: {ex.Message}", FeedbackSeverity.Error);
+        }
+    }
+
+    // Inline, colour-coded confirmation under the moment editor's Save button,
+    // auto-cleared after 2s (mirrors ShowTagFeedback).
+    private void ShowMomentFeedback(string message, FeedbackSeverity severity)
+    {
+        MomentFeedbackSeverity = severity;
+        MomentFeedback = message;
+        _momentFeedbackTimer.Stop();
+        _momentFeedbackTimer.Start();
+    }
+
+    [RelayCommand]
+    private async Task DeleteMomentAsync(MomentViewModel? moment)
+    {
+        moment ??= SelectedMoment;
+        if (moment is null) return;
+
+        await _momentService.DeleteAsync(moment.Id);
+        Moments.Remove(moment);
+        if (ReferenceEquals(SelectedMoment, moment)) SelectedMoment = null;
+        MomentCount = Moments.Count;
+        if (Current is not null)
+        {
+            Current.MomentCount = MomentCount;
+        }
+        MomentMarkStatus = "Moment deleted";
+        await WriteSidecarStatusAsync();
+    }
+
+    [RelayCommand]
+    private async Task AddMomentTagAsync()
+    {
+        if (SelectedMoment is null || string.IsNullOrWhiteSpace(NewMomentTagName)) return;
+        var tag = await _tagService.GetOrCreateAsync(NewMomentTagName.Trim(), NewMomentTagType);
+        NewMomentTagName = string.Empty;
+
+        await _momentService.AttachTagAsync(SelectedMoment.Id, tag.Id);
+        if (!SelectedMoment.Tags.Any(t => t.Id == tag.Id))
+        {
+            SelectedMoment.Tags.Add(tag);
+            SelectedMoment.RefreshTagSummary();
+        }
+
+        // A moment tag can mint a brand-new catalog tag; surface it like the
+        // clip-tag path so the sidebar picker stays in sync.
+        TagCatalogChanged?.Invoke(this, tag);
+        MomentMarkStatus = $"Tag added to moment · {tag.Name}";
+        await WriteSidecarStatusAsync();
+    }
+
+    [RelayCommand]
+    private async Task RemoveMomentTagAsync(Tag? tag)
+    {
+        if (tag is null || SelectedMoment is null) return;
+        await _momentService.DetachTagAsync(SelectedMoment.Id, tag.Id);
+        SelectedMoment.Tags.Remove(tag);
+        SelectedMoment.RefreshTagSummary();
+        MomentMarkStatus = $"Tag removed from moment · {tag.Name}";
+        await WriteSidecarStatusAsync();
+    }
+
+    private static string FormatSeconds(double seconds)
+    {
+        if (seconds < 0) seconds = 0;
+        var t = TimeSpan.FromSeconds(seconds);
+        return t.TotalHours >= 1
+            ? $"{(int)t.TotalHours}:{t.Minutes:D2}:{t.Seconds:D2}"
+            : $"{t.Minutes:D2}:{t.Seconds:D2}";
     }
 }

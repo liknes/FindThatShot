@@ -344,6 +344,11 @@ public class VideoScannerService : IVideoScannerService
                 await ApplySidecarTagsAsync(ctx, entity.Id, sidecar.Tags, cancellationToken).ConfigureAwait(false);
             }
 
+            if (sidecar != null && sidecar.Moments.Count > 0)
+            {
+                await ApplySidecarMomentsAsync(ctx, entity.Id, path, sidecar.Moments, cancellationToken).ConfigureAwait(false);
+            }
+
             return new ProcessResult(ProcessAction.Added, entity.Id);
         }
         else
@@ -437,6 +442,84 @@ public class VideoScannerService : IVideoScannerService
             }
 
             await ctx.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            _tagImportLock.Release();
+        }
+    }
+
+    // Rehydrate timestamped moments from a sidecar onto a freshly-imported clip.
+    // Each moment row is created, its in-point thumbnail is grabbed best-effort
+    // (the source file is present — we just scanned it), and its tags are linked
+    // through the same get-or-create path as clip tags. Only runs for brand-new
+    // imports, so a rescan never re-creates moments the user may have since
+    // pruned. The source video file is only read for the thumbnail, never written.
+    private async Task ApplySidecarMomentsAsync(
+        VideoArchiveDbContext ctx,
+        int videoItemId,
+        string videoPath,
+        IReadOnlyList<SidecarMomentData> moments,
+        CancellationToken cancellationToken)
+    {
+        await _tagImportLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            foreach (var sm in moments)
+            {
+                var moment = new VideoMoment
+                {
+                    VideoItemId = videoItemId,
+                    StartSeconds = sm.StartSeconds < 0 ? 0 : sm.StartSeconds,
+                    EndSeconds = sm.EndSeconds,
+                    Label = string.IsNullOrWhiteSpace(sm.Label) ? null : sm.Label.Trim(),
+                    Notes = sm.Notes,
+                    Rating = sm.Rating,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                ctx.VideoMoments.Add(moment);
+                await ctx.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+                // Best-effort in-point thumbnail; a missing/offline file just
+                // leaves ThumbnailPath null (the moment still works).
+                try
+                {
+                    var thumb = await _thumbnails
+                        .GenerateAtAsync(moment.Id, videoPath, moment.StartSeconds, cancellationToken)
+                        .ConfigureAwait(false);
+                    if (!string.IsNullOrEmpty(thumb))
+                    {
+                        moment.ThumbnailPath = thumb;
+                        await ctx.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                    }
+                }
+                catch
+                {
+                    // Thumbnail capture is non-essential; never fail the import.
+                }
+
+                foreach (var st in sm.Tags)
+                {
+                    if (string.IsNullOrWhiteSpace(st.Name)) continue;
+                    var name = st.Name.Trim();
+                    var type = ParseTagType(st.Type);
+
+                    var tag = await ctx.Tags
+                        .FirstOrDefaultAsync(t => t.Name == name && t.Type == type, cancellationToken)
+                        .ConfigureAwait(false);
+                    if (tag == null)
+                    {
+                        tag = new Tag { Name = name, Type = type };
+                        ctx.Tags.Add(tag);
+                        await ctx.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                    }
+
+                    ctx.MomentTags.Add(new MomentTag { VideoMomentId = moment.Id, TagId = tag.Id });
+                }
+
+                await ctx.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            }
         }
         finally
         {

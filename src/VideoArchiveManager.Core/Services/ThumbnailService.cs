@@ -41,6 +41,13 @@ public class ThumbnailService : IThumbnailService
         return Path.Combine(dir, $"{videoId}.jpg");
     }
 
+    public string GetMomentThumbnailPath(int momentId)
+    {
+        var dir = Path.Combine(_settings.Current.EffectiveThumbnailDirectory, "Moments");
+        Directory.CreateDirectory(dir);
+        return Path.Combine(dir, $"{momentId}.jpg");
+    }
+
     // Deletes only canonical "{id}.jpg" files inside the configured thumbnail
     // cache directory. Source video files (anything outside this directory)
     // are NEVER touched, even if a malformed DB row tried to point us there.
@@ -92,17 +99,38 @@ public class ThumbnailService : IThumbnailService
         return deleted;
     }
 
-    public async Task<string?> GenerateAsync(int videoId, string videoFilePath, double? durationSeconds, CancellationToken cancellationToken = default)
+    public Task<string?> GenerateAsync(int videoId, string videoFilePath, double? durationSeconds, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(videoFilePath) || !File.Exists(videoFilePath))
         {
-            return null;
+            return Task.FromResult<string?>(null);
         }
 
         var outputPath = GetThumbnailPath(videoId);
+        return ExtractFrameAsync(videoFilePath, ComputeSeek(durationSeconds), outputPath, cancellationToken);
+    }
+
+    public Task<string?> GenerateAtAsync(int momentId, string videoFilePath, double seekSeconds, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(videoFilePath) || !File.Exists(videoFilePath))
+        {
+            return Task.FromResult<string?>(null);
+        }
+
+        // Clamp negatives to 0; an out-of-range (past EOF) seek just yields no
+        // frame and we return null, which the caller treats as "no thumbnail".
+        var seek = seekSeconds < 0 ? 0 : seekSeconds;
+        var outputPath = GetMomentThumbnailPath(momentId);
+        return ExtractFrameAsync(videoFilePath, seek, outputPath, cancellationToken);
+    }
+
+    // Shared single-frame extract used by both whole-clip and moment thumbnails.
+    // Seeks (fast seek, before -i) to seekSeconds and writes one scaled JPEG to
+    // outputPath. The source file is only read, never written.
+    private async Task<string?> ExtractFrameAsync(string videoFilePath, double seekSeconds, string outputPath, CancellationToken cancellationToken)
+    {
         Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
 
-        var seekSeconds = ComputeSeek(durationSeconds);
         var exe = ResolveExecutablePath();
 
         var psi = new ProcessStartInfo
@@ -147,6 +175,54 @@ public class ThumbnailService : IThumbnailService
         }
 
         return null;
+    }
+
+    public int DeleteForMoments(IEnumerable<int> momentIds)
+    {
+        if (momentIds is null) return 0;
+
+        string momentsDirFull;
+        try
+        {
+            momentsDirFull = Path.GetFullPath(
+                Path.Combine(_settings.Current.EffectiveThumbnailDirectory, "Moments"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not resolve moment thumbnail directory; skipping cleanup.");
+            return 0;
+        }
+
+        if (!Directory.Exists(momentsDirFull)) return 0;
+
+        var deleted = 0;
+        foreach (var id in momentIds)
+        {
+            try
+            {
+                var candidate = Path.GetFullPath(Path.Combine(momentsDirFull, $"{id}.jpg"));
+                var candidateDir = Path.GetDirectoryName(candidate);
+
+                // Same defense-in-depth as DeleteForVideos: only delete files
+                // that resolve directly inside the Moments cache directory.
+                if (!string.Equals(candidateDir, momentsDirFull, StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogWarning("Skipping moment thumbnail outside cache dir: {Path}", candidate);
+                    continue;
+                }
+
+                if (File.Exists(candidate))
+                {
+                    File.Delete(candidate);
+                    deleted++;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to delete thumbnail for moment id {Id}", id);
+            }
+        }
+        return deleted;
     }
 
     private static double ComputeSeek(double? duration)

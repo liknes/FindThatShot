@@ -15,7 +15,11 @@ namespace VideoArchiveManager.Core.Services;
 public class JsonSidecarService : ISidecarService
 {
     public const string SidecarSuffix = ".findthatshot.json";
-    public const string SchemaId = "findthatshot/v1";
+
+    // v2 adds the "moments" array (timestamped sub-clips). v1 readers simply
+    // ignore the extra property, and v1 files round-trip cleanly through a v2
+    // reader (moments default to empty), so the bump is backward compatible.
+    public const string SchemaId = "findthatshot/v2";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -57,6 +61,7 @@ public class JsonSidecarService : ISidecarService
     public async Task<SidecarWriteResult> WriteAsync(
         VideoItem video,
         IEnumerable<Tag> tags,
+        IReadOnlyList<VideoMoment>? moments = null,
         CancellationToken cancellationToken = default)
     {
         if (video is null || string.IsNullOrWhiteSpace(video.FilePath))
@@ -85,7 +90,21 @@ public class JsonSidecarService : ISidecarService
                 sidecarPath);
         }
 
-        var payload = BuildPayload(video, tags);
+        // Resolve the moments section: rewrite from the supplied list, or — when
+        // the caller didn't pass one (whole-clip save, bulk edit) — preserve
+        // whatever moments the existing sidecar already holds so they're never
+        // silently dropped.
+        IReadOnlyList<SidecarMoment> momentPayload;
+        if (moments is not null)
+        {
+            momentPayload = moments.Select(MapMoment).ToArray();
+        }
+        else
+        {
+            momentPayload = await ReadExistingMomentsAsync(sidecarPath, cancellationToken).ConfigureAwait(false);
+        }
+
+        var payload = BuildPayload(video, tags, momentPayload);
 
         try
         {
@@ -155,7 +174,8 @@ public class JsonSidecarService : ISidecarService
         {
             cancellationToken.ThrowIfCancellationRequested();
             attempted++;
-            var result = await WriteAsync(video, tags, cancellationToken).ConfigureAwait(false);
+            // moments left null → existing moments in each sidecar are preserved.
+            var result = await WriteAsync(video, tags, moments: null, cancellationToken).ConfigureAwait(false);
             if (result.Written) written++;
             else if (result.Skipped) skipped++;
             else
@@ -213,6 +233,20 @@ public class JsonSidecarService : ISidecarService
                 Tags = payload.Tags
                     .Where(t => !string.IsNullOrWhiteSpace(t.Name))
                     .Select(t => new SidecarTagData { Name = t.Name, Type = t.Type })
+                    .ToArray(),
+                Moments = payload.Moments
+                    .Select(m => new SidecarMomentData
+                    {
+                        StartSeconds = m.StartSeconds,
+                        EndSeconds = m.EndSeconds,
+                        Label = m.Label,
+                        Notes = m.Notes,
+                        Rating = m.Rating,
+                        Tags = (m.Tags ?? Array.Empty<SidecarTag>())
+                            .Where(t => !string.IsNullOrWhiteSpace(t.Name))
+                            .Select(t => new SidecarTagData { Name = t.Name, Type = t.Type })
+                            .ToArray()
+                    })
                     .ToArray()
             };
         }
@@ -229,7 +263,7 @@ public class JsonSidecarService : ISidecarService
         }
     }
 
-    private static SidecarPayload BuildPayload(VideoItem video, IEnumerable<Tag> tags)
+    private static SidecarPayload BuildPayload(VideoItem video, IEnumerable<Tag> tags, IReadOnlyList<SidecarMoment> moments)
     {
         return new SidecarPayload
         {
@@ -254,8 +288,58 @@ public class JsonSidecarService : ISidecarService
             FolderDate = video.FolderDate,
             Tags = tags
                 .Select(t => new SidecarTag { Name = t.Name, Type = t.Type.ToString() })
+                .ToArray(),
+            Moments = moments
+        };
+    }
+
+    private static SidecarMoment MapMoment(VideoMoment m)
+    {
+        return new SidecarMoment
+        {
+            StartSeconds = m.StartSeconds,
+            EndSeconds = m.EndSeconds,
+            Label = m.Label,
+            Notes = m.Notes,
+            Rating = m.Rating,
+            Tags = (m.MomentTags ?? new List<MomentTag>())
+                .Where(mt => mt.Tag is not null)
+                .Select(mt => new SidecarTag { Name = mt.Tag.Name, Type = mt.Tag.Type.ToString() })
                 .ToArray()
         };
+    }
+
+    // Reads just the moments array from an existing sidecar so a write that
+    // doesn't supply moments can carry the user's existing record forward.
+    // Returns an empty list when there's no file or it can't be parsed.
+    private async Task<IReadOnlyList<SidecarMoment>> ReadExistingMomentsAsync(string sidecarPath, CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (!File.Exists(sidecarPath)) return Array.Empty<SidecarMoment>();
+
+            await using var fs = new FileStream(
+                sidecarPath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read,
+                bufferSize: 1 << 14,
+                useAsync: true);
+
+            var payload = await JsonSerializer
+                .DeserializeAsync<SidecarPayload>(fs, JsonOptions, cancellationToken)
+                .ConfigureAwait(false);
+            return payload?.Moments ?? Array.Empty<SidecarMoment>();
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not read existing moments from {Path}; writing without them.", sidecarPath);
+            return Array.Empty<SidecarMoment>();
+        }
     }
 
     private sealed class SidecarPayload
@@ -286,6 +370,30 @@ public class JsonSidecarService : ISidecarService
 
         [JsonPropertyName("folderDate")]
         public DateTime? FolderDate { get; set; }
+
+        [JsonPropertyName("tags")]
+        public IReadOnlyList<SidecarTag> Tags { get; set; } = Array.Empty<SidecarTag>();
+
+        [JsonPropertyName("moments")]
+        public IReadOnlyList<SidecarMoment> Moments { get; set; } = Array.Empty<SidecarMoment>();
+    }
+
+    private sealed class SidecarMoment
+    {
+        [JsonPropertyName("startSeconds")]
+        public double StartSeconds { get; set; }
+
+        [JsonPropertyName("endSeconds")]
+        public double? EndSeconds { get; set; }
+
+        [JsonPropertyName("label")]
+        public string? Label { get; set; }
+
+        [JsonPropertyName("notes")]
+        public string? Notes { get; set; }
+
+        [JsonPropertyName("rating")]
+        public int Rating { get; set; }
 
         [JsonPropertyName("tags")]
         public IReadOnlyList<SidecarTag> Tags { get; set; } = Array.Empty<SidecarTag>();

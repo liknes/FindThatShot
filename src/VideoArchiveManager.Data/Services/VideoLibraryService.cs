@@ -31,12 +31,16 @@ public class VideoLibraryService : IVideoLibraryService
 
         await using var ctx = await _contextFactory.CreateDbContextAsync(cancellationToken);
 
-        // VideoTags and AiTagSuggestions cascade on VideoItem delete (see EF configurations).
+        var momentIds = await CollectMomentIdsAsync(ctx, ids, cancellationToken);
+
+        // VideoTags, AiTagSuggestions, and VideoMoments cascade on VideoItem
+        // delete (see EF configurations).
         var deleted = await ctx.VideoItems
             .Where(v => ids.Contains(v.Id))
             .ExecuteDeleteAsync(cancellationToken);
 
         _thumbnails.DeleteForVideos(ids);
+        _thumbnails.DeleteForMoments(momentIds);
         return deleted;
     }
 
@@ -50,11 +54,14 @@ public class VideoLibraryService : IVideoLibraryService
             .ToListAsync(cancellationToken);
         if (ids.Count == 0) return 0;
 
+        var momentIds = await CollectMomentIdsAsync(ctx, ids, cancellationToken);
+
         var deleted = await ctx.VideoItems
             .Where(v => ids.Contains(v.Id))
             .ExecuteDeleteAsync(cancellationToken);
 
         _thumbnails.DeleteForVideos(ids);
+        _thumbnails.DeleteForMoments(momentIds);
         return deleted;
     }
 
@@ -81,12 +88,29 @@ public class VideoLibraryService : IVideoLibraryService
             .ToListAsync(cancellationToken);
         if (ids.Count == 0) return 0;
 
+        var momentIds = await CollectMomentIdsAsync(ctx, ids, cancellationToken);
+
         var deleted = await ctx.VideoItems
             .Where(v => ids.Contains(v.Id))
             .ExecuteDeleteAsync(cancellationToken);
 
         _thumbnails.DeleteForVideos(ids);
+        _thumbnails.DeleteForMoments(momentIds);
         return deleted;
+    }
+
+    // Collect moment ids for the videos about to be deleted so their cached
+    // thumbnails can be pruned. The DB cascades the moment rows themselves; we
+    // just need their ids beforehand to clean up the matching cache files.
+    private static async Task<IReadOnlyCollection<int>> CollectMomentIdsAsync(
+        VideoArchiveDbContext ctx,
+        IReadOnlyCollection<int> videoIds,
+        CancellationToken cancellationToken)
+    {
+        return await ctx.VideoMoments
+            .Where(m => videoIds.Contains(m.VideoItemId))
+            .Select(m => m.Id)
+            .ToListAsync(cancellationToken);
     }
 
     // Build a directory prefix that always ends with a separator so we don't

@@ -60,4 +60,6 @@ public class VideoItem
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     public ICollection<VideoTag> VideoTags { get; set; } = new List<VideoTag>();
+
+    public ICollection<VideoMoment> Moments { get; set; } = new List<VideoMoment>();
 }

@@ -117,6 +117,9 @@
                         <MenuItem Header="Find _duplicates…"
                                   Click="Duplicates_Click"
                                   ToolTip="Find clips that share the same file size, duration, and resolution — almost certainly the same footage in more than one place — and prune the redundant catalog entries. Source video files are never moved or deleted." />
+                        <MenuItem Header="Find _moments…"
+                                  Click="Moments_Click"
+                                  ToolTip="Search across every timestamped moment (sub-clip) you've marked — by label, note, tag, or rating — and jump straight to the shot in the player." />
                         <Separator />
                         <MenuItem Header="_Bulk edit selection…"
                                   Command="{Binding OpenBulkEditCommand}"
@@ -969,7 +972,7 @@
                         </Style.Triggers>
                     </Style>
                 </Border.Style>
-                <Grid>
+                <Grid x:Name="PlayerArea">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
@@ -1045,6 +1048,57 @@
                                 </ControlTemplate>
                             </Button.Template>
                         </Button>
+                    </Popup>
+
+                    <!-- Marker capture overlay. Hosted in a Popup (its own HWND) for
+                         the same reason as the close button: it must composite ABOVE
+                         the video on BOTH the FFME WriteableBitmap path AND the
+                         experimental mpv child-window (airspace) path, where in-grid
+                         WPF content is hidden. Floats at the top-centre of the frame
+                         (custom placement callback in code-behind) so the reviewer's
+                         eyes — already on the picture — can't miss it. Code-behind
+                         pulses it while an in-point is armed and flashes a green
+                         confirmation when a moment / marker is saved, so an O press
+                         is unmistakably registered. IsHitTestVisible=False keeps it
+                         click-through. -->
+                    <Popup x:Name="MarkerOverlayPopup"
+                           PlacementTarget="{Binding ElementName=PlayerArea}"
+                           Placement="Custom"
+                           AllowsTransparency="True"
+                           Focusable="False"
+                           StaysOpen="True">
+                        <Border x:Name="MarkerOverlayPill"
+                                CornerRadius="10"
+                                Padding="20,12"
+                                Background="#D9000000"
+                                BorderThickness="2"
+                                BorderBrush="{DynamicResource App.Accent}"
+                                RenderTransformOrigin="0.5,0.5"
+                                IsHitTestVisible="False">
+                            <Border.RenderTransform>
+                                <ScaleTransform x:Name="MarkerOverlayScale" ScaleX="1" ScaleY="1" />
+                            </Border.RenderTransform>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock x:Name="MarkerOverlayGlyph"
+                                           Text="&#x25CF;"
+                                           FontSize="24"
+                                           Margin="0,0,14,0"
+                                           VerticalAlignment="Center"
+                                           Foreground="{DynamicResource App.Accent}" />
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock x:Name="MarkerOverlayTitle"
+                                               Text="IN POINT SET"
+                                               FontSize="18"
+                                               FontWeight="Bold"
+                                               Foreground="White" />
+                                    <TextBlock x:Name="MarkerOverlaySubtitle"
+                                               Text="00:00"
+                                               FontSize="13"
+                                               FontFamily="Consolas"
+                                               Foreground="#E6FFFFFF" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
                     </Popup>
 
                     <!-- DJI telemetry strip. Sits in its OWN row directly under
@@ -1128,6 +1182,7 @@
                             Visibility="{Binding IsPlayerVisible, Converter={StaticResource BoolToVisibility}}">
                         <Grid>
                             <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
@@ -1245,14 +1300,31 @@
                                             Style="{StaticResource App.Button.Secondary}"
                                             helpers:Theme.Icon="{StaticResource Icon.Stop}"
                                             ToolTip="Stop playback (resets position)" />
-                                    <!-- Telemetry visibility is now controlled by the
-                                         "Show drone telemetry overlay" setting (on by
-                                         default) instead of a transport-bar toggle, and
-                                         closing is handled by the corner X / Esc, so the
-                                         old Telemetry and Close buttons were removed to
-                                         keep the transport bar focused on playback. -->
+                                    <!-- Moment capture: stamp the in / out points of a
+                                         shot at the current playback position. Same
+                                         action as the I / O keys; kept on the bar so the
+                                         gesture is discoverable without the shortcut. -->
+                                    <Button Content="Mark in" MinWidth="78" Margin="16,4,0,4"
+                                            Click="PlayerMarkIn_Click"
+                                            Style="{StaticResource App.Button.Secondary}"
+                                            ToolTip="Set the in-point of a moment here (I)" />
+                                    <Button Content="Mark out" MinWidth="84" Margin="6,4,0,4"
+                                            Click="PlayerMarkOut_Click"
+                                            Style="{StaticResource App.Button.Secondary}"
+                                            ToolTip="Set the out-point and save the moment (O)" />
                                 </WrapPanel>
                             </Grid>
+
+                            <!-- Marker workflow status: "In point 00:01:12 — press O
+                                 to set the out point", "Moment added 00:01:12 → 00:01:20",
+                                 etc. Collapses when there's nothing to say. -->
+                            <TextBlock Grid.Row="2"
+                                       Margin="0,6,0,0"
+                                       HorizontalAlignment="Center"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource App.Accent}"
+                                       Text="{Binding MomentMarkStatus}"
+                                       Visibility="{Binding MomentMarkStatus, Converter={StaticResource NullToVisibility}}" />
                         </Grid>
                     </Border>
                 </Grid>
@@ -1283,6 +1355,16 @@
                     <ScrollViewer VerticalScrollBarVisibility="Auto"
                                   Visibility="{Binding Detail.Current, Converter={StaticResource NullToVisibility}}">
                         <StackPanel Margin="16" DataContext="{Binding Detail}">
+
+                            <!-- ===== MAP panel ===== -->
+                            <Expander Margin="0"
+                                      Style="{StaticResource App.Expander}"
+                                      Visibility="{Binding IsMapVisible, Converter={StaticResource BoolToVisibility}}"
+                                      IsExpanded="{Binding DataContext.IsDetailMapPanelExpanded, RelativeSource={RelativeSource AncestorType=Window}, Mode=TwoWay}">
+                                <Expander.Header>
+                                    <TextBlock Text="MAP" Style="{StaticResource App.Type.Section}" Margin="0" />
+                                </Expander.Header>
+                                <StackPanel>
                             <!-- Location preview. Always rendered (the control itself
                                  handles the "no GPS" state by falling back to a
                                  grayscaled regional view) so the sidebar layout stays
@@ -1399,14 +1481,21 @@
                                 </Border>
                             </Grid>
 
-                            <!-- The editor opens straight into TAGS / NOTES / STATUS /
-                                 RATING. The old sidebar action row (Play in app /
-                                 Open location) was removed: in-app playback is on
-                                 double-click of a catalog thumbnail, and the catalog
-                                 right-click menu carries *Play externally* and
-                                 *Open file location*. -->
+                                </StackPanel>
+                            </Expander>
 
-                            <TextBlock Text="TAGS" Style="{StaticResource App.Type.Section}" />
+                            <!-- ===== TAGS panel =====
+                                 In-app playback is on double-click of a catalog
+                                 thumbnail, and the catalog right-click menu carries
+                                 *Play externally* / *Open file location*; the old
+                                 sidebar action row was removed, so this panel is a
+                                 pure tag editor. -->
+                            <Expander Style="{StaticResource App.Expander}"
+                                      IsExpanded="{Binding DataContext.IsDetailTagsPanelExpanded, RelativeSource={RelativeSource AncestorType=Window}, Mode=TwoWay}">
+                                <Expander.Header>
+                                    <TextBlock Text="TAGS" Style="{StaticResource App.Type.Section}" Margin="0" />
+                                </Expander.Header>
+                                <StackPanel>
                             <ItemsControl ItemsSource="{Binding Tags}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
@@ -1445,6 +1534,57 @@
                                         helpers:Theme.Icon="{StaticResource Icon.Add}" />
                             </StackPanel>
 
+                            <!-- Transient, colour-coded confirmation for tag add /
+                                 remove (also fires for the review-mode pinned-tag
+                                 hotkeys, since they route through the same VM
+                                 paths). Auto-clears after 2s; severity drives the
+                                 colour — green = saved, amber = saved but the
+                                 sidecar write failed, red = the catalog write
+                                 itself failed. The bottom status bar keeps the
+                                 detailed, persistent record (LastSaveStatus). -->
+                            <TextBlock Margin="0,8,0,0"
+                                       FontSize="12"
+                                       TextWrapping="Wrap"
+                                       Text="{Binding TagFeedback}"
+                                       Visibility="{Binding TagFeedback, Converter={StaticResource NullToVisibility}}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="{DynamicResource App.Success}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding TagFeedbackSeverity}" Value="Warning">
+                                                <Setter Property="Foreground" Value="{DynamicResource App.Warning}" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding TagFeedbackSeverity}" Value="Error">
+                                                <Setter Property="Foreground" Value="{DynamicResource App.Destructive}" />
+                                            </DataTrigger>
+                                            <!-- Gentle fade-in each time the line
+                                                 appears so the change registers
+                                                 even though it's tucked in the
+                                                 panel rather than a corner toast. -->
+                                            <DataTrigger Binding="{Binding TagFeedback, Converter={StaticResource NullToVisibility}}" Value="Visible">
+                                                <DataTrigger.EnterActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                             From="0" To="1" Duration="0:0:0.18" />
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </DataTrigger.EnterActions>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                                </StackPanel>
+                            </Expander>
+
+                            <!-- ===== NOTES &amp; RATING panel ===== -->
+                            <Expander Style="{StaticResource App.Expander}"
+                                      IsExpanded="{Binding DataContext.IsDetailNotesPanelExpanded, RelativeSource={RelativeSource AncestorType=Window}, Mode=TwoWay}">
+                                <Expander.Header>
+                                    <TextBlock Text="NOTES &amp; RATING" Style="{StaticResource App.Type.Section}" Margin="0" />
+                                </Expander.Header>
+                                <StackPanel>
                             <TextBlock Text="NOTES" Style="{StaticResource App.Type.Section}" />
                             <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
                                      AcceptsReturn="True" TextWrapping="Wrap"
@@ -1476,6 +1616,194 @@
                                     Margin="0,16,0,0"
                                     Style="{StaticResource App.Button.Primary}"
                                     helpers:Theme.Icon="{StaticResource Icon.Save}" />
+                                </StackPanel>
+                            </Expander>
+
+                            <!-- ===== MOMENTS panel (timestamped sub-clips) ===== -->
+                            <Expander Style="{StaticResource App.Expander}"
+                                      IsExpanded="{Binding DataContext.IsDetailMomentsPanelExpanded, RelativeSource={RelativeSource AncestorType=Window}, Mode=TwoWay}">
+                                <Expander.Header>
+                                    <TextBlock Text="MOMENTS" Style="{StaticResource App.Type.Section}" Margin="0" />
+                                </Expander.Header>
+                                <Expander.Tag>
+                                    <TextBlock VerticalAlignment="Center"
+                                               FontSize="12"
+                                               Foreground="{DynamicResource App.Foreground.Secondary}"
+                                               Text="{Binding MomentCountText}"
+                                               Visibility="{Binding HasMoments, Converter={StaticResource BoolToVisibility}}" />
+                                </Expander.Tag>
+                                <StackPanel>
+
+                                    <!-- Hint when nothing's marked yet. -->
+                                    <TextBlock Margin="0,4,0,0"
+                                               TextWrapping="Wrap"
+                                               FontSize="12"
+                                               Foreground="{DynamicResource App.Foreground.Secondary}"
+                                               Text="Play the clip, then press I to set an in-point and O to set the out-point — each moment becomes a searchable shot with its own thumbnail, label, rating, note and tags."
+                                               Visibility="{Binding HasMoments, Converter={StaticResource BoolToVisibilityInverted}}" />
+
+                                    <ListBox ItemsSource="{Binding Moments}"
+                                             SelectedItem="{Binding SelectedMoment, Mode=TwoWay}"
+                                             Background="Transparent"
+                                             BorderThickness="0"
+                                             Padding="0"
+                                             MaxHeight="280"
+                                             Margin="0,8,0,0"
+                                             HorizontalContentAlignment="Stretch"
+                                             ItemContainerStyle="{StaticResource App.ListBoxItem}"
+                                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <Border Grid.Column="0"
+                                                            Width="96" Height="54"
+                                                            CornerRadius="3"
+                                                            Background="Black"
+                                                            ClipToBounds="True">
+                                                        <Image Source="{Binding Thumbnail}"
+                                                               Stretch="UniformToFill" />
+                                                    </Border>
+
+                                                    <StackPanel Grid.Column="1" Margin="10,0,8,0" VerticalAlignment="Center">
+                                                        <!-- Title row: the moment's label (falls back to its
+                                                             in-point timecode when unnamed) takes the available
+                                                             width on the left, with the time range pinned to the
+                                                             right so both read at a glance across the full row. -->
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="Auto" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock Grid.Column="0"
+                                                                       Text="{Binding DisplayLabel}"
+                                                                       FontWeight="SemiBold"
+                                                                       TextTrimming="CharacterEllipsis"
+                                                                       VerticalAlignment="Center"
+                                                                       ToolTip="{Binding DisplayLabel}" />
+                                                            <TextBlock Grid.Column="1"
+                                                                       Text="{Binding TimeRangeText}"
+                                                                       Margin="8,0,0,0"
+                                                                       FontFamily="Consolas"
+                                                                       FontSize="11"
+                                                                       VerticalAlignment="Center"
+                                                                       Foreground="{DynamicResource App.Accent}" />
+                                                        </Grid>
+                                                        <!-- Tags on their own full-width line so the extra room
+                                                             is used; hidden entirely when the moment has none. -->
+                                                        <TextBlock Text="{Binding TagSummary}"
+                                                                   Margin="0,3,0,0"
+                                                                   FontSize="11"
+                                                                   TextTrimming="CharacterEllipsis"
+                                                                   Foreground="{DynamicResource App.Foreground.Secondary}"
+                                                                   ToolTip="{Binding TagSummary}"
+                                                                   Visibility="{Binding TagSummary, Converter={StaticResource NotEmptyToVisibility}}" />
+                                                    </StackPanel>
+
+                                                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <Button Style="{StaticResource App.Button.IconOnly}"
+                                                                helpers:Theme.Icon="{StaticResource Icon.Play}"
+                                                                ToolTip="Jump to this moment"
+                                                                Command="{Binding DataContext.PlayMomentCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                                CommandParameter="{Binding}" />
+                                                        <Button Style="{StaticResource App.Button.IconOnly}"
+                                                                helpers:Theme.Icon="{StaticResource Icon.Trash}"
+                                                                Margin="4,0,0,0"
+                                                                ToolTip="Delete this moment"
+                                                                Command="{Binding DataContext.DeleteMomentCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                                CommandParameter="{Binding}" />
+                                                    </StackPanel>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+
+                                    <!-- Compact editor for the selected moment. -->
+                                    <Border Margin="0,8,0,0"
+                                            Padding="10"
+                                            CornerRadius="4"
+                                            Background="{DynamicResource App.Chrome.Background}"
+                                            BorderBrush="{DynamicResource App.Border.Subtle}"
+                                            BorderThickness="1"
+                                            Visibility="{Binding HasSelectedMoment, Converter={StaticResource BoolToVisibility}}">
+                                        <StackPanel DataContext="{Binding SelectedMoment}">
+                                            <!-- Header makes it explicit this card edits the
+                                                 moment the user just clicked (the moment itself
+                                                 already exists from Mark out / O — this only
+                                                 saves label + note changes). -->
+                                            <TextBlock Margin="0,0,0,8"
+                                                       FontWeight="SemiBold"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       Text="{Binding TimeRangeText, StringFormat='Editing moment · {0}'}"
+                                                       Foreground="{DynamicResource App.Foreground.Secondary}" />
+
+                                            <TextBlock Text="LABEL" Style="{StaticResource App.Type.Section}" />
+                                            <TextBox Text="{Binding Label, UpdateSourceTrigger=PropertyChanged}"
+                                                     ui:ControlHelper.PlaceholderText="e.g. hero drone reveal" />
+
+                                            <TextBlock Text="NOTE" Style="{StaticResource App.Type.Section}" Margin="0,8,0,0" />
+                                            <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
+                                                     AcceptsReturn="True" TextWrapping="Wrap" MinHeight="44" />
+
+                                            <!-- Save action + inline confirmation. Rating and
+                                                 tags were intentionally dropped from the moment
+                                                 editor — a moment carries just a label and a
+                                                 note. The colour-coded line (auto-clears after
+                                                 2s) is the at-a-glance "it saved" cue right
+                                                 where you clicked; the bottom status bar /
+                                                 review-mode marker line keep the fuller record. -->
+                                            <Grid Margin="0,12,0,0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0"
+                                                           VerticalAlignment="Center"
+                                                           Margin="0,0,8,0"
+                                                           FontSize="12"
+                                                           TextWrapping="Wrap"
+                                                           Text="{Binding DataContext.Detail.MomentFeedback, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                           Visibility="{Binding DataContext.Detail.MomentFeedback, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource NullToVisibility}}">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Foreground" Value="{DynamicResource App.Success}" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding DataContext.Detail.MomentFeedbackSeverity, RelativeSource={RelativeSource AncestorType=Window}}" Value="Warning">
+                                                                    <Setter Property="Foreground" Value="{DynamicResource App.Warning}" />
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding DataContext.Detail.MomentFeedbackSeverity, RelativeSource={RelativeSource AncestorType=Window}}" Value="Error">
+                                                                    <Setter Property="Foreground" Value="{DynamicResource App.Destructive}" />
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding DataContext.Detail.MomentFeedback, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource NullToVisibility}}" Value="Visible">
+                                                                    <DataTrigger.EnterActions>
+                                                                        <BeginStoryboard>
+                                                                            <Storyboard>
+                                                                                <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                                                 From="0" To="1" Duration="0:0:0.18" />
+                                                                            </Storyboard>
+                                                                        </BeginStoryboard>
+                                                                    </DataTrigger.EnterActions>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                                <Button Grid.Column="1"
+                                                        Content="Save"
+                                                        HorizontalAlignment="Right"
+                                                        Style="{StaticResource App.Button.Primary}"
+                                                        helpers:Theme.Icon="{StaticResource Icon.Save}"
+                                                        Command="{Binding DataContext.Detail.SaveMomentCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </Expander>
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>
