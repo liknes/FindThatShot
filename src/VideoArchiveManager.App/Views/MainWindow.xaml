@@ -121,6 +121,15 @@
                                   Click="Moments_Click"
                                   ToolTip="Search across every timestamped moment (sub-clip) you've marked — by label, note, tag, or rating — and jump straight to the shot in the player." />
                         <Separator />
+                        <MenuItem Header="_Generate AI tags…"
+                                  Click="GenerateAiTags_Click"
+                                  Visibility="{Binding IsAiEnabled, Converter={StaticResource BoolToVisibility}}"
+                                  ToolTip="Score clips with a local CLIP model (sampling frames across each clip) to propose tags. Nothing is auto-applied; review proposals afterwards. Source files are only read." />
+                        <MenuItem Header="Review _AI suggestions…"
+                                  Click="AiReview_Click"
+                                  Visibility="{Binding IsAiEnabled, Converter={StaticResource BoolToVisibility}}"
+                                  ToolTip="Accept or reject the AI's proposed tags. Accepting adds a real tag to the clip." />
+                        <Separator Visibility="{Binding IsAiEnabled, Converter={StaticResource BoolToVisibility}}" />
                         <MenuItem Header="_Bulk edit selection…"
                                   Command="{Binding OpenBulkEditCommand}"
                                   InputGestureText="Ctrl+B" />
@@ -148,6 +157,11 @@
                                   IsCheckable="True"
                                   IsChecked="{Binding OnlyUnreviewed}"
                                   ToolTip="Limit the catalog to clips whose status is still Unreviewed OR that have no tags yet." />
+                        <MenuItem Header="Search by _description (AI)"
+                                  IsCheckable="True"
+                                  IsChecked="{Binding UseSemanticSearch}"
+                                  Visibility="{Binding IsAiEnabled, Converter={StaticResource BoolToVisibility}}"
+                                  ToolTip="Treat the search box as a natural-language description (e.g. &quot;drone shot over snowy mountains at sunset&quot;) and rank clips by AI visual similarity instead of literal text matching." />
                         <Separator />
                         <MenuItem Header="_Start review session"
                                   Command="{Binding StartReviewSessionCommand}"

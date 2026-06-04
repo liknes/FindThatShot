@@ -55,6 +55,46 @@ public class AppSettings
 
     public int PageSize { get; set; } = 200;
 
+    // --- AI auto-tagging & natural-language search (opt-in) ---------------
+    // Master switch for the whole CLIP subsystem. When false, no model is
+    // downloaded or loaded, no scoring pass runs, the AI menu commands are
+    // hidden, and natural-language search is disabled. Defaults OFF so nobody
+    // pays the model download or the CPU cost unless they opt in (mirrors how
+    // sidecars and proxy-substitution default off).
+    public bool EnableAiTagging { get; set; } = false;
+
+    // Optional drop-in location for the CLIP ONNX model bundle (image encoder,
+    // text encoder, tokenizer vocab, manifest). When empty the app uses its
+    // managed model directory under app-data and can download the bundle on
+    // demand. A power user / offline machine can pre-place the files and point
+    // here to skip the download entirely (mirrors the tools/ffmpeg pattern).
+    public string? AiModelDirectory { get; set; }
+
+    // URL the model bundle (.zip) is fetched from on first use
+    // (download-on-demand) by the in-app "Download model" button. Points at the
+    // GitHub Release asset for this repo; the archive is produced by
+    // scripts/export-clip-onnx.py --zip and uploaded under the models-v1 tag.
+    // If you re-export the model, upload it under the SAME tag/filename or bump
+    // this default. Power users can still override via AiModelDirectory (a
+    // drop-in folder) or by editing this in appsettings.json.
+    public string? AiModelDownloadUrl { get; set; } =
+        "https://github.com/liknes/FindThatShot/releases/download/models-v1/clip-vit-b32.zip";
+
+    // How many frames to sample across each clip when building its embedding.
+    // A single thumbnail is a poor signal for a whole video, so we decode N
+    // evenly-spaced frames and max-pool tag/search scores across them. More
+    // frames = better recall on what a clip "ever shows" at higher cost.
+    public int AiFramesPerClip { get; set; } = 9;
+
+    // Cosine-similarity floor (CLIP image↔text) above which a vocabulary label
+    // becomes an AiTagSuggestion. CLIP matches typically score ~0.22–0.35, so
+    // ~0.26 is a sensible default; raise for fewer/cleaner suggestions.
+    public double AiSuggestionThreshold { get; set; } = 0.26;
+
+    // Cap on how many suggestions a single clip can produce (the top-N labels
+    // by confidence above the threshold), so the review queue stays focused.
+    public int AiMaxSuggestionsPerClip { get; set; } = 6;
+
     // Persisted main-window sidebar layout. Width is the user's last
     // dragged width of the FOLDERS / TAGS / CAMERAS rail; the three
     // *Expanded flags persist Lightroom-style panel collapse state so

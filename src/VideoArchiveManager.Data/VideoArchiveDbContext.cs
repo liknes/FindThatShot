@@ -17,6 +17,8 @@ public class VideoArchiveDbContext : DbContext
     public DbSet<MomentTag> MomentTags => Set<MomentTag>();
     public DbSet<RootFolder> RootFolders => Set<RootFolder>();
     public DbSet<AiTagSuggestion> AiTagSuggestions => Set<AiTagSuggestion>();
+    public DbSet<AiClipEmbedding> AiClipEmbeddings => Set<AiClipEmbedding>();
+    public DbSet<AiFrameEmbedding> AiFrameEmbeddings => Set<AiFrameEmbedding>();
     public DbSet<GeocodeCacheEntry> GeocodeCacheEntries => Set<GeocodeCacheEntry>();
     public DbSet<SavedSearch> SavedSearches => Set<SavedSearch>();
 

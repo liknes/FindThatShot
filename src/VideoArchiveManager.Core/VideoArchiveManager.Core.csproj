@@ -8,6 +8,11 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
+    <!-- CPU ONNX inference for the optional CLIP auto-tagging / semantic-search
+         subsystem. The model files themselves are NOT shipped in the repo or
+         this package — they are downloaded on demand (or dropped into a local
+         folder) at runtime, so this only adds the runtime, not the weights. -->
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.20.1" />
   </ItemGroup>
 
 </Project>
