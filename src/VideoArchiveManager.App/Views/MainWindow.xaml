@@ -931,6 +931,24 @@
                                                    FontFamily="{StaticResource App.FontFamily.Mono}"
                                                    FontSize="11" />
                                     </Border>
+                                    <!-- Tag indicator: a small tag glyph in the bottom-left
+                                         marks clips that carry tags, so a tagged-vs-untagged
+                                         scan is possible at a glance. Hidden when the clip has
+                                         no tags; the tooltip lists them. -->
+                                    <Border VerticalAlignment="Bottom"
+                                            HorizontalAlignment="Left"
+                                            Background="#A0000000"
+                                            Padding="6,3"
+                                            CornerRadius="3"
+                                            Margin="6"
+                                            ToolTip="{Binding TagSummary}"
+                                            Visibility="{Binding HasTags, Converter={StaticResource BoolToVisibility}}">
+                                        <TextBlock Text="&#xE8EC;"
+                                                   FontFamily="{StaticResource App.Icon.FontFamily}"
+                                                   Foreground="White"
+                                                   FontSize="11"
+                                                   VerticalAlignment="Center" />
+                                    </Border>
                                     <Border Background="#C0000000"
                                             Padding="8,4"
                                             CornerRadius="4"

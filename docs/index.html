@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Find That Shot — Catalog, search & review your local video archive</title>
+<meta name="description" content="A local-first Windows app that catalogs, tags, and helps you instantly find any clip across all your drives — without ever moving, renaming, or modifying a single source file." />
+
+<!-- Open Graph / social -->
+<meta property="og:title" content="Find That Shot" />
+<meta property="og:description" content="Catalog, search & review your local video archive. Your source files are never moved, renamed, or modified." />
+<meta property="og:type" content="website" />
+<meta property="og:image" content="assets/logo.png" />
+
+<link rel="icon" href="assets/favicon.ico" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+<style>
+  :root {
+    --accent: #f5a623;
+    --accent-strong: #e2900c;
+    --accent-soft: rgba(245, 166, 35, 0.12);
+    --ink: #11161f;
+    --ink-2: #38414f;
+    --muted: #6b7585;
+    --line: #e7e9ee;
+    --bg: #ffffff;
+    --bg-soft: #f7f8fa;
+    --hero-1: #0f1722;
+    --hero-2: #1b2738;
+    --radius: 16px;
+    --shadow: 0 10px 30px -12px rgba(15, 23, 34, 0.25);
+    --maxw: 1120px;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; text-decoration: none; }
+  img { max-width: 100%; display: block; }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+  section { padding: 88px 0; }
+  h1, h2, h3 { line-height: 1.15; letter-spacing: -0.02em; margin: 0; }
+  .eyebrow {
+    display: inline-block; font-size: 13px; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--accent-strong); margin-bottom: 14px;
+  }
+
+  /* ---------- Buttons ---------- */
+  .btn {
+    display: inline-flex; align-items: center; gap: 9px; font-weight: 600; font-size: 15px;
+    padding: 13px 22px; border-radius: 12px; border: 1px solid transparent; cursor: pointer;
+    transition: transform .15s ease, box-shadow .15s ease, background .15s ease, border-color .15s ease;
+  }
+  .btn:hover { transform: translateY(-2px); }
+  .btn-primary { background: var(--accent); color: #1a1206; box-shadow: 0 10px 24px -10px rgba(245,166,35,.7); }
+  .btn-primary:hover { background: var(--accent-strong); }
+  .btn-ghost { border-color: rgba(255,255,255,.22); color: #fff; background: rgba(255,255,255,.04); }
+  .btn-ghost:hover { background: rgba(255,255,255,.1); }
+  .btn-dark { background: var(--ink); color: #fff; }
+  .btn-dark:hover { background: #000; }
+  .btn-outline { border-color: var(--line); color: var(--ink); background: #fff; }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent-strong); }
+
+  /* ---------- Nav ---------- */
+  header.nav {
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: saturate(180%) blur(12px);
+    background: rgba(255,255,255,.82);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 66px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 18px; letter-spacing: -0.02em; }
+  .brand .mark {
+    width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center;
+    background: var(--accent-soft); color: var(--accent-strong);
+  }
+  .nav-links { display: flex; align-items: center; gap: 28px; }
+  .nav-links a { color: var(--ink-2); font-weight: 500; font-size: 15px; }
+  .nav-links a:hover { color: var(--ink); }
+  .nav-cta { display: flex; align-items: center; gap: 12px; }
+  @media (max-width: 860px) { .nav-links { display: none; } }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    position: relative; overflow: hidden; color: #fff;
+    background:
+      radial-gradient(900px 480px at 78% -10%, rgba(245,166,35,.22), transparent 60%),
+      linear-gradient(160deg, var(--hero-1), var(--hero-2));
+  }
+  .hero::before {
+    content: ""; position: absolute; inset: 0; opacity: .5;
+    background-image:
+      linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+    background-size: 46px 46px; mask-image: radial-gradient(900px 500px at 70% 0%, #000, transparent 75%);
+  }
+  .hero .wrap { position: relative; }
+  .hero-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 56px; align-items: center; padding: 96px 0 104px; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600;
+    padding: 6px 13px; border-radius: 999px; color: #ffd699;
+    background: rgba(245,166,35,.12); border: 1px solid rgba(245,166,35,.28); margin-bottom: 22px;
+  }
+  .pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px rgba(245,166,35,.25); }
+  .hero h1 { font-size: clamp(34px, 5vw, 56px); font-weight: 800; }
+  .hero h1 .accent { color: var(--accent); }
+  .hero p.lead { font-size: 18px; color: #c4cdda; margin: 22px 0 32px; max-width: 540px; }
+  .hero-actions { display: flex; flex-wrap: wrap; gap: 14px; }
+  .hero-meta { margin-top: 28px; display: flex; gap: 26px; flex-wrap: wrap; color: #8c98a8; font-size: 14px; }
+  .hero-meta b { color: #eef2f7; font-weight: 700; }
+  @media (max-width: 920px) { .hero-grid { grid-template-columns: 1fr; gap: 36px; padding: 64px 0 72px; } }
+
+  /* ---------- App mock ---------- */
+  .mock {
+    border-radius: 14px; overflow: hidden; border: 1px solid rgba(255,255,255,.12);
+    background: #0c121b; box-shadow: 0 40px 80px -30px rgba(0,0,0,.7);
+  }
+  .mock-bar { display: flex; align-items: center; gap: 7px; padding: 11px 14px; background: #131c28; border-bottom: 1px solid rgba(255,255,255,.07); }
+  .mock-bar i { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+  .mock-bar .r { background: #ff5f57; } .mock-bar .y { background: #febc2e; } .mock-bar .g { background: #28c840; }
+  .mock-bar span { margin-left: 10px; font-size: 12px; color: #6b7888; }
+  .mock-body { display: grid; grid-template-columns: 150px 1fr; min-height: 320px; }
+  .mock-side { background: #0e151f; border-right: 1px solid rgba(255,255,255,.06); padding: 14px 12px; }
+  .mock-side .s-search { height: 26px; border-radius: 7px; background: rgba(255,255,255,.06); margin-bottom: 14px; }
+  .mock-side .s-item { height: 9px; border-radius: 4px; background: rgba(255,255,255,.07); margin: 9px 4px; }
+  .mock-side .s-item.act { background: rgba(245,166,35,.55); width: 70%; }
+  .mock-side .s-item.w60 { width: 60%; } .mock-side .s-item.w80 { width: 80%; } .mock-side .s-item.w45 { width: 45%; }
+  .mock-main { padding: 14px; }
+  .mock-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .mock-card { border-radius: 8px; overflow: hidden; background: #131d29; border: 1px solid rgba(255,255,255,.06); }
+  .mock-thumb { aspect-ratio: 16/10; position: relative; background: linear-gradient(135deg, #1d2c3d, #24405a); }
+  .mock-thumb.a { background: linear-gradient(135deg, #2a2233, #4a3a24); }
+  .mock-thumb.b { background: linear-gradient(135deg, #15303a, #1f5358); }
+  .mock-thumb.c { background: linear-gradient(135deg, #2d2030, #5a2d3a); }
+  .mock-thumb .badge { position: absolute; top: 6px; right: 6px; font-size: 9px; font-weight: 700; color: #1a1206; background: var(--accent); padding: 2px 6px; border-radius: 5px; }
+  .mock-thumb .dur { position: absolute; bottom: 6px; right: 6px; font-size: 9px; color: #cfe; background: rgba(0,0,0,.55); padding: 1px 5px; border-radius: 4px; }
+  .mock-meta { padding: 7px 8px; } .mock-meta .l1 { height: 7px; width: 85%; background: rgba(255,255,255,.16); border-radius: 3px; }
+  .mock-meta .l2 { height: 6px; width: 55%; background: rgba(255,255,255,.09); border-radius: 3px; margin-top: 6px; }
+
+  /* ---------- Promise band ---------- */
+  .promise { background: var(--ink); color: #fff; padding: 30px 0; }
+  .promise .wrap { display: flex; align-items: center; gap: 18px; justify-content: center; text-align: center; flex-wrap: wrap; }
+  .promise .lock { width: 42px; height: 42px; border-radius: 11px; background: rgba(245,166,35,.16); color: var(--accent); display: grid; place-items: center; flex: none; }
+  .promise p { margin: 0; font-size: 16px; color: #d7dde6; }
+  .promise b { color: #fff; }
+
+  /* ---------- Features ---------- */
+  .sec-head { max-width: 640px; margin-bottom: 52px; }
+  .sec-head h2 { font-size: clamp(28px, 3.6vw, 40px); font-weight: 800; }
+  .sec-head p { color: var(--muted); font-size: 17px; margin-top: 14px; }
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  @media (max-width: 920px) { .features { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 600px) { .features { grid-template-columns: 1fr; } }
+  .card {
+    border: 1px solid var(--line); border-radius: var(--radius); padding: 26px; background: #fff;
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  }
+  .card:hover { transform: translateY(-4px); box-shadow: var(--shadow); border-color: #dfe3ea; }
+  .card .ico {
+    width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center;
+    background: var(--accent-soft); color: var(--accent-strong); margin-bottom: 16px;
+  }
+  .card h3 { font-size: 18px; font-weight: 700; }
+  .card p { color: var(--muted); font-size: 14.5px; margin: 8px 0 0; }
+
+  /* ---------- Steps ---------- */
+  .steps-wrap { background: var(--bg-soft); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  @media (max-width: 800px) { .steps { grid-template-columns: 1fr; } }
+  .step { position: relative; padding: 28px; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); }
+  .step .num {
+    width: 38px; height: 38px; border-radius: 10px; background: var(--ink); color: var(--accent);
+    font-weight: 800; display: grid; place-items: center; margin-bottom: 16px; font-size: 16px;
+  }
+  .step h3 { font-size: 19px; font-weight: 700; }
+  .step p { color: var(--muted); margin-top: 8px; font-size: 15px; }
+
+  /* ---------- Download ---------- */
+  .download { text-align: center; }
+  .dl-box {
+    max-width: 760px; margin: 0 auto; border-radius: 22px; padding: 56px 40px; color: #fff; position: relative; overflow: hidden;
+    background: radial-gradient(700px 320px at 50% -30%, rgba(245,166,35,.28), transparent 65%), linear-gradient(160deg, var(--hero-1), var(--hero-2));
+    border: 1px solid rgba(255,255,255,.08);
+  }
+  .dl-box h2 { font-size: clamp(26px, 3.4vw, 38px); font-weight: 800; }
+  .dl-box p { color: #c4cdda; margin: 16px auto 30px; max-width: 520px; }
+  .dl-actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  .dl-note { margin-top: 22px; font-size: 13px; color: #8c98a8; }
+  .dl-note code { background: rgba(255,255,255,.08); padding: 2px 7px; border-radius: 6px; color: #ffd699; font-size: 12px; }
+
+  /* ---------- Footer ---------- */
+  footer { padding: 44px 0; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+  .foot-inner { display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
+  .foot-links { display: flex; gap: 22px; flex-wrap: wrap; }
+  .foot-links a:hover { color: var(--ink); }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="#top">
+      <span class="mark" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      </span>
+      Find That Shot
+    </a>
+    <nav class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#how">How it works</a>
+      <a href="#privacy">Privacy</a>
+      <a href="#download">Download</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-outline" href="https://github.com/liknes/FindThatShot" target="_blank" rel="noopener">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.2.8-.5v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.4-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.7 18.3 5 18.3 5c.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .3.2.6.8.5 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5Z"/></svg>
+        GitHub
+      </a>
+      <a class="btn btn-primary" href="#download">Download</a>
+    </div>
+  </div>
+</header>
+
+<!-- HERO -->
+<a id="top"></a>
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <span class="pill"><span class="dot"></span> Local-first · Windows 10/11 · Open source</span>
+        <h1>Find <span class="accent">that</span> shot.<br />Across every drive.</h1>
+        <p class="lead">
+          A desktop app that catalogs, tags, and instantly searches your entire local video archive —
+          internal disks, externals, offline drives — <b style="color:#fff">without ever moving, renaming, or modifying a single source file.</b>
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#download">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"/></svg>
+            <span>Download for Windows</span>
+          </a>
+          <a class="btn btn-ghost" href="#features">See what it does</a>
+        </div>
+        <div class="hero-meta">
+          <span><b>0</b> files touched on disk</span>
+          <span><b>100%</b> local &amp; offline</span>
+          <span><b>GPLv3</b> open source</span>
+        </div>
+      </div>
+
+      <!-- App mock -->
+      <div class="mock" aria-hidden="true">
+        <div class="mock-bar"><i class="r"></i><i class="y"></i><i class="g"></i><span>Find That Shot</span></div>
+        <div class="mock-body">
+          <div class="mock-side">
+            <div class="s-search"></div>
+            <div class="s-item w80"></div>
+            <div class="s-item act"></div>
+            <div class="s-item w60"></div>
+            <div class="s-item w80"></div>
+            <div class="s-item w45"></div>
+            <div class="s-item w60"></div>
+          </div>
+          <div class="mock-main">
+            <div class="mock-grid">
+              <div class="mock-card"><div class="mock-thumb"><span class="dur">0:42</span></div><div class="mock-meta"><div class="l1"></div><div class="l2"></div></div></div>
+              <div class="mock-card"><div class="mock-thumb a"><span class="badge">★ 4</span><span class="dur">2:18</span></div><div class="mock-meta"><div class="l1"></div><div class="l2"></div></div></div>
+              <div class="mock-card"><div class="mock-thumb b"><span class="dur">0:09</span></div><div class="mock-meta"><div class="l1"></div><div class="l2"></div></div></div>
+              <div class="mock-card"><div class="mock-thumb c"><span class="dur">5:31</span></div><div class="mock-meta"><div class="l1"></div><div class="l2"></div></div></div>
+              <div class="mock-card"><div class="mock-thumb b"><span class="badge">★ 5</span><span class="dur">1:04</span></div><div class="mock-meta"><div class="l1"></div><div class="l2"></div></div></div>
+              <div class="mock-card"><div class="mock-thumb"><span class="dur">0:27</span></div><div class="mock-meta"><div class="l1"></div><div class="l2"></div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROMISE -->
+<div class="promise" id="privacy">
+  <div class="wrap">
+    <div class="lock" aria-hidden="true">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    </div>
+    <p><b>Your footage is never modified.</b> Source video files are never moved, renamed, deleted, or touched — the app only writes its own catalog, thumbnails, and (optionally) sidecar files.</p>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Built for big archives</span>
+      <h2>Everything you need to find a single clip in thousands</h2>
+      <p>Catalog once, then slice your library by text, tags, rating, status, camera, date, location, and more — even for clips on drives that are currently unplugged.</p>
+    </div>
+    <div class="features">
+      <div class="card">
+        <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></div>
+        <h3>Instant search &amp; smart collections</h3>
+        <p>AND-matched tokens across filename, path, location, notes, camera &amp; tags. Save any filter combo as a live, self-updating collection.</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 4v16"/></svg></div>
+        <h3>Moments — mark the exact shot</h3>
+        <p>A shot is rarely a whole file. Drop timestamped in/out markers with their own label, rating, notes &amp; tags, and jump straight back to them.</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 3 14 9-14 9V3z"/></svg></div>
+        <h3>Built-in player &amp; Review mode</h3>
+        <p>Preview clips in-app with an FFmpeg-powered player (H.264/265, ProRes, DNxHD…) while you tag, rate and take notes side-by-side.</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></div>
+        <h3>Browse on a map</h3>
+        <p>Every geotagged clip plotted on a clustered offline map. Click a region to scope your whole grid to "where did I shoot that?"</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></div>
+        <h3>Browse by date</h3>
+        <p>A year-by-month heatmap bucketed by when footage was actually captured. Click a month to scope the grid to it.</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M4 16V6a2 2 0 0 1 2-2h10"/></svg></div>
+        <h3>Find duplicates</h3>
+        <p>Instantly group copies by metadata fingerprint — even across offline backups — and clear redundant catalog entries (never the files).</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 7v6c0 4 3.5 7 8 8 4.5-1 8-4 8-8V7l-8-4Z"/><path d="m9 12 2 2 4-4"/></svg></div>
+        <h3>Local AI tagging &amp; NL search</h3>
+        <p>Opt-in CLIP model runs fully offline on your CPU. Get subject-tag suggestions and search by plain English — <em>"drone shot over snowy mountains at sunset."</em></p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M5 3h9l5 5v13H5z"/><path d="M9 13h6M9 17h6"/></svg></div>
+        <h3>Portable sidecar files</h3>
+        <p>Optionally write a tiny JSON next to each video so your tags, ratings, notes &amp; moments travel with the footage to any machine.</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0Z"/><path d="M12 7v5l3 2"/></svg></div>
+        <h3>Stats &amp; automatic backups</h3>
+        <p>A read-only dashboard of your whole archive, plus rotating, restorable backups of your catalog so curation work is never lost.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="steps-wrap" id="how">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">How it works</span>
+      <h2>Three steps to a searchable archive</h2>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="num">1</div>
+        <h3>Add your folders</h3>
+        <p>Point the app at any root directory on any drive — add as many as you like. Nothing is copied or moved.</p>
+      </div>
+      <div class="step">
+        <div class="num">2</div>
+        <h3>Scan</h3>
+        <p>It walks each folder, reads technical metadata with FFprobe, parses dates &amp; locations, and generates thumbnails in the background.</p>
+      </div>
+      <div class="step">
+        <div class="num">3</div>
+        <h3>Find that shot</h3>
+        <p>Search, filter, tag, rate, mark moments, and review — across your entire library, online or offline.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DOWNLOAD -->
+<section class="download" id="download">
+  <div class="wrap">
+    <div class="dl-box">
+      <span class="eyebrow" style="color:var(--accent)">Get started</span>
+      <h2>Download Find That Shot</h2>
+      <p>A self-contained Windows build with a one-click installer (auto-updates) or a portable zip. Free and open source under the GPLv3.</p>
+      <div class="dl-actions">
+        <a class="btn btn-primary" href="https://github.com/liknes/FindThatShot/releases/latest" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"/></svg>
+          <span>Installer (Setup.exe)</span>
+        </a>
+        <a class="btn btn-ghost" href="https://github.com/liknes/FindThatShot/releases/latest" target="_blank" rel="noopener">Portable .zip</a>
+        <a class="btn btn-ghost" href="https://github.com/liknes/FindThatShot" target="_blank" rel="noopener">View source</a>
+      </div>
+      <p class="dl-note">Requires Windows 10/11. FFmpeg is bundled — or install with <code>winget install Gyan.FFmpeg</code>. Unsigned build: SmartScreen may warn on first launch.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap foot-inner">
+    <div class="brand" style="font-size:16px;">
+      <span class="mark" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      </span>
+      Find That Shot
+    </div>
+    <div class="foot-links">
+      <a href="#features">Features</a>
+      <a href="#how">How it works</a>
+      <a href="#download">Download</a>
+      <a href="https://github.com/liknes/FindThatShot" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://github.com/liknes/FindThatShot/blob/main/LICENSE" target="_blank" rel="noopener">GPLv3 License</a>
+    </div>
+    <div>© <span id="year"></span> Find That Shot · Find. Tag. Review. Anywhere.</div>
+  </div>
+</footer>
+
+<script>
+  document.getElementById("year").textContent = new Date().getFullYear();
+</script>
+</body>
+</html>

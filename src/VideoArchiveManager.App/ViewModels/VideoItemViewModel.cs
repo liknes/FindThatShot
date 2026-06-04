@@ -86,7 +86,13 @@ public partial class VideoItemViewModel : ObservableObject
     }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasTags))]
     private string _tagSummary = string.Empty;
+
+    // Drives a small tag icon on the catalog card so clips that carry tags
+    // stand out at a glance (the tag names themselves live in the editor /
+    // the badge's tooltip). Kept in sync via TagSummary's change notification.
+    public bool HasTags => !string.IsNullOrWhiteSpace(TagSummary);
 
     // Number of timestamped moments (sub-clips) marked inside this clip. Drives
     // a small "N" badge on the catalog card so clips with marked shots stand
