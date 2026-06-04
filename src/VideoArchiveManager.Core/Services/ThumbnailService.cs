@@ -56,6 +56,7 @@ public class ThumbnailService : IThumbnailService
         string videoFilePath,
         double? durationSeconds,
         int frameCount,
+        IProgress<string>? frameProduced = null,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(videoFilePath) || !File.Exists(videoFilePath))
@@ -70,7 +71,11 @@ public class ThumbnailService : IThumbnailService
         var expected = Enumerable.Range(0, timestamps.Count)
             .Select(i => Path.Combine(dir, $"{i}.jpg"))
             .ToList();
-        if (expected.All(File.Exists)) return expected;
+        if (expected.All(File.Exists))
+        {
+            foreach (var p in expected) frameProduced?.Report(p);
+            return expected;
+        }
 
         Directory.CreateDirectory(dir);
 
@@ -82,6 +87,7 @@ public class ThumbnailService : IThumbnailService
             if (File.Exists(outputPath))
             {
                 result.Add(outputPath);
+                frameProduced?.Report(outputPath);
                 continue;
             }
 
@@ -91,7 +97,13 @@ public class ThumbnailService : IThumbnailService
             var produced = await ExtractFrameAsync(
                 videoFilePath, timestamps[i], outputPath, cancellationToken,
                 scaleFilter: "scale=320:-2", quality: 5).ConfigureAwait(false);
-            if (produced != null) result.Add(produced);
+            if (produced != null)
+            {
+                result.Add(produced);
+                // Reveal this frame immediately so the card "fills in" as
+                // extraction proceeds rather than blocking on the whole set.
+                frameProduced?.Report(produced);
+            }
         }
         return result;
     }

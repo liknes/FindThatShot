@@ -31,7 +31,8 @@ public partial class MainWindow : Window
     // the card, and a cancellation source so leaving a card / moving to another
     // aborts any in-flight lazy generation. All touched only on the UI thread.
     private VideoItemViewModel? _scrubVm;
-    private IReadOnlyList<string>? _scrubFrames;
+    private readonly List<string> _scrubFrames = new();
+    private int _scrubExpectedCount;
     private double _scrubFraction;
     private CancellationTokenSource? _scrubCts;
 
@@ -657,7 +658,8 @@ public partial class MainWindow : Window
         EndScrub();
 
         _scrubVm = vm;
-        _scrubFrames = null;
+        _scrubFrames.Clear();
+        _scrubExpectedCount = Math.Clamp(_settingsStore.Current.HoverScrubFrameCount, 4, 40);
 
         var cts = new CancellationTokenSource();
         _scrubCts = cts;
@@ -672,14 +674,19 @@ public partial class MainWindow : Window
             // its way elsewhere never trigger an ffmpeg run.
             await Task.Delay(160, token);
 
-            var count = Math.Clamp(_settingsStore.Current.HoverScrubFrameCount, 4, 40);
-            var frames = await _thumbnailService.GenerateScrubFramesAsync(
-                vm.Id, vm.FilePath, vm.Model.DurationSeconds, count, token);
+            // Reveal each frame the instant it's extracted (progressive fill-in)
+            // rather than blocking on the whole set — the card feels responsive
+            // even while the later frames are still being decoded. Progress<T>
+            // marshals back to this UI thread.
+            var progress = new Progress<string>(path =>
+            {
+                if (token.IsCancellationRequested || !ReferenceEquals(vm, _scrubVm)) return;
+                _scrubFrames.Add(path);
+                UpdateScrubFrame();
+            });
 
-            if (token.IsCancellationRequested || !ReferenceEquals(vm, _scrubVm)) return;
-
-            _scrubFrames = frames;
-            UpdateScrubFrame();
+            await _thumbnailService.GenerateScrubFramesAsync(
+                vm.Id, vm.FilePath, vm.Model.DurationSeconds, _scrubExpectedCount, progress, token);
         }
         catch (OperationCanceledException)
         {
@@ -695,14 +702,18 @@ public partial class MainWindow : Window
     private void UpdateScrubFrame()
     {
         var vm = _scrubVm;
-        var frames = _scrubFrames;
-        if (vm is null || frames is null || frames.Count == 0) return;
+        if (vm is null || _scrubFrames.Count == 0) return;
 
-        var index = (int)(_scrubFraction * frames.Count);
-        if (index < 0) index = 0;
-        if (index >= frames.Count) index = frames.Count - 1;
+        // Map the pointer over the EXPECTED frame count so the cursor position
+        // stays stable as frames fill in, then clamp to whatever's available so
+        // far (frames are produced in order, so the last available is the
+        // nearest match while generation is still catching up).
+        var span = Math.Max(_scrubExpectedCount, _scrubFrames.Count);
+        var desired = (int)(_scrubFraction * span);
+        if (desired < 0) desired = 0;
+        if (desired >= _scrubFrames.Count) desired = _scrubFrames.Count - 1;
 
-        var bitmap = ThumbnailLoader.Load(frames[index]);
+        var bitmap = ThumbnailLoader.Load(_scrubFrames[desired]);
         if (bitmap != null) vm.ScrubFrame = bitmap;
     }
 
@@ -717,7 +728,8 @@ public partial class MainWindow : Window
             _scrubVm.ScrubFrame = null;
             _scrubVm = null;
         }
-        _scrubFrames = null;
+        _scrubFrames.Clear();
+        _scrubExpectedCount = 0;
     }
 
     // Re-entrancy guard for the tag picker. Adding a chip mutates

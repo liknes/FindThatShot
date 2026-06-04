@@ -43,10 +43,15 @@ public interface IThumbnailService
     // the ordered list of frame paths that exist on disk (may be shorter than
     // frameCount on partial failure). The source video file is only ever read,
     // never modified.
+    //
+    // frameProduced (optional) is invoked with each frame path the moment it's
+    // available (cached or freshly extracted), in index order, so the UI can
+    // reveal the scrub strip progressively instead of waiting for the whole set.
     Task<IReadOnlyList<string>> GenerateScrubFramesAsync(
         int videoId,
         string videoFilePath,
         double? durationSeconds,
         int frameCount,
+        IProgress<string>? frameProduced = null,
         CancellationToken cancellationToken = default);
 }
