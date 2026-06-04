@@ -104,6 +104,20 @@ The installed application bundles or links to several third-party components. Th
 - **Specific icon used:** `Apps-kmplayer` from the Oxygen icon set, redistributed by IconArchive (https://www.iconarchive.com/show/oxygen-icons-by-oxygen-icons.org/Apps-kmplayer-icon.html).
 - **How it is used:** Shipped unmodified as the application icon (`AppIcon.ico` / `AppIcon.png`) for the main window, secondary windows, the executable, and the Velopack installer / Start-menu shortcut.
 
+## ONNX Runtime (Microsoft.ML.OnnxRuntime)
+
+- **Version:** 1.20.1
+- **License:** MIT, https://github.com/microsoft/onnxruntime/blob/main/LICENSE
+- **Project home:** https://onnxruntime.ai/ (source: https://github.com/microsoft/onnxruntime)
+- **How it is used:** CPU inference engine for the **optional, opt-in** AI auto-tagging / natural-language search feature. The ONNX Runtime native libraries (`onnxruntime.dll` etc.) ship in the installer and are loaded in-process to run the CLIP image/text encoders. The feature is **off by default** and runs entirely locally — no data leaves the machine. Shipped unmodified as a NuGet binary dependency.
+
+## OpenAI CLIP (clip-vit-base-patch32)
+
+- **Model:** `openai/clip-vit-base-patch32` (ViT-B/32), exported to ONNX
+- **License:** MIT, https://github.com/openai/CLIP/blob/main/LICENSE
+- **Project home:** https://github.com/openai/CLIP — weights: https://huggingface.co/openai/clip-vit-base-patch32
+- **How it is used:** Optional, opt-in local image/text embedding model that powers AI auto-tag suggestions and natural-language ("search by description") ranking. It runs entirely on the local CPU via ONNX Runtime. The model weights are **not bundled in the application installer**; they are produced from the public upstream weights with `scripts/export-clip-onnx.py` and distributed separately as a downloadable `.zip` (fetched on demand via the in-app **Download model** button) or supplied by the user. The CLIP BPE tokenizer vocabulary (`bpe_simple_vocab_16e6`) is from the upstream CLIP repository and carries the same MIT license.
+
 ---
 
 If you redistribute Find That Shot, you must keep this file and the `LICENSE` file alongside the executable. If you modify the application and distribute the result, you must do so under the GNU General Public License v3.
