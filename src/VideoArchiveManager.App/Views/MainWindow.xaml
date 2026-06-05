@@ -260,7 +260,7 @@
             </Grid.ColumnDefinitions>
 
             <Border Grid.Column="0" Padding="10"
-                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                     BorderThickness="0,0,1,0">
                 <!-- Sidebar rail layout (Lightroom-style proportional split).
                      Each panel (FOLDERS / TAGS / CAMERAS) gets its own
@@ -283,7 +283,7 @@
                      * has nothing to share). Each panel relies on its
                      inner control (TreeView / ListBox) for content
                      scrolling once the panel itself is sized. -->
-                <Grid>
+            <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="{Binding IsFoldersPanelExpanded, Converter={StaticResource BoolToStarOrAuto}}" />
                         <RowDefinition Height="{Binding IsTagsPanelExpanded, Converter={StaticResource BoolToStarOrAuto}}" />
@@ -346,11 +346,11 @@
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
                                                 <Grid Margin="0,0,0,2">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="*" />
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                                                         <ColumnDefinition Width="Auto" />
-                                                        <ColumnDefinition Width="Auto" />
-                                                    </Grid.ColumnDefinitions>
+                </Grid.ColumnDefinitions>
 
                                                     <!-- Apply row. Clicking re-applies the
                                                          saved criteria and re-runs the search.
@@ -376,7 +376,7 @@
                                                             <TextBlock Text="{Binding Name}"
                                                                        VerticalAlignment="Center"
                                                                        TextTrimming="CharacterEllipsis" />
-                                                        </StackPanel>
+                </StackPanel>
                                                     </Button>
 
                                                     <Button Grid.Column="1"
@@ -398,7 +398,7 @@
                                                             ToolTip="Delete this saved search"
                                                             Command="{Binding DataContext.DeleteSavedSearchCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                             CommandParameter="{Binding}" />
-                                                </Grid>
+            </Grid>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
@@ -487,7 +487,7 @@
                                                    HorizontalAlignment="Center"
                                                    Foreground="{DynamicResource App.Accent}" />
                                     </StackPanel>
-                                </Border>
+        </Border>
 
                                 <!-- First-run empty state: shown when no root folders are
                                      configured. Headline + subtext + a primary CTA that
@@ -548,11 +548,11 @@
                             <TreeView.ItemTemplate>
                                 <HierarchicalDataTemplate ItemsSource="{Binding Children}">
                                     <Grid>
-                                        <Grid.ColumnDefinitions>
+            <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto" />
-                                            <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
+            </Grid.ColumnDefinitions>
                                         <!-- Folder glyph. Drives use a "device"-ish
                                              open folder; registered roots and
                                              subfolders use the standard folder
@@ -677,7 +677,7 @@
                                         </ItemsPanelTemplate>
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
+                                <DataTemplate>
                                             <Border Style="{StaticResource App.TagChip}">
                                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                                     <TextBlock Text="{Binding Name}"
@@ -688,9 +688,9 @@
                                                             ToolTip="Remove this tag filter."
                                                             Command="{Binding DataContext.RemoveTagFilterCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                             CommandParameter="{Binding}" />
-                                                </StackPanel>
+                                    </StackPanel>
                                             </Border>
-                                        </DataTemplate>
+                                </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
 
@@ -743,8 +743,8 @@
                                  the 3-panel-expanded layout; VerticalAlignment
                                  Stretch lets it fill the row when it's the
                                  only expanded panel. -->
-                            <ListBox ItemsSource="{Binding Cameras}"
-                                     SelectedItem="{Binding CameraFilter}"
+                        <ListBox ItemsSource="{Binding Cameras}"
+                                 SelectedItem="{Binding CameraFilter}"
                                      Style="{StaticResource App.ListBox}"
                                      MinHeight="100"
                                      VerticalAlignment="Stretch" />
@@ -791,7 +791,7 @@
                                             CalendarStyle="{StaticResource App.Calendar}"
                                             SelectedDate="{Binding DateTo}"
                                             ui:ControlHelper.PlaceholderText="To" />
-                            </StackPanel>
+                    </StackPanel>
                         </Expander>
 
                         <!-- Clear filters: resets the search box, folder/tag/camera
@@ -896,7 +896,7 @@
                              card to availableWidth / columnCount. The thumbnail
                              box keeps a true 16:9 shape by binding its Height to
                              its own ActualWidth via WidthTo16x9Height. -->
-                        <StackPanel>
+                            <StackPanel>
                             <!-- Double-clicking the thumbnail mirrors the sidebar
                                  "Play in app" button — see Thumbnail_OnMouseLeftButtonDown. -->
                             <Border Style="{StaticResource App.VideoCard.Thumbnail}"
@@ -974,13 +974,13 @@
                                                        Text="&#xE783;"
                                                        VerticalAlignment="Center"
                                                        Margin="0,0,6,0" />
-                                            <TextBlock Text="Offline"
-                                                       Foreground="White"
-                                                       FontWeight="SemiBold"
-                                                       FontSize="11"
+                                        <TextBlock Text="Offline"
+                                                   Foreground="White"
+                                           FontWeight="SemiBold"
+                                           FontSize="11"
                                                        VerticalAlignment="Center" />
-                                        </StackPanel>
-                                    </Border>
+                            </StackPanel>
+                        </Border>
                                 </Grid>
                             </Border>
                             <!-- Card is intentionally just the thumbnail + duration
@@ -1106,7 +1106,7 @@
                                                    Foreground="White"
                                                    HorizontalAlignment="Center"
                                                    VerticalAlignment="Center" />
-                                    </Border>
+                                </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
                                             <Setter TargetName="bg" Property="Background" Value="#E6E15050" />
@@ -1247,7 +1247,7 @@
                             Background="Black"
                             Padding="12,8"
                             Visibility="{Binding IsPlayerVisible, Converter={StaticResource BoolToVisibility}}">
-                        <Grid>
+                            <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
@@ -1518,10 +1518,10 @@
                                 <!-- State C: picking → TextBox + Save + Cancel. -->
                                 <Border Visibility="{Binding IsPickingLocation, Converter={StaticResource BoolToVisibility}}">
                                     <Grid>
-                                        <Grid.RowDefinitions>
+                                <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto" />
                                             <RowDefinition Height="Auto" />
-                                        </Grid.RowDefinitions>
+                                </Grid.RowDefinitions>
                                         <TextBox Grid.Row="0"
                                                  Text="{Binding PendingCoordsText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                  VerticalContentAlignment="Center"
@@ -1588,7 +1588,7 @@
                                                      outline dot that reads as "secondary / incidental" rather
                                                      than the disabled look a dimmed chip gives. -->
                                                 <TextBlock Text="&#x25CB;"
-                                                           FontSize="10"
+                                                        FontSize="10"
                                                            VerticalAlignment="Center"
                                                            Margin="0,0,5,0"
                                                            Foreground="{DynamicResource App.Foreground.Secondary}"
@@ -1955,7 +1955,7 @@
                                    FontSize="11"
                                    Text="{StaticResource Icon.Sync}"
                                    Foreground="{DynamicResource App.Accent}"
-                                   VerticalAlignment="Center"
+                           VerticalAlignment="Center"
                                    Margin="0,0,6,0">
                             <TextBlock.RenderTransform>
                                 <RotateTransform CenterX="5.5" CenterY="5.5" />
@@ -2251,8 +2251,8 @@
                      Background="Transparent"
                      BorderThickness="0"
                      Foreground="{DynamicResource App.Accent}"
-                     Maximum="{Binding ProgressMaximum}"
-                     Value="{Binding ProgressValue}"
+                             Maximum="{Binding ProgressMaximum}"
+                             Value="{Binding ProgressValue}"
                      Panel.ZIndex="100"
                      Visibility="{Binding IsScanning, Converter={StaticResource BoolToVisibility}}">
             <ProgressBar.Style>

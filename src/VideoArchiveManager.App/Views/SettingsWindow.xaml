@@ -223,32 +223,32 @@
                         <TextBlock Text="ffmpeg.exe path (leave blank to use PATH)"
                                    Style="{StaticResource App.Type.Caption}" />
                         <Grid Margin="0,4,0,12">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBox Grid.Column="0" Text="{Binding FfmpegPath, UpdateSourceTrigger=PropertyChanged}" />
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0" Text="{Binding FfmpegPath, UpdateSourceTrigger=PropertyChanged}" />
                             <Button Grid.Column="1" Margin="8,0,0,0"
                                     Content="Browse"
                                     Style="{StaticResource App.Button.Secondary}"
                                     helpers:Theme.Icon="{StaticResource Icon.Folder}"
                                     Command="{Binding BrowseFfmpegCommand}" />
-                        </Grid>
+            </Grid>
 
                         <TextBlock Text="ffprobe.exe path (leave blank to use PATH)"
                                    Style="{StaticResource App.Type.Caption}" />
                         <Grid Margin="0,4,0,16">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBox Grid.Column="0" Text="{Binding FfprobePath, UpdateSourceTrigger=PropertyChanged}" />
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0" Text="{Binding FfprobePath, UpdateSourceTrigger=PropertyChanged}" />
                             <Button Grid.Column="1" Margin="8,0,0,0"
                                     Content="Browse"
                                     Style="{StaticResource App.Button.Secondary}"
                                     helpers:Theme.Icon="{StaticResource Icon.Folder}"
                                     Command="{Binding BrowseFfprobeCommand}" />
-                        </Grid>
+            </Grid>
 
                         <TextBlock Text="PLAYBACK" Style="{StaticResource App.Type.Section}" />
                         <TextBlock TextWrapping="Wrap" Style="{StaticResource App.Type.BodyMuted}" Margin="0,0,0,12"
@@ -366,7 +366,7 @@
 
                         <TextBlock Text="MODEL" Style="{StaticResource App.Type.Section}" />
                         <TextBlock Text="{Binding AiModelStatus}"
-                                   TextWrapping="Wrap"
+                     TextWrapping="Wrap"
                                    Style="{StaticResource App.Type.Caption}"
                                    Margin="0,0,0,8" />
 
@@ -382,7 +382,7 @@
                                     Style="{StaticResource App.Button.Ghost}"
                                     Command="{Binding ClearAiDataCommand}"
                                     ToolTip="Remove all embeddings and pending suggestions. Accepted tags and source files are kept." />
-                        </StackPanel>
+        </StackPanel>
 
                         <ProgressBar Minimum="0" Maximum="1" Height="4"
                                      Value="{Binding AiDownloadProgress}"

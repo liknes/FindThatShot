@@ -101,9 +101,9 @@ public partial class MainWindow : Window
             {
                 LeftSidebarColumn.Width = new GridLength(persisted);
             }
-        }
-        catch
-        {
+            }
+            catch
+            {
             // Defensive: any exception here just means we use the XAML default.
         }
 
@@ -1938,7 +1938,7 @@ public partial class MainWindow : Window
         switch (e.PropertyName)
         {
             case nameof(Unosquare.FFME.MediaElement.Position):
-                Dispatcher.BeginInvoke(UpdatePlayerTime);
+        Dispatcher.BeginInvoke(UpdatePlayerTime);
                 break;
         }
     }
