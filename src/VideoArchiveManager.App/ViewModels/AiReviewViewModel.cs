@@ -123,7 +123,7 @@ public partial class AiReviewGroupViewModel : ObservableObject
         FileName = model.FileName;
         FolderPath = string.IsNullOrEmpty(model.FolderPath) ? model.FileName : model.FolderPath;
         FileExists = model.FileExists;
-        _thumbnailPath = model.ThumbnailPath;
+        ThumbnailPath = model.ThumbnailPath;
 
         Chips = new ObservableCollection<AiReviewChipViewModel>(
             model.Suggestions.Select(s => new AiReviewChipViewModel(s, this, parent)));
@@ -134,8 +134,10 @@ public partial class AiReviewGroupViewModel : ObservableObject
     public string FolderPath { get; }
     public bool FileExists { get; }
 
-    private readonly string? _thumbnailPath;
-    public BitmapImage? Thumbnail => ThumbnailLoader.Load(_thumbnailPath);
+    // Exposed as a path (not a decoded BitmapImage): the AsyncImage behavior in
+    // the card template decodes it off the UI thread, and only for the realized,
+    // on-screen cards, so opening with hundreds of clips stays snappy.
+    public string? ThumbnailPath { get; }
 
     public ObservableCollection<AiReviewChipViewModel> Chips { get; }
 

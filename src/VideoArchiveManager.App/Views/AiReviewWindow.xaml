@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.modernwpf.com/2019"
         xmlns:vm="clr-namespace:VideoArchiveManager.App.ViewModels"
+        xmlns:helpers="clr-namespace:VideoArchiveManager.App.Helpers"
         Title="Review AI suggestions"
         Width="820" Height="820"
         MinWidth="620" MinHeight="520"
@@ -77,7 +78,7 @@
                             VerticalAlignment="Top"
                             ClipToBounds="True"
                             Background="{DynamicResource App.Background.Base}">
-                        <Image Source="{Binding Thumbnail}"
+                        <Image helpers:AsyncImage.SourcePath="{Binding ThumbnailPath}"
                                Stretch="UniformToFill"
                                HorizontalAlignment="Stretch"
                                VerticalAlignment="Stretch" />
@@ -171,12 +172,42 @@
                            Margin="0,8,0,0" />
             </StackPanel>
 
-            <ScrollViewer VerticalScrollBarVisibility="Auto"
-                          Padding="24,4,24,16"
-                          Visibility="{Binding HasData, Converter={StaticResource BoolToVisibility}}">
-                <ItemsControl ItemsSource="{Binding Groups}"
-                              ItemTemplate="{StaticResource AiGroupTemplate}" />
-            </ScrollViewer>
+            <!-- Virtualized so opening with hundreds of clips only realizes (and
+                 only decodes thumbnails for) the handful of cards on screen. -->
+            <ListBox ItemsSource="{Binding Groups}"
+                     ItemTemplate="{StaticResource AiGroupTemplate}"
+                     Padding="24,4,24,16"
+                     Background="Transparent"
+                     BorderThickness="0"
+                     HorizontalContentAlignment="Stretch"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     ScrollViewer.CanContentScroll="True"
+                     VirtualizingPanel.IsVirtualizing="True"
+                     VirtualizingPanel.VirtualizationMode="Recycling"
+                     KeyboardNavigation.TabNavigation="Continue"
+                     Visibility="{Binding HasData, Converter={StaticResource BoolToVisibility}}">
+                <ListBox.ItemContainerStyle>
+                    <!-- A bare ContentPresenter: no selection highlight, focus
+                         rectangle, or padding, so each card looks exactly as it
+                         did under the old ItemsControl. -->
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Margin" Value="0" />
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="Background" Value="Transparent" />
+                        <Setter Property="BorderThickness" Value="0" />
+                        <Setter Property="Focusable" Value="False" />
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ListBoxItem">
+                                    <ContentPresenter />
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ListBox.ItemContainerStyle>
+            </ListBox>
         </Grid>
     </Grid>
 </Window>

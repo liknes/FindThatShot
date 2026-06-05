@@ -40,6 +40,45 @@ public static class ThumbnailLoader
         }
     }
 
+    // Off-UI-thread decode for list scenarios (e.g. the AI review queue) where
+    // many cards would otherwise each block the dispatcher decoding a JPEG. The
+    // bitmap is frozen on the worker thread so it's safe to hand back to the UI.
+    public static async Task<BitmapImage?> LoadAsync(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+        {
+            return null;
+        }
+
+        if (Cache.TryGetValue(path, out var cached))
+        {
+            return cached;
+        }
+
+        try
+        {
+            var bitmap = await Task.Run(() =>
+            {
+                var bmp = new BitmapImage();
+                bmp.BeginInit();
+                bmp.CacheOption = BitmapCacheOption.OnLoad;
+                bmp.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
+                bmp.DecodePixelWidth = CardWidthPixels;
+                bmp.UriSource = new Uri(path, UriKind.Absolute);
+                bmp.EndInit();
+                bmp.Freeze();
+                return bmp;
+            }).ConfigureAwait(false);
+
+            Cache[path] = bitmap;
+            return bitmap;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     public static BitmapImage? LoadLarge(string? path)
     {
         if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
