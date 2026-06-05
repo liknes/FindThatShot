@@ -120,7 +120,15 @@
   .hero-meta b { color: #eef2f7; font-weight: 700; }
   @media (max-width: 920px) { .hero-grid { grid-template-columns: 1fr; gap: 36px; padding: 64px 0 72px; } }
 
-  /* ---------- App mock ---------- */
+  /* ---------- App screenshot ---------- */
+  .shot {
+    border-radius: 14px; overflow: hidden; line-height: 0;
+    border: 1px solid rgba(255,255,255,.14);
+    box-shadow: 0 40px 80px -30px rgba(0,0,0,.7);
+  }
+  .shot img { width: 100%; height: auto; display: block; }
+
+  /* ---------- App mock (unused; kept as fallback) ---------- */
   .mock {
     border-radius: 14px; overflow: hidden; border: 1px solid rgba(255,255,255,.12);
     background: #0c121b; box-shadow: 0 40px 80px -30px rgba(0,0,0,.7);
@@ -364,30 +372,10 @@
         </div>
       </div>
 
-      <!-- App mock -->
-      <div class="mock" aria-hidden="true">
-        <div class="mock-bar"><i class="r"></i><i class="y"></i><i class="g"></i><span>Find That Shot</span></div>
-        <div class="mock-body">
-          <div class="mock-side">
-            <div class="s-search"></div>
-            <div class="s-item w80"></div>
-            <div class="s-item act"></div>
-            <div class="s-item w60"></div>
-            <div class="s-item w80"></div>
-            <div class="s-item w45"></div>
-            <div class="s-item w60"></div>
-          </div>
-          <div class="mock-main">
-            <div class="mock-grid">
-              <div class="mock-card"><div class="mock-thumb"><span class="dur">0:42</span></div><div class="mock-meta"><div class="l1"></div><div class="l2"></div></div></div>
-              <div class="mock-card"><div class="mock-thumb a"><span class="badge">★ 4</span><span class="dur">2:18</span></div><div class="mock-meta"><div class="l1"></div><div class="l2"></div></div></div>
-              <div class="mock-card"><div class="mock-thumb b"><span class="dur">0:09</span></div><div class="mock-meta"><div class="l1"></div><div class="l2"></div></div></div>
-              <div class="mock-card"><div class="mock-thumb c"><span class="dur">5:31</span></div><div class="mock-meta"><div class="l1"></div><div class="l2"></div></div></div>
-              <div class="mock-card"><div class="mock-thumb b"><span class="badge">★ 5</span><span class="dur">1:04</span></div><div class="mock-meta"><div class="l1"></div><div class="l2"></div></div></div>
-              <div class="mock-card"><div class="mock-thumb"><span class="dur">0:27</span></div><div class="mock-meta"><div class="l1"></div><div class="l2"></div></div></div>
-            </div>
-          </div>
-        </div>
+      <!-- App screenshot -->
+      <div class="shot">
+        <img src="assets/shot-hero.png" width="1847" height="1107" fetchpriority="high"
+             alt="Find That Shot main window — a grid of drone clip thumbnails with a folders sidebar and a location map in the detail panel." />
       </div>
     </div>
   </div>
