@@ -338,7 +338,7 @@ Behaviour:
 
 Two independent signals, since one tool can't cover both cleanly:
 
-- **Landing-page visitors & referrers** — Cloudflare Web Analytics (cookieless) is wired into `docs/index.html`. Paste your site token where `PASTE_YOUR_CLOUDFLARE_TOKEN_HERE` is (see the comment block at the bottom of that file), then view stats at *dash.cloudflare.com → Web Analytics*. This counts page views and referrers only — it has no custom-event API on the free tier, so it cannot count downloads.
+- **Landing-page visitors & referrers** — GoatCounter (cookieless, no consent banner) is wired into `docs/index.html`. Register the code `findthatshot` at https://www.goatcounter.com/ so the snippet's `findthatshot.goatcounter.com` URL resolves, then view stats at https://findthatshot.goatcounter.com/. This counts page views and referrers only (you'll see Facebook as a referrer once you start posting). It does not count downloads — GitHub does that (below).
 - **Actual app downloads** — GitHub counts every release-asset download server-side (far more accurate than click-tracking). Quick view per release:
   ```powershell
   gh api repos/liknes/FindThatShot/releases --jq '.[] | "\(.tag_name): " + ([.assets[] | select(.name|test("Setup.exe|Portable.zip")) | "\(.name)=\(.download_count)"] | join("  "))'

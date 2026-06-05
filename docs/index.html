@@ -670,17 +670,16 @@
 </script>
 
 <!--
-  Cloudflare Web Analytics — privacy-friendly, cookieless pageview tracking.
+  GoatCounter — privacy-friendly, cookieless analytics (no cookie-consent banner needed).
   One-time setup:
-    1. dash.cloudflare.com  ->  Analytics & Logs  ->  Web Analytics  ->  "Add a site"
-    2. Enter the site hostname (your GitHub Pages URL, e.g. liknes.github.io)
-    3. Cloudflare shows a JS snippet — copy the value of its "token"
-    4. Replace PASTE_YOUR_CLOUDFLARE_TOKEN_HERE below with that token, commit & push
-  Until a real token is pasted, the beacon simply reports nothing (page is unaffected).
-  Note: this counts page views & referrers only. Actual app downloads are counted
-  by GitHub per release asset (see README / `gh release view`), which is the real number.
+    1. Sign up at https://www.goatcounter.com/ and register the code "findthatshot"
+       (this gives you the dashboard at https://findthatshot.goatcounter.com/).
+    2. That's it — the snippet below already points there. Nothing else to paste.
+  If the code "findthatshot" is taken, register another and tell me; I'll update the URL below.
+  Counts page views & referrers only. Actual app downloads are counted by GitHub
+  per release asset (see README / `gh release view`), which is the real number.
 -->
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js"
-        data-cf-beacon='{"token": "PASTE_YOUR_CLOUDFLARE_TOKEN_HERE"}'></script>
+<script data-goatcounter="https://findthatshot.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>
