@@ -1,0 +1,17 @@
+<Project>
+
+  <!-- Shared assembly + package metadata for every project in the solution.
+       Baking copyright/author/license into the compiled binaries makes
+       ownership unambiguous and travels with the .exe / .dll even if source
+       files are stripped of their headers. -->
+  <PropertyGroup>
+    <Authors>Ingve Moss Liknes</Authors>
+    <Company>Ingve Moss Liknes</Company>
+    <Product>Find That Shot</Product>
+    <Copyright>Copyright (C) 2026 Ingve Moss Liknes &lt;findthatshot@ingve.no&gt;</Copyright>
+    <PackageProjectUrl>https://github.com/liknes/FindThatShot</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/liknes/FindThatShot</RepositoryUrl>
+    <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+  </PropertyGroup>
+
+</Project>

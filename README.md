@@ -351,6 +351,10 @@ The installer and binaries are currently unsigned. End users will see a SmartScr
 
 ## Licensing & attribution
 
+> Copyright (C) 2026 Ingve Moss Liknes &lt;findthatshot@ingve.no&gt;
+>
+> Find That Shot is free software: you can redistribute it and/or modify it under the terms of the **GNU General Public License v3** (or, at your option, any later version) as published by the Free Software Foundation. It is distributed **without any warranty** — see the GNU General Public License for details. A copy ships in [`LICENSE`](./LICENSE); if not, see <https://www.gnu.org/licenses/>.
+
 Find That Shot itself is licensed under the **GNU General Public License v3** (see `LICENSE`). The installed application bundles several third-party components with their own licenses:
 
 - **FFmpeg** (Gyan.dev "full" build, version 8.1.1) — GPLv3, https://ffmpeg.org/. Used in two ways: (a) invoked as separate `ffmpeg.exe` / `ffprobe.exe` processes for scanning and thumbnails, and (b) the same FFmpeg shared-library DLLs are loaded in-process by the in-app player (FFME).
