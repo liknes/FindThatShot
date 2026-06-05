@@ -211,6 +211,11 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private bool _onlyUnreviewed;
 
+    // When on, a tag filter only matches clips where the tag is a primary
+    // (non-background) subject. Only has an effect while tag chips are active.
+    [ObservableProperty]
+    private bool _mainSubjectOnly;
+
     [ObservableProperty]
     private string _statusMessage = "Ready";
 
@@ -610,6 +615,7 @@ public partial class MainViewModel : ObservableObject
     }
     partial void OnShowOnlyAvailableChanged(bool value) => OnFilterChanged();
     partial void OnOnlyUnreviewedChanged(bool value) => OnFilterChanged();
+    partial void OnMainSubjectOnlyChanged(bool value) => OnFilterChanged();
 
     public async Task InitializeAsync()
     {
@@ -1357,6 +1363,7 @@ public partial class MainViewModel : ObservableObject
             RootFolderPath = NormalizeFolderPrefix(SelectedFolderNode?.FullPath),
             FileExists = ShowOnlyAvailable ? true : null,
             OnlyUnreviewed = OnlyUnreviewed ? true : null,
+            MainSubjectOnly = MainSubjectOnly,
             VideoIds = includeMapSelection ? _mapSelectionIds : null,
             Take = 500
         };
@@ -2143,7 +2150,8 @@ public partial class MainViewModel : ObservableObject
         DateTo = DateTo,
         RootFolderPath = SelectedFolderNode?.FullPath,
         ShowOnlyAvailable = ShowOnlyAvailable,
-        OnlyUnreviewed = OnlyUnreviewed
+        OnlyUnreviewed = OnlyUnreviewed,
+        MainSubjectOnly = MainSubjectOnly
     };
 
     // Lets the user name and store whatever filter combination is currently
@@ -2213,6 +2221,7 @@ public partial class MainViewModel : ObservableObject
             DateTo = criteria.DateTo;
             ShowOnlyAvailable = criteria.ShowOnlyAvailable;
             OnlyUnreviewed = criteria.OnlyUnreviewed;
+            MainSubjectOnly = criteria.MainSubjectOnly;
 
             SelectFolderNodeByPath(criteria.RootFolderPath);
         }
@@ -2350,6 +2359,7 @@ public partial class MainViewModel : ObservableObject
         if (SelectedTagFilters.Count > 0) parts.Add(string.Join(", ", SelectedTagFilters.Take(3).Select(t => t.Name)));
         if (SelectedFolderNode is not null) parts.Add(SelectedFolderNode.Name);
         if (OnlyUnreviewed) parts.Add("Unreviewed");
+        if (MainSubjectOnly && SelectedTagFilters.Count > 0) parts.Add("main subject");
         if (DateFrom.HasValue || DateTo.HasValue) parts.Add("date range");
 
         return parts.Count == 0 ? "All clips" : string.Join(" \u00b7 ", parts);

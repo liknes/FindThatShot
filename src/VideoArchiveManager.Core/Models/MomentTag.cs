@@ -10,4 +10,9 @@ public class MomentTag
 
     public int TagId { get; set; }
     public Tag Tag { get; set; } = null!;
+
+    // Prominence of this tag on this moment. false = primary (default); true =
+    // incidental/background. Mirrors VideoTag.IsBackground so moments and whole
+    // clips share the same primary-vs-background semantics.
+    public bool IsBackground { get; set; }
 }

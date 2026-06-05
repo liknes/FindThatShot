@@ -167,6 +167,10 @@
                                   IsCheckable="True"
                                   IsChecked="{Binding OnlyUnreviewed}"
                                   ToolTip="Limit the catalog to clips whose status is still Unreviewed OR that have no tags yet." />
+                        <MenuItem Header="Tag filter: _main subject only"
+                                  IsCheckable="True"
+                                  IsChecked="{Binding MainSubjectOnly}"
+                                  ToolTip="When filtering by tags, only match clips where the tag is a primary subject — hide clips where it's just an incidental/background element." />
                         <MenuItem Header="Search by _description (AI)"
                                   IsCheckable="True"
                                   IsChecked="{Binding UseSemanticSearch}"
@@ -1559,10 +1563,45 @@
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border Style="{StaticResource App.TagChip}">
+                                        <Border Style="{StaticResource App.TagChip}"
+                                                Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                ToolTip="Right-click to mark this tag as a background (incidental) subject.">
+                                            <Border.ContextMenu>
+                                                <ContextMenu>
+                                                    <MenuItem Header="Background subject"
+                                                              IsCheckable="True"
+                                                              IsChecked="{Binding PlacementTarget.DataContext.IsBackground, RelativeSource={RelativeSource AncestorType=ContextMenu}, Mode=OneWay}"
+                                                              Command="{Binding PlacementTarget.Tag.ToggleTagProminenceCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                              CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                                </ContextMenu>
+                                            </Border.ContextMenu>
                                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                <TextBlock Text="{Binding Name}"
-                                                           Style="{StaticResource App.TagChip.Text}" />
+                                                <!-- Leading marker shown only on background tags: a small
+                                                     outline dot that reads as "secondary / incidental" rather
+                                                     than the disabled look a dimmed chip gives. -->
+                                                <TextBlock Text="&#x25CB;"
+                                                           FontSize="10"
+                                                           VerticalAlignment="Center"
+                                                           Margin="0,0,5,0"
+                                                           Foreground="{DynamicResource App.Foreground.Secondary}"
+                                                           Visibility="{Binding IsBackground, Converter={StaticResource BoolToVisibility}}" />
+                                                <TextBlock Text="{Binding Name}">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock" BasedOn="{StaticResource App.TagChip.Text}">
+                                                            <Style.Triggers>
+                                                                <!-- Background tags read as a muted, italicised
+                                                                     secondary subject; primary tags keep the bright
+                                                                     accent. Full opacity either way so neither looks
+                                                                     disabled. -->
+                                                                <DataTrigger Binding="{Binding IsBackground}" Value="True">
+                                                                    <Setter Property="Foreground" Value="{DynamicResource App.Foreground.Secondary}" />
+                                                                    <Setter Property="FontStyle" Value="Italic" />
+                                                                    <Setter Property="FontWeight" Value="Normal" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
                                                 <Button Style="{StaticResource App.Button.ChipClose}"
                                                         helpers:Theme.Icon="{StaticResource Icon.Cancel}"
                                                         Margin="6,0,-2,0"

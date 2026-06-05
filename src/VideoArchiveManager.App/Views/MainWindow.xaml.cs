@@ -1609,7 +1609,7 @@ public partial class MainWindow : Window
     // The popup is purely a viewer, so a recreate-on-reopen is cheap.
     private void Detail_ShowInfoRequested(object? sender, VideoItemViewModel item)
     {
-        var tags = _viewModel.Detail.Tags.ToArray();
+        var tags = _viewModel.Detail.Tags.Select(t => t.Tag).ToArray();
 
         // If a popup is already open for the same clip, just bring it to
         // the front rather than respawning identical content.

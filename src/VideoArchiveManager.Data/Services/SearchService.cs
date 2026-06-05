@@ -28,7 +28,39 @@ public class SearchService : ISearchService
 
         var total = await q.CountAsync(cancellationToken);
 
-        q = query.SortBy switch
+        var tagIds = query.TagIds?.ToArray() ?? Array.Empty<int>();
+        q = ApplySort(q, query.SortBy, tagIds);
+
+        if (query.Skip > 0) q = q.Skip(query.Skip);
+        if (query.Take > 0) q = q.Take(query.Take);
+
+        var items = await q.ToListAsync(cancellationToken);
+        return new SearchResult { Items = items, TotalCount = total };
+    }
+
+    // Applies the user's chosen sort. When a tag filter is active, a
+    // primary-first key is prepended so clips where a matched tag is the main
+    // subject rank above clips where it's only incidental/background; the
+    // user's SortBy then acts as the tiebreaker.
+    private static IQueryable<VideoItem> ApplySort(IQueryable<VideoItem> q, SearchSortField sortBy, int[] tagIds)
+    {
+        if (tagIds.Length > 0)
+        {
+            var primaryFirst = q.OrderByDescending(
+                v => v.VideoTags.Any(vt => tagIds.Contains(vt.TagId) && !vt.IsBackground));
+            return sortBy switch
+            {
+                SearchSortField.ModifiedDescending => primaryFirst.ThenByDescending(v => v.ModifiedAtFile),
+                SearchSortField.ModifiedAscending => primaryFirst.ThenBy(v => v.ModifiedAtFile),
+                SearchSortField.FileNameAscending => primaryFirst.ThenBy(v => v.FileName),
+                SearchSortField.FileNameDescending => primaryFirst.ThenByDescending(v => v.FileName),
+                SearchSortField.RatingDescending => primaryFirst.ThenByDescending(v => v.Rating).ThenByDescending(v => v.ModifiedAtFile),
+                SearchSortField.FolderDateDescending => primaryFirst.ThenByDescending(v => v.FolderDate).ThenByDescending(v => v.ModifiedAtFile),
+                _ => primaryFirst.ThenByDescending(v => v.ModifiedAtFile)
+            };
+        }
+
+        return sortBy switch
         {
             SearchSortField.ModifiedDescending => q.OrderByDescending(v => v.ModifiedAtFile),
             SearchSortField.ModifiedAscending => q.OrderBy(v => v.ModifiedAtFile),
@@ -38,12 +70,6 @@ public class SearchService : ISearchService
             SearchSortField.FolderDateDescending => q.OrderByDescending(v => v.FolderDate).ThenByDescending(v => v.ModifiedAtFile),
             _ => q.OrderByDescending(v => v.ModifiedAtFile)
         };
-
-        if (query.Skip > 0) q = q.Skip(query.Skip);
-        if (query.Take > 0) q = q.Take(query.Take);
-
-        var items = await q.ToListAsync(cancellationToken);
-        return new SearchResult { Items = items, TotalCount = total };
     }
 
     // Shared WHERE-clause pipeline used by both the grid search and the global
@@ -92,9 +118,15 @@ public class SearchService : ISearchService
         if (query.TagIds is { Count: > 0 })
         {
             var tagIds = query.TagIds.ToArray();
+            var mainOnly = query.MainSubjectOnly;
             foreach (var tagId in tagIds)
             {
-                q = q.Where(v => v.VideoTags.Any(vt => vt.TagId == tagId));
+                // When MainSubjectOnly is set, the matched tag must be a primary
+                // (non-background) subject on the clip; otherwise any attachment
+                // counts (the clip stays findable even when the tag is incidental).
+                q = mainOnly
+                    ? q.Where(v => v.VideoTags.Any(vt => vt.TagId == tagId && !vt.IsBackground))
+                    : q.Where(v => v.VideoTags.Any(vt => vt.TagId == tagId));
             }
         }
 

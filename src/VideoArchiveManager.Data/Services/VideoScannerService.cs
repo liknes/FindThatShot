@@ -415,18 +415,20 @@ public class VideoScannerService : IVideoScannerService
         CancellationToken cancellationToken)
     {
         // Dedupe within the sidecar (defensive — a hand-edited file could
-        // repeat a tag) so we don't try to add the same link twice.
+        // repeat a tag) so we don't try to add the same link twice. A clip can
+        // only hold a tag once (composite PK), so on a conflicting duplicate the
+        // first occurrence's prominence wins.
         var distinct = tags
             .Where(t => !string.IsNullOrWhiteSpace(t.Name))
-            .Select(t => (Name: t.Name.Trim(), Type: ParseTagType(t.Type)))
-            .Distinct()
+            .GroupBy(t => (Name: t.Name.Trim(), Type: ParseTagType(t.Type)))
+            .Select(g => (g.Key.Name, g.Key.Type, Background: g.First().Background))
             .ToList();
         if (distinct.Count == 0) return;
 
         await _tagImportLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            foreach (var (name, type) in distinct)
+            foreach (var (name, type, background) in distinct)
             {
                 var tag = await ctx.Tags
                     .FirstOrDefaultAsync(t => t.Name == name && t.Type == type, cancellationToken)
@@ -438,7 +440,7 @@ public class VideoScannerService : IVideoScannerService
                     await ctx.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                 }
 
-                ctx.VideoTags.Add(new VideoTag { VideoItemId = videoItemId, TagId = tag.Id });
+                ctx.VideoTags.Add(new VideoTag { VideoItemId = videoItemId, TagId = tag.Id, IsBackground = background });
             }
 
             await ctx.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -515,7 +517,7 @@ public class VideoScannerService : IVideoScannerService
                         await ctx.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                     }
 
-                    ctx.MomentTags.Add(new MomentTag { VideoMomentId = moment.Id, TagId = tag.Id });
+                    ctx.MomentTags.Add(new MomentTag { VideoMomentId = moment.Id, TagId = tag.Id, IsBackground = st.Background });
                 }
 
                 await ctx.SaveChangesAsync(cancellationToken).ConfigureAwait(false);

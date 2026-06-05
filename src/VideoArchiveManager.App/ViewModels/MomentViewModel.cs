@@ -13,7 +13,7 @@ public partial class MomentViewModel : ObservableObject
 {
     public VideoMoment Model { get; }
 
-    public MomentViewModel(VideoMoment model, IEnumerable<Tag>? tags = null)
+    public MomentViewModel(VideoMoment model, IEnumerable<MomentTag>? tags = null)
     {
         Model = model;
         _label = model.Label;
@@ -21,7 +21,10 @@ public partial class MomentViewModel : ObservableObject
         _rating = model.Rating;
         if (tags is not null)
         {
-            foreach (var t in tags) Tags.Add(t);
+            foreach (var mt in tags)
+            {
+                if (mt.Tag is not null) Tags.Add(new AttachedTag(mt.Tag, mt.IsBackground));
+            }
         }
         RefreshTagSummary();
     }
@@ -40,7 +43,7 @@ public partial class MomentViewModel : ObservableObject
     [ObservableProperty]
     private int _rating;
 
-    public ObservableCollection<Tag> Tags { get; } = new();
+    public ObservableCollection<AttachedTag> Tags { get; } = new();
 
     [ObservableProperty]
     private string _tagSummary = string.Empty;

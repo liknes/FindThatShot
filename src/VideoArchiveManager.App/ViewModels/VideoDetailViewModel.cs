@@ -203,7 +203,7 @@ public partial class VideoDetailViewModel : ObservableObject
 
     public BitmapImage? LargeThumbnail => Current is null ? null : ThumbnailLoader.LoadLarge(Current.Model.ThumbnailPath);
 
-    public ObservableCollection<Tag> Tags { get; } = new();
+    public ObservableCollection<AttachedTag> Tags { get; } = new();
     public ObservableCollection<TagType> AvailableTagTypes { get; } = new(Enum.GetValues<TagType>());
     public ObservableCollection<VideoStatus> AvailableStatuses { get; } = new(Enum.GetValues<VideoStatus>());
     public ObservableCollection<int> RatingValues { get; } = new(new[] { 0, 1, 2, 3, 4, 5 });
@@ -414,8 +414,8 @@ public partial class VideoDetailViewModel : ObservableObject
         Rating = item.Model.Rating;
         Status = item.Model.Status;
 
-        var tags = await _tagService.GetTagsForVideoAsync(item.Id);
-        foreach (var t in tags) Tags.Add(t);
+        var videoTags = await _tagService.GetVideoTagsForVideoAsync(item.Id);
+        foreach (var vt in videoTags) Tags.Add(new AttachedTag(vt.Tag, vt.IsBackground));
         OnPropertyChanged(nameof(LargeThumbnail));
 
         // Refresh the suggestion cache for the AutoSuggestBox. Cheap
@@ -438,7 +438,7 @@ public partial class VideoDetailViewModel : ObservableObject
         Moments.Clear();
         foreach (var m in moments)
         {
-            Moments.Add(new MomentViewModel(m, m.MomentTags.Select(mt => mt.Tag)));
+            Moments.Add(new MomentViewModel(m, m.MomentTags));
         }
         MomentCount = Moments.Count;
         Current.MomentCount = MomentCount;
@@ -826,7 +826,7 @@ public partial class VideoDetailViewModel : ObservableObject
             await _tagService.AttachAsync(Current.Id, tag.Id);
             if (!Tags.Any(t => t.Id == tag.Id))
             {
-                Tags.Add(tag);
+                Tags.Add(new AttachedTag(tag, isBackground: false));
             }
             Current.TagSummary = string.Join(", ", Tags.Select(t => t.Name));
 
@@ -940,7 +940,7 @@ public partial class VideoDetailViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task RemoveTagAsync(Tag? tag)
+    private async Task RemoveTagAsync(AttachedTag? tag)
     {
         if (tag is null || Current is null) return;
         try
@@ -959,6 +959,30 @@ public partial class VideoDetailViewModel : ObservableObject
         {
             LastSaveStatus = $"Tag remove failed: {ex.Message}";
             ShowTagFeedback($"Couldn't remove tag: {ex.Message}", FeedbackSeverity.Error);
+        }
+    }
+
+    // Flips a clip tag between primary and background (incidental) prominence
+    // from the chip's right-click menu, persists it, and rewrites the sidecar so
+    // the portable record stays in sync. A no-op when nothing is attached.
+    [RelayCommand]
+    private async Task ToggleTagProminenceAsync(AttachedTag? tag)
+    {
+        if (tag is null || Current is null) return;
+        var next = !tag.IsBackground;
+        try
+        {
+            await _tagService.SetTagProminenceAsync(Current.Id, tag.Id, next);
+            tag.IsBackground = next;
+
+            var (sidecarFailed, _) = await WriteSidecarStatusAsync();
+            ShowTagFeedback(
+                next ? $"Marked as background: {tag.Name}" : $"Marked as main subject: {tag.Name}",
+                sidecarFailed ? FeedbackSeverity.Warning : FeedbackSeverity.Success);
+        }
+        catch (Exception ex)
+        {
+            ShowTagFeedback($"Couldn't update tag: {ex.Message}", FeedbackSeverity.Error);
         }
     }
 
@@ -998,9 +1022,12 @@ public partial class VideoDetailViewModel : ObservableObject
         }
 
         // Always carry the clip's current moments into the sidecar so the
-        // portable record stays complete and in sync with the catalog.
+        // portable record stays complete and in sync with the catalog. Pull the
+        // join rows (not the in-memory chip list) so each tag's prominence
+        // (IsBackground) is written from the catalog's source of truth.
         var moments = await _momentService.GetForVideoAsync(Current.Id);
-        var result = await _sidecar.WriteAsync(entity, Tags.ToArray(), moments);
+        var videoTags = await _tagService.GetVideoTagsForVideoAsync(Current.Id);
+        var result = await _sidecar.WriteAsync(entity, videoTags, moments);
         if (result.Written && !string.IsNullOrEmpty(result.Path))
         {
             return (false, $"sidecar written: {result.Path}");
@@ -1364,7 +1391,7 @@ public partial class VideoDetailViewModel : ObservableObject
         await _momentService.AttachTagAsync(SelectedMoment.Id, tag.Id);
         if (!SelectedMoment.Tags.Any(t => t.Id == tag.Id))
         {
-            SelectedMoment.Tags.Add(tag);
+            SelectedMoment.Tags.Add(new AttachedTag(tag, isBackground: false));
             SelectedMoment.RefreshTagSummary();
         }
 
@@ -1376,13 +1403,28 @@ public partial class VideoDetailViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task RemoveMomentTagAsync(Tag? tag)
+    private async Task RemoveMomentTagAsync(AttachedTag? tag)
     {
         if (tag is null || SelectedMoment is null) return;
         await _momentService.DetachTagAsync(SelectedMoment.Id, tag.Id);
         SelectedMoment.Tags.Remove(tag);
         SelectedMoment.RefreshTagSummary();
         MomentMarkStatus = $"Tag removed from moment · {tag.Name}";
+        await WriteSidecarStatusAsync();
+    }
+
+    // Moment-tag analogue of ToggleTagProminenceAsync: flips a moment tag
+    // between primary and background and rewrites the sidecar.
+    [RelayCommand]
+    private async Task ToggleMomentTagProminenceAsync(AttachedTag? tag)
+    {
+        if (tag is null || SelectedMoment is null) return;
+        var next = !tag.IsBackground;
+        await _momentService.SetTagProminenceAsync(SelectedMoment.Id, tag.Id, next);
+        tag.IsBackground = next;
+        MomentMarkStatus = next
+            ? $"Moment tag marked as background · {tag.Name}"
+            : $"Moment tag marked as main subject · {tag.Name}";
         await WriteSidecarStatusAsync();
     }
 

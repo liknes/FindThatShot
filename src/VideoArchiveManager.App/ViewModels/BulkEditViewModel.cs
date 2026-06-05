@@ -165,10 +165,10 @@ public partial class BulkEditViewModel : ObservableObject
                 .ToListAsync();
         }
 
-        var withTags = new List<(VideoItem Video, IReadOnlyList<Tag> Tags)>(entities.Count);
+        var withTags = new List<(VideoItem Video, IReadOnlyList<VideoTag> Tags)>(entities.Count);
         foreach (var entity in entities)
         {
-            var tags = await _tagService.GetTagsForVideoAsync(entity.Id);
+            var tags = await _tagService.GetVideoTagsForVideoAsync(entity.Id);
             withTags.Add((entity, tags));
         }
 

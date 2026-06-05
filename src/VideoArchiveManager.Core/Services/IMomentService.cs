@@ -10,6 +10,11 @@ public class MomentSearchQuery
     public int? MinRating { get; set; }
     public IReadOnlyCollection<int>? TagIds { get; set; }
     public bool? FileExists { get; set; }
+
+    // True ⇒ when filtering by tags, only match moments where the tag is a
+    // primary (non-background) subject. Has no effect unless TagIds is set.
+    public bool MainSubjectOnly { get; set; }
+
     public int Take { get; set; } = 500;
 }
 
@@ -39,6 +44,10 @@ public interface IMomentService
     Task AttachTagAsync(int momentId, int tagId, CancellationToken cancellationToken = default);
 
     Task DetachTagAsync(int momentId, int tagId, CancellationToken cancellationToken = default);
+
+    // Sets whether a tag is "background" (incidental) on a specific moment.
+    // No-op if the tag isn't attached.
+    Task SetTagProminenceAsync(int momentId, int tagId, bool isBackground, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<Tag>> GetTagsForMomentAsync(int momentId, CancellationToken cancellationToken = default);
 

@@ -124,4 +124,26 @@ public class TagService : ITagService
             .ThenBy(t => t.Name)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<IReadOnlyList<VideoTag>> GetVideoTagsForVideoAsync(int videoItemId, CancellationToken cancellationToken = default)
+    {
+        await using var ctx = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        return await ctx.VideoTags
+            .AsNoTracking()
+            .Include(vt => vt.Tag)
+            .Where(vt => vt.VideoItemId == videoItemId)
+            .OrderBy(vt => vt.Tag.Type)
+            .ThenBy(vt => vt.Tag.Name)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task SetTagProminenceAsync(int videoItemId, int tagId, bool isBackground, CancellationToken cancellationToken = default)
+    {
+        await using var ctx = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var entity = await ctx.VideoTags.FirstOrDefaultAsync(
+            vt => vt.VideoItemId == videoItemId && vt.TagId == tagId, cancellationToken);
+        if (entity == null || entity.IsBackground == isBackground) return;
+        entity.IsBackground = isBackground;
+        await ctx.SaveChangesAsync(cancellationToken);
+    }
 }

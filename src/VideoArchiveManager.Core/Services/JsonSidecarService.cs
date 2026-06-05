@@ -16,10 +16,12 @@ public class JsonSidecarService : ISidecarService
 {
     public const string SidecarSuffix = ".findthatshot.json";
 
-    // v2 adds the "moments" array (timestamped sub-clips). v1 readers simply
-    // ignore the extra property, and v1 files round-trip cleanly through a v2
-    // reader (moments default to empty), so the bump is backward compatible.
-    public const string SchemaId = "findthatshot/v2";
+    // v2 adds the "moments" array (timestamped sub-clips). v3 adds the optional
+    // per-tag "background" flag (primary vs incidental subject). Older readers
+    // ignore the extra property, and older files round-trip cleanly through a
+    // newer reader (moments default to empty, background defaults to false), so
+    // each bump is backward compatible.
+    public const string SchemaId = "findthatshot/v3";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -60,7 +62,7 @@ public class JsonSidecarService : ISidecarService
 
     public async Task<SidecarWriteResult> WriteAsync(
         VideoItem video,
-        IEnumerable<Tag> tags,
+        IEnumerable<VideoTag> tags,
         IReadOnlyList<VideoMoment>? moments = null,
         CancellationToken cancellationToken = default)
     {
@@ -153,7 +155,7 @@ public class JsonSidecarService : ISidecarService
     }
 
     public async Task<SidecarBatchResult> WriteManyAsync(
-        IEnumerable<(VideoItem Video, IReadOnlyList<Tag> Tags)> items,
+        IEnumerable<(VideoItem Video, IReadOnlyList<VideoTag> Tags)> items,
         CancellationToken cancellationToken = default)
     {
         if (items is null)
@@ -232,7 +234,7 @@ public class JsonSidecarService : ISidecarService
                 FolderDate = payload.FolderDate,
                 Tags = payload.Tags
                     .Where(t => !string.IsNullOrWhiteSpace(t.Name))
-                    .Select(t => new SidecarTagData { Name = t.Name, Type = t.Type })
+                    .Select(t => new SidecarTagData { Name = t.Name, Type = t.Type, Background = t.Background ?? false })
                     .ToArray(),
                 Moments = payload.Moments
                     .Select(m => new SidecarMomentData
@@ -244,7 +246,7 @@ public class JsonSidecarService : ISidecarService
                         Rating = m.Rating,
                         Tags = (m.Tags ?? Array.Empty<SidecarTag>())
                             .Where(t => !string.IsNullOrWhiteSpace(t.Name))
-                            .Select(t => new SidecarTagData { Name = t.Name, Type = t.Type })
+                            .Select(t => new SidecarTagData { Name = t.Name, Type = t.Type, Background = t.Background ?? false })
                             .ToArray()
                     })
                     .ToArray()
@@ -263,7 +265,7 @@ public class JsonSidecarService : ISidecarService
         }
     }
 
-    private static SidecarPayload BuildPayload(VideoItem video, IEnumerable<Tag> tags, IReadOnlyList<SidecarMoment> moments)
+    private static SidecarPayload BuildPayload(VideoItem video, IEnumerable<VideoTag> tags, IReadOnlyList<SidecarMoment> moments)
     {
         return new SidecarPayload
         {
@@ -287,7 +289,13 @@ public class JsonSidecarService : ISidecarService
             ContextText = video.ContextText,
             FolderDate = video.FolderDate,
             Tags = tags
-                .Select(t => new SidecarTag { Name = t.Name, Type = t.Type.ToString() })
+                .Where(vt => vt.Tag is not null)
+                .Select(vt => new SidecarTag
+                {
+                    Name = vt.Tag.Name,
+                    Type = vt.Tag.Type.ToString(),
+                    Background = vt.IsBackground ? true : null
+                })
                 .ToArray(),
             Moments = moments
         };
@@ -304,7 +312,12 @@ public class JsonSidecarService : ISidecarService
             Rating = m.Rating,
             Tags = (m.MomentTags ?? new List<MomentTag>())
                 .Where(mt => mt.Tag is not null)
-                .Select(mt => new SidecarTag { Name = mt.Tag.Name, Type = mt.Tag.Type.ToString() })
+                .Select(mt => new SidecarTag
+                {
+                    Name = mt.Tag.Name,
+                    Type = mt.Tag.Type.ToString(),
+                    Background = mt.IsBackground ? true : null
+                })
                 .ToArray()
         };
     }
@@ -433,5 +446,11 @@ public class JsonSidecarService : ISidecarService
 
         [JsonPropertyName("type")]
         public string Type { get; set; } = string.Empty;
+
+        // Null (omitted) when the tag is primary; true when it's an incidental /
+        // background subject. Nullable + WhenWritingNull keeps primary tags
+        // unchanged on disk versus pre-v3 sidecars.
+        [JsonPropertyName("background")]
+        public bool? Background { get; set; }
     }
 }

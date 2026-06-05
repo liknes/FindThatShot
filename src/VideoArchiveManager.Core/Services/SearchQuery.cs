@@ -26,6 +26,12 @@ public class SearchQuery
     // (no tags yet) both surface the same way.
     public bool? OnlyUnreviewed { get; set; }
 
+    // True ⇒ when filtering by tags, only match clips where the tag is a
+    // primary (non-background) subject. Hides clips where the tag is merely
+    // incidental (e.g. distant islands behind a beach). Has no effect unless
+    // TagIds is set.
+    public bool MainSubjectOnly { get; set; }
+
     public int Skip { get; set; }
     public int Take { get; set; } = 200;
 

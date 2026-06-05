@@ -22,5 +22,7 @@ public class VideoTagConfiguration : IEntityTypeConfiguration<VideoTag>
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex(vt => vt.TagId);
+
+        builder.Property(vt => vt.IsBackground).HasDefaultValue(false);
     }
 }

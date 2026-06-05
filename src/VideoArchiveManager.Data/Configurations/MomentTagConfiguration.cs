@@ -22,5 +22,7 @@ public class MomentTagConfiguration : IEntityTypeConfiguration<MomentTag>
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex(mt => mt.TagId);
+
+        builder.Property(mt => mt.IsBackground).HasDefaultValue(false);
     }
 }

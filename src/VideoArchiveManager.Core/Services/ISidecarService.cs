@@ -12,12 +12,12 @@ public interface ISidecarService
     // bulk edit never silently drops the portable moment record).
     Task<SidecarWriteResult> WriteAsync(
         VideoItem video,
-        IEnumerable<Tag> tags,
+        IEnumerable<VideoTag> tags,
         IReadOnlyList<VideoMoment>? moments = null,
         CancellationToken cancellationToken = default);
 
     Task<SidecarBatchResult> WriteManyAsync(
-        IEnumerable<(VideoItem Video, IReadOnlyList<Tag> Tags)> items,
+        IEnumerable<(VideoItem Video, IReadOnlyList<VideoTag> Tags)> items,
         CancellationToken cancellationToken = default);
 
     // Reads and parses the sidecar sitting next to a video, if one exists.
@@ -102,6 +102,10 @@ public sealed class SidecarTagData
     public string Name { get; init; } = string.Empty;
 
     public string? Type { get; init; }
+
+    // Per-clip/per-moment prominence. true = incidental/background subject.
+    // Absent in pre-v3 sidecars, in which case the tag is treated as primary.
+    public bool Background { get; init; }
 }
 
 // A timestamped moment as carried in a sidecar — enough to rehydrate it (and

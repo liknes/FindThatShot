@@ -162,6 +162,16 @@ public class MomentService : IMomentService
         await ctx.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task SetTagProminenceAsync(int momentId, int tagId, bool isBackground, CancellationToken cancellationToken = default)
+    {
+        await using var ctx = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var entity = await ctx.MomentTags.FirstOrDefaultAsync(
+            mt => mt.VideoMomentId == momentId && mt.TagId == tagId, cancellationToken);
+        if (entity is null || entity.IsBackground == isBackground) return;
+        entity.IsBackground = isBackground;
+        await ctx.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<Tag>> GetTagsForMomentAsync(int momentId, CancellationToken cancellationToken = default)
     {
         await using var ctx = await _contextFactory.CreateDbContextAsync(cancellationToken);
@@ -209,11 +219,15 @@ public class MomentService : IMomentService
             q = q.Where(m => m.Rating >= query.MinRating.Value);
         }
 
-        if (query.TagIds is { Count: > 0 })
+        var tagIds = query.TagIds?.ToArray() ?? Array.Empty<int>();
+        if (tagIds.Length > 0)
         {
-            foreach (var tagId in query.TagIds.ToArray())
+            var mainOnly = query.MainSubjectOnly;
+            foreach (var tagId in tagIds)
             {
-                q = q.Where(m => m.MomentTags.Any(mt => mt.TagId == tagId));
+                q = mainOnly
+                    ? q.Where(m => m.MomentTags.Any(mt => mt.TagId == tagId && !mt.IsBackground))
+                    : q.Where(m => m.MomentTags.Any(mt => mt.TagId == tagId));
             }
         }
 
@@ -225,7 +239,13 @@ public class MomentService : IMomentService
 
         var total = await q.CountAsync(cancellationToken);
 
-        q = q.OrderByDescending(m => m.UpdatedAt);
+        // When filtering by tags, float moments where a matched tag is the
+        // primary subject above ones where it's only incidental; recency is the
+        // tiebreaker (and the sole sort when no tag filter is active).
+        q = tagIds.Length > 0
+            ? q.OrderByDescending(m => m.MomentTags.Any(mt => tagIds.Contains(mt.TagId) && !mt.IsBackground))
+                .ThenByDescending(m => m.UpdatedAt)
+            : q.OrderByDescending(m => m.UpdatedAt);
         if (query.Take > 0) q = q.Take(query.Take);
 
         var moments = await q.ToListAsync(cancellationToken);

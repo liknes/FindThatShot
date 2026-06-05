@@ -32,6 +32,11 @@ public class SavedSearchCriteria
 
     public bool OnlyUnreviewed { get; set; }
 
+    // When set, a tag filter only matches clips where the tag is a primary
+    // (non-background) subject. Defaults to false so older saved searches
+    // restore unchanged.
+    public bool MainSubjectOnly { get; set; }
+
     private static readonly JsonSerializerOptions SerializerOptions = new()
     {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,

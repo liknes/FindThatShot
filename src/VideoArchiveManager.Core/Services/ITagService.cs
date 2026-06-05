@@ -22,4 +22,12 @@ public interface ITagService
     Task BulkAttachAsync(IEnumerable<int> videoItemIds, int tagId, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<Tag>> GetTagsForVideoAsync(int videoItemId, CancellationToken cancellationToken = default);
+
+    // Like GetTagsForVideoAsync but returns the join rows so callers can see
+    // each tag's per-clip prominence (VideoTag.IsBackground), with Tag loaded.
+    Task<IReadOnlyList<VideoTag>> GetVideoTagsForVideoAsync(int videoItemId, CancellationToken cancellationToken = default);
+
+    // Sets whether a tag is "background" (incidental) on a specific clip.
+    // No-op if the tag isn't attached.
+    Task SetTagProminenceAsync(int videoItemId, int tagId, bool isBackground, CancellationToken cancellationToken = default);
 }
