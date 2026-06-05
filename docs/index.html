@@ -66,8 +66,6 @@
   .btn-primary:hover { background: var(--accent-strong); }
   .btn-ghost { border-color: rgba(255,255,255,.22); color: #fff; background: rgba(255,255,255,.04); }
   .btn-ghost:hover { background: rgba(255,255,255,.1); }
-  .btn-dark { background: var(--ink); color: #fff; }
-  .btn-dark:hover { background: #000; }
   .btn-outline { border-color: var(--line); color: var(--ink); background: #fff; }
   .btn-outline:hover { border-color: var(--accent); color: var(--accent-strong); }
 
@@ -127,33 +125,6 @@
     box-shadow: 0 40px 80px -30px rgba(0,0,0,.7);
   }
   .shot img { width: 100%; height: auto; display: block; }
-
-  /* ---------- App mock (unused; kept as fallback) ---------- */
-  .mock {
-    border-radius: 14px; overflow: hidden; border: 1px solid rgba(255,255,255,.12);
-    background: #0c121b; box-shadow: 0 40px 80px -30px rgba(0,0,0,.7);
-  }
-  .mock-bar { display: flex; align-items: center; gap: 7px; padding: 11px 14px; background: #131c28; border-bottom: 1px solid rgba(255,255,255,.07); }
-  .mock-bar i { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
-  .mock-bar .r { background: #ff5f57; } .mock-bar .y { background: #febc2e; } .mock-bar .g { background: #28c840; }
-  .mock-bar span { margin-left: 10px; font-size: 12px; color: #6b7888; }
-  .mock-body { display: grid; grid-template-columns: 150px 1fr; min-height: 320px; }
-  .mock-side { background: #0e151f; border-right: 1px solid rgba(255,255,255,.06); padding: 14px 12px; }
-  .mock-side .s-search { height: 26px; border-radius: 7px; background: rgba(255,255,255,.06); margin-bottom: 14px; }
-  .mock-side .s-item { height: 9px; border-radius: 4px; background: rgba(255,255,255,.07); margin: 9px 4px; }
-  .mock-side .s-item.act { background: rgba(245,166,35,.55); width: 70%; }
-  .mock-side .s-item.w60 { width: 60%; } .mock-side .s-item.w80 { width: 80%; } .mock-side .s-item.w45 { width: 45%; }
-  .mock-main { padding: 14px; }
-  .mock-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-  .mock-card { border-radius: 8px; overflow: hidden; background: #131d29; border: 1px solid rgba(255,255,255,.06); }
-  .mock-thumb { aspect-ratio: 16/10; position: relative; background: linear-gradient(135deg, #1d2c3d, #24405a); }
-  .mock-thumb.a { background: linear-gradient(135deg, #2a2233, #4a3a24); }
-  .mock-thumb.b { background: linear-gradient(135deg, #15303a, #1f5358); }
-  .mock-thumb.c { background: linear-gradient(135deg, #2d2030, #5a2d3a); }
-  .mock-thumb .badge { position: absolute; top: 6px; right: 6px; font-size: 9px; font-weight: 700; color: #1a1206; background: var(--accent); padding: 2px 6px; border-radius: 5px; }
-  .mock-thumb .dur { position: absolute; bottom: 6px; right: 6px; font-size: 9px; color: #cfe; background: rgba(0,0,0,.55); padding: 1px 5px; border-radius: 4px; }
-  .mock-meta { padding: 7px 8px; } .mock-meta .l1 { height: 7px; width: 85%; background: rgba(255,255,255,.16); border-radius: 3px; }
-  .mock-meta .l2 { height: 6px; width: 55%; background: rgba(255,255,255,.09); border-radius: 3px; margin-top: 6px; }
 
   /* ---------- Promise band ---------- */
   .promise { background: var(--ink); color: #fff; padding: 30px 0; }
@@ -233,32 +204,6 @@
   .drone-points h4 { margin: 0; font-size: 15.5px; font-weight: 700; }
   .drone-points p { margin: 3px 0 0; color: #94a2b3; font-size: 14px; }
   @media (max-width: 920px) { .drone-grid { grid-template-columns: 1fr; gap: 40px; } }
-
-  /* Flight-path visual */
-  .flightmap {
-    position: relative; border-radius: 18px; overflow: hidden;
-    border: 1px solid rgba(255,255,255,.1); background: #0a121b;
-    box-shadow: 0 36px 70px -28px rgba(0,0,0,.7);
-  }
-  .flightmap-bar { display: flex; align-items: center; gap: 8px; padding: 11px 14px; background: #101b27; border-bottom: 1px solid rgba(255,255,255,.07); font-size: 12px; color: #7e8c9d; }
-  .flightmap-bar svg { color: #58e6cf; }
-  .flightmap-bar span { color: #8696a6; }
-  .flightmap-bar .live { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; color: #58e6cf; font-weight: 600; }
-  .flightmap-bar .live i { width: 7px; height: 7px; border-radius: 50%; background: #2ee6c9; box-shadow: 0 0 0 0 rgba(46,230,201,.6); animation: pulse 1.8s infinite; }
-  .flightmap-stage { position: relative; aspect-ratio: 16/10; background: radial-gradient(120% 120% at 70% 20%, #14202d, #0a111a); }
-  .flightmap-stage svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-  .drone-dot { transform-box: fill-box; transform-origin: center; animation: hover 4s ease-in-out infinite; }
-  .drone-dot circle.halo { animation: pulse 2s infinite; transform-origin: center; }
-  .tele {
-    position: absolute; left: 14px; bottom: 14px; display: flex; gap: 7px; flex-wrap: wrap;
-    background: rgba(8,14,20,.66); border: 1px solid rgba(255,255,255,.1); padding: 8px 9px; border-radius: 11px; backdrop-filter: blur(4px);
-  }
-  .tele .chip { font-size: 12px; font-weight: 600; color: #d7e0ea; background: rgba(255,255,255,.06); padding: 4px 9px; border-radius: 7px; font-variant-numeric: tabular-nums; }
-  .tele .chip b { color: #58e6cf; font-weight: 700; }
-  .tele .chip.amber b { color: var(--accent); }
-  .flightmap .orig { position: absolute; top: 14px; right: 14px; font-size: 10px; font-weight: 700; color: #0c1f17; background: #2ee6c9; padding: 3px 8px; border-radius: 6px; letter-spacing: .04em; }
-  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(46,230,201,.5); } 70% { box-shadow: 0 0 0 9px rgba(46,230,201,0); } 100% { box-shadow: 0 0 0 0 rgba(46,230,201,0); } }
-  @keyframes hover { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 
   /* ---------- Deep dive (tabs) ---------- */
   .deepdive .sec-head { margin-bottom: 36px; }
