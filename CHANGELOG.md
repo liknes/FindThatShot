@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-06-05
+
+### Added
+
+- **Tag prominence — mark subjects as primary or background.** A tag attached to a clip or a moment can now be flagged as a *background* (incidental) subject rather than a *primary* one, adding nuance to what a clip is actually *about* versus what merely happens to be in frame. Toggle it from the tag chip's right-click context menu; background tags are visually de-emphasised in the UI (dimmed, italicised, with a leading marker). Search gains a **Main subject only** option so you can find clips where a tag is a *primary* subject rather than just present, and results are ranked to surface clips/moments where the matched tags are primary. The flag is persisted via a new `IsBackground` column on `VideoTag` and `MomentTag` (**database migration**) and travels with the footage — the sidecar schema is bumped to `findthatshot/v3` to carry it (older v1/v2 sidecars are still read). Under the hood this adds an `AttachedTag` view-model wrapping a tag together with its prominence, plus the toggle commands and the search filter/sort plumbing.
+
+- **Frame previews and jump-to-moment for AI tag suggestions.** Reviewing AI suggestions no longer means hunting for the relevant moment by hand. In the **Review AI suggestions** window each suggestion now offers a lazy, on-hover preview of the exact **best-scoring frame** that produced it, and a one-click **jump** straight to that timestamp in the main player. Offline source files are handled gracefully — the preview/jump simply indicate the frame is unavailable rather than failing.
+
+### Changed
+
+- **Clearer AI review chips.** The suggestion chip now splits its two actions into distinct icons — an **image** icon that shows the best-frame preview tooltip on hover (with a subtle highlight for affordance), and a **film** icon that jumps to the moment — instead of overloading the tag label to do both. The shared preview tooltip was refactored into a reusable `ControlTemplate`.
+
+- **Faster thumbnail loading in long, virtualised lists.** Thumbnail decoding now happens **off the UI thread** (a new `AsyncImage` attached behaviour plus a `ThumbnailLoader.LoadAsync` that decodes on a worker thread and freezes the bitmap for safe cross-thread UI use), and the AI review queue is now a virtualised list that only loads the thumbnails actually on screen. Scrolling large collections is noticeably smoother and no longer blocks the UI while images decode.
+
 ### Fixed
 
 - **Several persisted settings silently reverted to their defaults on every launch.** The user-settings merge (`JsonSettingsStore.MergeWithUserOverrides`) rebuilds the `AppSettings` object field-by-field from `settings.json`, but a handful of fields were written to disk yet never copied back on load — so they appeared not to "stick" across restarts. Most visibly, the **right-hand clip editor's panel collapse state** (MAP / TAGS / NOTES & RATING / MOMENTS) was lost each launch; the **hover-scrub preview toggle** (`EnableHoverScrubPreview`) and its **frame count** (`HoverScrubFrameCount`), plus the **SAVED SEARCHES** rail panel's expand state, were affected the same way. All are now round-tripped through the merge so they persist as intended. (The left-rail FOLDERS / TAGS / CAMERAS / DATE panels and the window placement were already handled and are unaffected.)
@@ -357,7 +371,8 @@ First public release.
 
 - Responsive default window size; date pickers and the *Play externally* button are no longer clipped at common screen widths.
 
-[Unreleased]: https://github.com/liknes/FindThatShot/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/liknes/FindThatShot/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/liknes/FindThatShot/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/liknes/FindThatShot/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/liknes/FindThatShot/compare/v0.9.7...v0.10.0
 [0.9.7]: https://github.com/liknes/FindThatShot/compare/v0.9.6...v0.9.7
