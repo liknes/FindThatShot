@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+### Fixed
+
+- **Several persisted settings silently reverted to their defaults on every launch.** The user-settings merge (`JsonSettingsStore.MergeWithUserOverrides`) rebuilds the `AppSettings` object field-by-field from `settings.json`, but a handful of fields were written to disk yet never copied back on load — so they appeared not to "stick" across restarts. Most visibly, the **right-hand clip editor's panel collapse state** (MAP / TAGS / NOTES & RATING / MOMENTS) was lost each launch; the **hover-scrub preview toggle** (`EnableHoverScrubPreview`) and its **frame count** (`HoverScrubFrameCount`), plus the **SAVED SEARCHES** rail panel's expand state, were affected the same way. All are now round-tripped through the merge so they persist as intended. (The left-rail FOLDERS / TAGS / CAMERAS / DATE panels and the window placement were already handled and are unaffected.)
+
 ## [0.11.0] - 2026-06-04
 
 ### Added

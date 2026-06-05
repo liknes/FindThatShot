@@ -82,6 +82,10 @@ public class JsonSettingsStore : ISettingsStore
                 UpdateRepoUrl = !string.IsNullOrWhiteSpace(loaded.UpdateRepoUrl) ? loaded.UpdateRepoUrl : baseline.UpdateRepoUrl,
                 MaxScanParallelism = loaded.MaxScanParallelism > 0 ? loaded.MaxScanParallelism : baseline.MaxScanParallelism,
                 PageSize = loaded.PageSize > 0 ? loaded.PageSize : baseline.PageSize,
+                EnableHoverScrubPreview = loaded.EnableHoverScrubPreview,
+                HoverScrubFrameCount = loaded.HoverScrubFrameCount > 0
+                    ? loaded.HoverScrubFrameCount
+                    : baseline.HoverScrubFrameCount,
                 EnableAiTagging = loaded.EnableAiTagging,
                 AiModelDirectory = !string.IsNullOrWhiteSpace(loaded.AiModelDirectory) ? loaded.AiModelDirectory : baseline.AiModelDirectory,
                 AiModelDownloadUrl = !string.IsNullOrWhiteSpace(loaded.AiModelDownloadUrl) ? loaded.AiModelDownloadUrl : baseline.AiModelDownloadUrl,
@@ -102,6 +106,14 @@ public class JsonSettingsStore : ISettingsStore
                 SidebarCamerasExpanded = loaded.SidebarCamerasExpanded,
                 SidebarDateExpanded = loaded.SidebarDateExpanded,
                 SidebarSavedSearchesExpanded = loaded.SidebarSavedSearchesExpanded,
+                // Right-hand editor (detail) panel collapse state. Same as the
+                // left-rail flags above: these are written to settings.json but
+                // would silently revert to defaults each launch unless they're
+                // copied through this merge.
+                DetailMapPanelExpanded = loaded.DetailMapPanelExpanded,
+                DetailTagsPanelExpanded = loaded.DetailTagsPanelExpanded,
+                DetailNotesPanelExpanded = loaded.DetailNotesPanelExpanded,
+                DetailMomentsPanelExpanded = loaded.DetailMomentsPanelExpanded,
                 // Window placement is validated (on-screen + sane size) at
                 // restore time in MainWindow, so we pass the saved values
                 // through verbatim here and let the UI decide whether to honour
