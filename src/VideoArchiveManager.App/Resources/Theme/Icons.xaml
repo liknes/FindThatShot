@@ -42,6 +42,7 @@
 
     <!-- Tags / metadata -->
     <sys:String x:Key="Icon.Tag">&#xE8EC;</sys:String>
+    <sys:String x:Key="Icon.Image">&#xE91B;</sys:String>
     <sys:String x:Key="Icon.Star">&#xE735;</sys:String>
     <sys:String x:Key="Icon.Time">&#xE823;</sys:String>
 
