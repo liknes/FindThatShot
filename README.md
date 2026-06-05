@@ -291,12 +291,28 @@ The release pipeline targets a **GitHub Release** as the update host. Required t
    ```powershell
    pwsh ./scripts/publish.ps1 -Version 0.3.0
    ```
-   This populates `./releases/` with the installer, portable zip, nupkg, and `RELEASES` manifest.
-3. Tag and create a GitHub Release with the artifacts attached:
+   This populates `./releases/` with the installer, portable zip, nupkgs, and the update feeds (`releases.win.json`, `assets.win.json`, `RELEASES`).
+3. Tag and create a GitHub Release with the artifacts attached.
+
+   > **Do not** use `./releases/*` — that folder accumulates **every** historical `*.nupkg`, so the glob would upload dozens of stale full packages (gigabytes) and is slow/wrong. Attach only **this** version's files plus the three feed manifests. The two JSON feeds are **mandatory**: Velopack 1.1.x reads `releases.win.json` from the *latest* release to detect updates. If they're missing, installed apps report "you're on the latest version" even though a newer release exists.
+
    ```powershell
-   git tag v0.3.0
-   git push origin v0.3.0
-   gh release create v0.3.0 ./releases/* --title "v0.3.0" --notes "Release notes…"
+   $v = "0.3.0"
+   git tag "v$v"; git push origin "v$v"
+   gh release create "v$v" --title "v$v" --notes "Release notes…" `
+     ".\releases\VideoArchiveManager-win-Setup.exe" `
+     ".\releases\VideoArchiveManager-win-Portable.zip" `
+     ".\releases\VideoArchiveManager-$v-full.nupkg" `
+     ".\releases\VideoArchiveManager-$v-delta.nupkg" `
+     ".\releases\releases.win.json" `
+     ".\releases\assets.win.json" `
+     ".\releases\RELEASES"
+   ```
+
+   After publishing, sanity-check that the live feed reports the new version:
+   ```powershell
+   (Invoke-RestMethod "https://github.com/liknes/FindThatShot/releases/latest/download/releases.win.json").Assets |
+     Where-Object Type -eq Full | ForEach-Object { [version]$_.Version } | Sort-Object | Select-Object -Last 1
    ```
 4. On any installed copy of the app (laptop, multimedia PC), open **Help → Check for updates…** to pull the new version. The app verifies the version, downloads the delta or full package, applies the update, and restarts on the new version. Your catalog database, settings, sidecar files, and backups are not touched.
 
@@ -312,7 +328,7 @@ The release pipeline targets a **GitHub Release** as the update host. Required t
 Behaviour:
 
 - Only the **public** GitHub Releases of that repo are considered (no access token required at runtime).
-- Updates are detected via the `RELEASES` manifest attached to the latest release.
+- Updates are detected via the `releases.win.json` feed attached to the latest release (with `assets.win.json` / `RELEASES` alongside it). All three must be uploaded with every release — see the warning under *Releasing a new version*.
 - The check is **manual** — nothing happens on app startup. Click **Help → Check for updates…**.
 - The flow is: check → confirmation dialog → progress in the status bar → app exits → Velopack applies the swap → app relaunches on the new version.
 - Running from `dotnet run` or a raw `dotnet publish` output (i.e. not from the `Setup.exe` installer) shows a friendly "This build is not an installed copy" message instead of trying to apply.
