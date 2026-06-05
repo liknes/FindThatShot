@@ -48,6 +48,13 @@ public class ThumbnailService : IThumbnailService
         return Path.Combine(dir, $"{momentId}.jpg");
     }
 
+    public string GetAiPreviewThumbnailPath(int suggestionId)
+    {
+        var dir = Path.Combine(_settings.Current.EffectiveThumbnailDirectory, "AiPreview");
+        Directory.CreateDirectory(dir);
+        return Path.Combine(dir, $"{suggestionId}.jpg");
+    }
+
     public string GetScrubDirectory(int videoId)
         => Path.Combine(_settings.Current.EffectiveThumbnailDirectory, "Scrub", videoId.ToString());
 
@@ -220,6 +227,25 @@ public class ThumbnailService : IThumbnailService
         // frame and we return null, which the caller treats as "no thumbnail".
         var seek = seekSeconds < 0 ? 0 : seekSeconds;
         var outputPath = GetMomentThumbnailPath(momentId);
+        return ExtractFrameAsync(videoFilePath, seek, outputPath, cancellationToken);
+    }
+
+    public Task<string?> GenerateAtPathAsync(int suggestionId, string videoFilePath, double seekSeconds, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(videoFilePath) || !File.Exists(videoFilePath))
+        {
+            return Task.FromResult<string?>(null);
+        }
+
+        // The best frame for a given suggestion never changes, so reuse the
+        // cached still on a revisit instead of re-running ffmpeg.
+        var outputPath = GetAiPreviewThumbnailPath(suggestionId);
+        if (File.Exists(outputPath))
+        {
+            return Task.FromResult<string?>(outputPath);
+        }
+
+        var seek = seekSeconds < 0 ? 0 : seekSeconds;
         return ExtractFrameAsync(videoFilePath, seek, outputPath, cancellationToken);
     }
 

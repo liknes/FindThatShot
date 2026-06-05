@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using VideoArchiveManager.App.Helpers;
 using VideoArchiveManager.Core.Models.Enums;
+using VideoArchiveManager.Core.Services;
 using VideoArchiveManager.Core.Services.Ai;
 
 namespace VideoArchiveManager.App.ViewModels;
@@ -14,15 +15,33 @@ namespace VideoArchiveManager.App.ViewModels;
 public partial class AiReviewViewModel : ObservableObject
 {
     private readonly IAiSuggestionService _suggestions;
+    private readonly IThumbnailService _thumbnails;
 
-    public AiReviewViewModel(IAiSuggestionService suggestions)
+    public AiReviewViewModel(IAiSuggestionService suggestions, IThumbnailService thumbnails)
     {
         _suggestions = suggestions;
+        _thumbnails = thumbnails;
     }
 
     // Raised after any accept (which creates a real tag) so the owner can
     // refresh the main grid's tag chips / sidebar tag list.
     public event EventHandler? TagsChanged;
+
+    // Raised when the user asks to verify a suggestion in the player. The owner
+    // (MainWindow) selects the parent clip and seeks to the tag's best frame.
+    public event EventHandler<(int VideoItemId, double Seconds)>? JumpRequested;
+
+    internal void RequestJump(int videoItemId, double seconds) =>
+        JumpRequested?.Invoke(this, (videoItemId, seconds));
+
+    // Lazily extracts (and caches) the single best-scoring frame for a suggestion
+    // so the reviewer can eyeball whether the tag really belongs. Decoding is kept
+    // off the UI thread; returns null when the source is offline or extraction fails.
+    internal async Task<BitmapImage?> GeneratePreviewAsync(int suggestionId, string filePath, double seconds)
+    {
+        var path = await _thumbnails.GenerateAtPathAsync(suggestionId, filePath, seconds).ConfigureAwait(false);
+        return path is null ? null : await ThumbnailLoader.LoadLargeAsync(path).ConfigureAwait(false);
+    }
 
     [ObservableProperty]
     private bool _isLoading;
@@ -159,18 +178,66 @@ public partial class AiReviewChipViewModel : ObservableObject
         _group = group;
         _parent = parent;
         SuggestionId = model.SuggestionId;
+        VideoItemId = model.VideoItemId;
         TagName = model.TagName;
+        BestFrameSeconds = model.BestFrameSeconds;
+        FilePath = model.FilePath;
+        FileExists = model.FileExists;
         // Cosine similarity is roughly 0..1; surface it as a coarse match score.
         ConfidenceText = $"{Math.Round(model.Confidence * 100)}%";
     }
 
     public int SuggestionId { get; }
+    public int VideoItemId { get; }
     public string TagName { get; }
     public string ConfidenceText { get; }
+    public double? BestFrameSeconds { get; }
+    public string FilePath { get; }
+    public bool FileExists { get; }
+
+    // Both preview paths need an online source to read a frame / play the clip.
+    public bool CanPreview => FileExists && !string.IsNullOrWhiteSpace(FilePath);
+
+    public bool IsOffline => !CanPreview;
+
+    public string PreviewTooltip => CanPreview
+        ? "Click to jump to this moment in the player; hover to preview the best frame"
+        : "Source file is offline — preview unavailable";
+
+    // The best-scoring frame for this tag, lazily extracted on first hover.
+    [ObservableProperty]
+    private BitmapImage? _previewImage;
+
+    [ObservableProperty]
+    private bool _isPreviewLoading;
+
+    private bool _previewRequested;
+
+    // Lazy: triggered by the hover popup opening. Extracts/caches the still once,
+    // then keeps it for the lifetime of the chip.
+    public async Task EnsurePreviewAsync()
+    {
+        if (_previewRequested || !CanPreview) return;
+        _previewRequested = true;
+
+        IsPreviewLoading = true;
+        try
+        {
+            PreviewImage = await _parent.GeneratePreviewAsync(SuggestionId, FilePath, BestFrameSeconds ?? 0);
+        }
+        finally
+        {
+            IsPreviewLoading = false;
+        }
+    }
 
     [RelayCommand]
     private Task Accept() => _parent.AcceptSuggestionAsync(_group, this);
 
     [RelayCommand]
     private Task Reject() => _parent.RejectSuggestionAsync(_group, this);
+
+    // Verify in motion: open the parent clip and seek to this tag's best frame.
+    [RelayCommand(CanExecute = nameof(CanPreview))]
+    private void Jump() => _parent.RequestJump(VideoItemId, BestFrameSeconds ?? 0);
 }

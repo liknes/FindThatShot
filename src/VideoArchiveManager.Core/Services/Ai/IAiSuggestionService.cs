@@ -13,6 +13,7 @@ public class AiSuggestionItem
     public double? BestFrameSeconds { get; init; }
     public string FileName { get; init; } = string.Empty;
     public string FolderPath { get; init; } = string.Empty;
+    public string FilePath { get; init; } = string.Empty;
     public string? ThumbnailPath { get; init; }
     public bool FileExists { get; init; }
 }
@@ -23,6 +24,7 @@ public class AiSuggestionGroup
     public int VideoItemId { get; init; }
     public string FileName { get; init; } = string.Empty;
     public string FolderPath { get; init; } = string.Empty;
+    public string FilePath { get; init; } = string.Empty;
     public string? ThumbnailPath { get; init; }
     public bool FileExists { get; init; }
     public IReadOnlyList<AiSuggestionItem> Suggestions { get; init; } = Array.Empty<AiSuggestionItem>();

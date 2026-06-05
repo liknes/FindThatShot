@@ -31,6 +31,18 @@ public interface IThumbnailService
     // "Moments" subfolder. Returns the number of files actually deleted.
     int DeleteForMoments(IEnumerable<int> momentIds);
 
+    // Canonical cache path for an AI-suggestion preview frame: a
+    // "{suggestionId}.jpg" file inside an "AiPreview" subfolder, kept separate
+    // from clip/moment thumbnails so id spaces can't collide.
+    string GetAiPreviewThumbnailPath(int suggestionId);
+
+    // Extracts the single frame that drove a tag suggestion (seekSeconds is the
+    // suggestion's BestFrameSeconds) so the reviewer can verify it, writing it to
+    // GetAiPreviewThumbnailPath(suggestionId). Idempotent: returns the cached file
+    // if it already exists. Returns the output path on success, null on failure.
+    // The source video file is only ever read, never modified.
+    Task<string?> GenerateAtPathAsync(int suggestionId, string videoFilePath, double seekSeconds, CancellationToken cancellationToken = default);
+
     // Per-video cache directory for lazily-generated hover-scrub frames: a
     // "Scrub/{videoId}" subfolder of the configured thumbnail directory, kept
     // separate from whole-clip and moment thumbnails.

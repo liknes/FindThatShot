@@ -48,7 +48,7 @@ public class AiSuggestionService : IAiSuggestionService
         var clips = await ctx.VideoItems
             .AsNoTracking()
             .Where(v => rankedClipIds.Contains(v.Id))
-            .Select(v => new { v.Id, v.FileName, v.FolderPath, v.ThumbnailPath, v.FileExists })
+            .Select(v => new { v.Id, v.FileName, v.FolderPath, v.FilePath, v.ThumbnailPath, v.FileExists })
             .ToDictionaryAsync(v => v.Id, cancellationToken);
 
         var groups = new List<AiSuggestionGroup>(rankedClipIds.Count);
@@ -67,6 +67,7 @@ public class AiSuggestionService : IAiSuggestionService
                     BestFrameSeconds = s.BestFrameSeconds,
                     FileName = clip.FileName,
                     FolderPath = clip.FolderPath,
+                    FilePath = clip.FilePath,
                     ThumbnailPath = clip.ThumbnailPath,
                     FileExists = clip.FileExists
                 })
@@ -77,6 +78,7 @@ public class AiSuggestionService : IAiSuggestionService
                 VideoItemId = clipId,
                 FileName = clip.FileName,
                 FolderPath = clip.FolderPath,
+                FilePath = clip.FilePath,
                 ThumbnailPath = clip.ThumbnailPath,
                 FileExists = clip.FileExists,
                 Suggestions = items

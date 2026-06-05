@@ -22,14 +22,53 @@
 
     <Window.Resources>
 
-        <!-- One accept/reject chip for a suggested tag. -->
+        <!-- One accept/reject chip for a suggested tag. Hovering shows the exact
+             best-scoring frame; clicking the tag jumps to that moment in the player. -->
         <DataTemplate x:Key="AiChipTemplate" DataType="{x:Type vm:AiReviewChipViewModel}">
             <Border Margin="0,0,8,8"
                     Padding="4,2,4,2"
                     CornerRadius="14"
                     Background="{DynamicResource App.Background.Inset}"
                     BorderBrush="{DynamicResource App.Border.Subtle}"
-                    BorderThickness="1">
+                    BorderThickness="1"
+                    ToolTipService.InitialShowDelay="350"
+                    ToolTipService.BetweenShowDelay="0"
+                    ToolTipOpening="Chip_ToolTipOpening">
+                <Border.ToolTip>
+                    <ToolTip Background="Transparent" BorderThickness="0" Padding="0" HasDropShadow="False"
+                             Placement="Top">
+                        <Border Background="{DynamicResource App.Background.Elevated}"
+                                BorderBrush="{DynamicResource App.Border.Subtle}"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="6">
+                            <StackPanel Width="360">
+                                <Grid Height="203">
+                                    <Border Background="{DynamicResource App.Background.Base}" CornerRadius="4" />
+                                    <ui:ProgressRing IsActive="{Binding IsPreviewLoading}"
+                                                     Width="28" Height="28"
+                                                     Visibility="{Binding IsPreviewLoading, Converter={StaticResource BoolToVisibility}}" />
+                                    <Image Source="{Binding PreviewImage}"
+                                           Stretch="Uniform"
+                                           Visibility="{Binding PreviewImage, Converter={StaticResource NullToVisibility}}" />
+                                    <TextBlock Text="Source file is offline — preview unavailable"
+                                               TextWrapping="Wrap"
+                                               TextAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               Margin="16"
+                                               Style="{StaticResource App.Type.BodyMuted}"
+                                               Visibility="{Binding IsOffline, Converter={StaticResource BoolToVisibility}}" />
+                                </Grid>
+                                <TextBlock Margin="2,6,2,2" Style="{StaticResource App.Type.Caption}">
+                                    <Run Text="Best frame for " />
+                                    <Run Text="{Binding TagName, Mode=OneWay}" FontWeight="SemiBold" />
+                                    <Run Text=" · " />
+                                    <Run Text="{Binding ConfidenceText, Mode=OneWay}" />
+                                </TextBlock>
+                            </StackPanel>
+                        </Border>
+                    </ToolTip>
+                </Border.ToolTip>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <Button Width="22" Height="22" Padding="0" Margin="2,0,2,0"
                             Style="{StaticResource App.Button.Ghost}"
@@ -38,14 +77,23 @@
                         <TextBlock Text="&#x2713;" FontWeight="Bold"
                                    Foreground="{DynamicResource App.Accent}" />
                     </Button>
-                    <TextBlock Text="{Binding TagName}"
-                               VerticalAlignment="Center"
-                               Margin="2,0,4,0"
-                               Style="{StaticResource App.Type.Body}" />
-                    <TextBlock Text="{Binding ConfidenceText}"
-                               VerticalAlignment="Center"
-                               Margin="0,0,4,0"
-                               Style="{StaticResource App.Type.Caption}" />
+                    <!-- The tag label doubles as the jump-to-moment trigger. -->
+                    <Button Style="{StaticResource App.Button.Ghost}"
+                            Padding="2,0"
+                            Margin="0,0,2,0"
+                            Cursor="Hand"
+                            Command="{Binding JumpCommand}"
+                            ToolTip="{Binding PreviewTooltip}">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding TagName}"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,4,0"
+                                       Style="{StaticResource App.Type.Body}" />
+                            <TextBlock Text="{Binding ConfidenceText}"
+                                       VerticalAlignment="Center"
+                                       Style="{StaticResource App.Type.Caption}" />
+                        </StackPanel>
+                    </Button>
                     <Button Width="22" Height="22" Padding="0" Margin="0,0,2,0"
                             Style="{StaticResource App.Button.Ghost}"
                             Command="{Binding RejectCommand}"

@@ -1592,6 +1592,13 @@ public partial class MainWindow : Window
         _aiReviewWindow.Owner = this;
         _aiReviewWindow.TagsChanged += async (_, _) =>
             await _viewModel.SearchCommand.ExecuteAsync(null);
+        // Verify a suggestion in motion: select the parent clip and seek the
+        // player to the tag's best-scoring frame (reuses the Moments jump path).
+        _aiReviewWindow.JumpRequested += async (_, args) =>
+        {
+            await _viewModel.JumpToMomentAsync(args.VideoItemId, args.Seconds);
+            Activate();
+        };
         _aiReviewWindow.Closed += (_, _) => _aiReviewWindow = null;
         _aiReviewWindow.Show();
     }

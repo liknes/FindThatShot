@@ -104,6 +104,37 @@ public static class ThumbnailLoader
         }
     }
 
+    // Off-UI-thread variant of LoadLarge for on-demand previews (e.g. the AI
+    // review hover popup). Not cached: previews are viewed transiently and the
+    // underlying frame already lives on disk, so a re-hover re-decode is cheap.
+    public static Task<BitmapImage?> LoadLargeAsync(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+        {
+            return Task.FromResult<BitmapImage?>(null);
+        }
+
+        return Task.Run<BitmapImage?>(() =>
+        {
+            try
+            {
+                var bitmap = new BitmapImage();
+                bitmap.BeginInit();
+                bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                bitmap.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
+                bitmap.DecodePixelWidth = 800;
+                bitmap.UriSource = new Uri(path, UriKind.Absolute);
+                bitmap.EndInit();
+                bitmap.Freeze();
+                return bitmap;
+            }
+            catch
+            {
+                return null;
+            }
+        });
+    }
+
     public static void Invalidate(string? path)
     {
         if (string.IsNullOrEmpty(path)) return;
