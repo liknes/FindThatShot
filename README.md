@@ -334,6 +334,17 @@ Behaviour:
 - Running from `dotnet run` or a raw `dotnet publish` output (i.e. not from the `Setup.exe` installer) shows a friendly "This build is not an installed copy" message instead of trying to apply.
 - Source video files, the catalog database, settings, thumbnails, and sidecars are never read or modified by the update process — only the app's own binaries inside its install directory.
 
+### Tracking adoption (visitors & downloads)
+
+Two independent signals, since one tool can't cover both cleanly:
+
+- **Landing-page visitors & referrers** — Cloudflare Web Analytics (cookieless) is wired into `docs/index.html`. Paste your site token where `PASTE_YOUR_CLOUDFLARE_TOKEN_HERE` is (see the comment block at the bottom of that file), then view stats at *dash.cloudflare.com → Web Analytics*. This counts page views and referrers only — it has no custom-event API on the free tier, so it cannot count downloads.
+- **Actual app downloads** — GitHub counts every release-asset download server-side (far more accurate than click-tracking). Quick view per release:
+  ```powershell
+  gh api repos/liknes/FindThatShot/releases --jq '.[] | "\(.tag_name): " + ([.assets[] | select(.name|test("Setup.exe|Portable.zip")) | "\(.name)=\(.download_count)"] | join("  "))'
+  ```
+  Note: in-app updates pull the `*-delta.nupkg` / `*-full.nupkg` assets, so the `Setup.exe` count reflects *new* installs while the nupkg counts reflect *updates*.
+
 ### Code signing (not enabled)
 
 The installer and binaries are currently unsigned. End users will see a SmartScreen "Unknown publisher" warning the first time. For personal / internal use this is acceptable. If you ever distribute publicly, look into a code-signing certificate and `vpk pack --signParams …`.
