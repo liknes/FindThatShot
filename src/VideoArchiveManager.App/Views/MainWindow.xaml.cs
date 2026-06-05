@@ -1329,6 +1329,33 @@ public partial class MainWindow : Window
         Close();
     }
 
+    // Feedback channels for the public test cohort. Both open through the
+    // shell (default browser / mail client); failures on locked-down systems
+    // are swallowed like the existing Hyperlink_RequestNavigate handler.
+    private const string IssuesUrl = "https://github.com/liknes/FindThatShot/issues/new";
+    private const string FeedbackMailto =
+        "mailto:findthatshot@ingve.no?subject=Find%20That%20Shot%20feedback";
+
+    private void ReportBug_Click(object sender, RoutedEventArgs e) => OpenViaShell(IssuesUrl);
+
+    private void SendFeedback_Click(object sender, RoutedEventArgs e) => OpenViaShell(FeedbackMailto);
+
+    private static void OpenViaShell(string target)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = target,
+                UseShellExecute = true
+            });
+        }
+        catch
+        {
+            // Browser / mail-client launch can fail on locked-down systems; swallow silently.
+        }
+    }
+
     private void About_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new AboutWindow

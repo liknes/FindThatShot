@@ -198,6 +198,14 @@
                         <MenuItem Header="_Diagnostics…"
                                   Click="Diagnostics_Click"
                                   ToolTip="View environment info and the recent application log for troubleshooting." />
+                        <Separator />
+                        <MenuItem Header="_Report a bug (GitHub)…"
+                                  Click="ReportBug_Click"
+                                  ToolTip="Open the GitHub issue tracker in your browser. Tip: use Diagnostics → Copy full report and paste it into the issue." />
+                        <MenuItem Header="Send _feedback (email)…"
+                                  Click="SendFeedback_Click"
+                                  ToolTip="Open a new email to the developer. Tip: use Diagnostics → Copy full report and paste it into the message." />
+                        <Separator />
                         <MenuItem Header="_About Find That Shot…" Click="About_Click" />
                     </MenuItem>
                 </Menu>

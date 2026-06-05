@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-06-05
+
+### Added
+
+- **In-app feedback & bug-report links (Help menu).** Ahead of opening the app to public testers, the **Help** menu gains **Report a bug (GitHub)…** (opens the issue tracker) and **Send feedback (email)…** (opens a pre-addressed email to `findthatshot@ingve.no`). Both open through the shell (default browser / mail client) and fail silently on locked-down systems, and each carries a tooltip nudging you to attach **Diagnostics → Copy full report** so reports arrive with the version and recent logs already included. This gives first-time external users an obvious, low-friction way to report problems instead of having no channel at all.
+
 ## [0.12.0] - 2026-06-05
 
 ### Added
@@ -371,7 +377,8 @@ First public release.
 
 - Responsive default window size; date pickers and the *Play externally* button are no longer clipped at common screen widths.
 
-[Unreleased]: https://github.com/liknes/FindThatShot/compare/v0.12.0...HEAD
+[Unreleased]: https://github.com/liknes/FindThatShot/compare/v0.13.0...HEAD
+[0.13.0]: https://github.com/liknes/FindThatShot/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/liknes/FindThatShot/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/liknes/FindThatShot/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/liknes/FindThatShot/compare/v0.9.7...v0.10.0
