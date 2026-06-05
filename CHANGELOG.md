@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-06-05
+
+### Changed
+
+- **GPL-3.0-or-later license headers across the whole codebase.** Every source file (149 in total) now carries an SPDX `GPL-3.0-or-later` header with the project name, copyright, and the standard GPLv3 notice, making each file's licensing unambiguous on its own. A shared `Directory.Build.props` also bakes author, company, product, copyright, repository URL, and the `GPL-3.0-or-later` package-license expression into every compiled assembly, so ownership and license travel with the `.exe` / `.dll` even if the source headers are ever stripped. A small `scripts/add-license-headers.ps1` helper applies the header consistently to new files. No functional or behavioural changes — this release is purely licensing/metadata hygiene.
+
 ## [0.13.0] - 2026-06-05
 
 ### Added
@@ -377,7 +383,8 @@ First public release.
 
 - Responsive default window size; date pickers and the *Play externally* button are no longer clipped at common screen widths.
 
-[Unreleased]: https://github.com/liknes/FindThatShot/compare/v0.13.0...HEAD
+[Unreleased]: https://github.com/liknes/FindThatShot/compare/v0.14.0...HEAD
+[0.14.0]: https://github.com/liknes/FindThatShot/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/liknes/FindThatShot/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/liknes/FindThatShot/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/liknes/FindThatShot/compare/v0.10.0...v0.11.0
