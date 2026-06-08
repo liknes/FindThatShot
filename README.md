@@ -20,9 +20,12 @@ A Windows desktop application for organizing a large local video archive across 
 ```
 FindThatShot.sln
 src/
-  VideoArchiveManager.Core/   Models, enums, service interfaces, FfprobeService, ThumbnailService, FileSystemService, FolderNameParser, AppSettings
+  VideoArchiveManager.Core/   Models, enums, service interfaces, FfprobeService, ThumbnailService, FileSystemService, FolderNameParser, MediaSafetyGuard, AppSettings
   VideoArchiveManager.Data/   EF Core DbContext, entity configurations, migrations, TagService, SearchService, MomentService, VideoScannerService, VideoLibraryService
   VideoArchiveManager.App/    WPF UI, Views, ViewModels, App startup, DI container
+tests/
+  VideoArchiveManager.Core.Tests/   xUnit tests for Core (media-immutability guard, sidecar, backup, parsing, tokenizer)
+  VideoArchiveManager.Data.Tests/   xUnit tests for Data (durability, cascade scope, removal safety, search, migrations)
 ```
 
 ## Prerequisites
@@ -228,6 +231,31 @@ dotnet ef database update \
 ```
 
 `DesignTimeDbContextFactory` writes to `%LOCALAPPDATA%\VideoArchiveManager\catalog.db` by default, matching the runtime path. The application also calls `Database.MigrateAsync()` on startup so any new migrations are applied automatically.
+
+## Testing
+
+The two non-negotiable invariants — **original media is never touched** and **user curation is never silently destroyed** — are protected by an automated test suite (xUnit + NSubstitute + FluentAssertions), plus code-level runtime guardrails.
+
+Run the suites from the repo root:
+
+```powershell
+dotnet test tests/VideoArchiveManager.Core.Tests/VideoArchiveManager.Core.Tests.csproj
+dotnet test tests/VideoArchiveManager.Data.Tests/VideoArchiveManager.Data.Tests.csproj
+```
+
+What's covered:
+
+- **Media immutability (P0).** A `MediaSnapshot` helper fingerprints every file in a fixture tree (SHA-256 + length + last-write time); operations run, then it asserts **zero diffs** on the source media. Covers catalog removal (by id / under root), thumbnail-cache cleanup, sidecar writes (off by default → no file appears; on → only the `.findthatshot.json` appears and the video bytes are unchanged), and read-only ffprobe/thumbnail paths.
+- **Data durability (P0).** Cascade scope (deleting a clip removes its `VideoTag` / `VideoMoment` / `MomentTag` rows but never the global `Tag` vocabulary), targeted detach/delete, `AiTaggingService.ClearAllAiDataAsync` only touching AI tables, catalog backup/restore round-trip, and additive migrations (re-running `Migrate` over a populated catalog preserves data). Tests use a **real file-backed SQLite catalog** migrated with the production migrations, so cascade deletes and `ExecuteDeleteAsync` behave exactly as in production.
+- **Functional (P1).** `SearchService` filters/sort/paging, `FolderNameParser`, `VectorMath`, `ClipTokenizer`, `DuplicateDetectionService`, `SavedSearchService`, `TagService`, `MomentService`, and `NominatimReverseGeocodingService` (with a stubbed `HttpClient`).
+
+Runtime guardrails enforced in code (and locked in by tests):
+
+- **`MediaSafetyGuard`** (Core) — a last-line-of-defence that refuses to delete any path with a protected media/sidecar extension or outside the app's cache directory. The thumbnail-cache cleanup routes its deletes through it.
+- **Mandatory safety backup** — every bulk catalog removal (`RemoveByIds` / `RemoveOffline` / `RemoveUnderRoot` / `RemoveRootFolder`) takes a best-effort catalog snapshot first, so a mistaken removal is always recoverable.
+- **Atomic remove-root** — removing a root folder and its video records happens in a single database transaction, so a partial failure can never half-delete the catalog.
+
+CI runs both suites on a Windows runner for every push / pull request (`.github/workflows/tests.yml`).
 
 ## Distribution (Velopack)
 

@@ -36,4 +36,11 @@ public interface IVideoLibraryService
     Task<int> CountUnderRootAsync(string rootPath, CancellationToken cancellationToken = default);
 
     Task<int> RemoveUnderRootAsync(string rootPath, CancellationToken cancellationToken = default);
+
+    // Atomically removes a root folder row AND every video record imported from
+    // under it in a single database transaction, so a partial failure can never
+    // leave the catalog half-deleted (orphaned video rows with no root, or a
+    // root with no videos). Returns the number of video records removed. As with
+    // every method here, source video files on disk are NEVER touched.
+    Task<int> RemoveRootFolderAsync(int rootFolderId, string rootPath, CancellationToken cancellationToken = default);
 }

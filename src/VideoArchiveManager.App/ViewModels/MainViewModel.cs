@@ -1257,9 +1257,15 @@ public partial class MainViewModel : ObservableObject
                 return;
             }
 
+            // The incremental pass only scores clips without an embedding yet, so
+            // show the full online catalog size for context (the service repeats
+            // this framing in its per-clip progress updates).
+            var catalogTotal = reprocessAll
+                ? pending
+                : await _aiTaggingService.CountPendingAsync(reprocessAll: true, cts.Token);
             StatusMessage = reprocessAll
-                ? $"Re-scoring all {pending} clip(s) with the AI model…"
-                : $"Scoring {pending} clip(s) with the AI model…";
+                ? $"Re-scoring all {pending} clip(s) with the AI model"
+                : $"Scoring {pending} new clip(s) with the AI model ({catalogTotal} total)";
             var progress = new Progress<AiTaggingProgress>(p =>
             {
                 if (!string.IsNullOrEmpty(p.Message)) StatusMessage = p.Message;
@@ -1618,21 +1624,10 @@ public partial class MainViewModel : ObservableObject
             MessageBoxResult.Cancel);
         if (result != MessageBoxResult.OK) return;
 
-        await using (var ctx = await _contextFactory.CreateDbContextAsync())
-        {
-            var entity = await ctx.RootFolders.FirstOrDefaultAsync(r => r.Id == folder.Id);
-            if (entity is null)
-            {
-                RootFolders.Remove(folder);
-                return;
-            }
-            ctx.RootFolders.Remove(entity);
-            await ctx.SaveChangesAsync();
-        }
-
-        var removedVideos = videoCount > 0
-            ? await _libraryService.RemoveUnderRootAsync(folder.Path)
-            : 0;
+        // Atomic: the root folder row and all video records under it are removed
+        // in a single database transaction so a partial failure can never leave
+        // the catalog half-deleted. Source video files on disk are not touched.
+        var removedVideos = await _libraryService.RemoveRootFolderAsync(folder.Id, folder.Path);
 
         RootFolders.Remove(folder);
         if (SelectedRootFolder?.Id == folder.Id) SelectedRootFolder = null;
