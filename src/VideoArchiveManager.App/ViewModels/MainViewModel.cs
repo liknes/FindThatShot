@@ -2020,31 +2020,64 @@ public partial class MainViewModel : ObservableObject
             }
 
             StatusMessage = $"Downloading v{result.AvailableVersion}…";
-            var apply = await _updateService.DownloadAndApplyAsync(onProgress: p =>
+
+            // Velopack's progress meter covers the network download but then
+            // goes quiet during its verify/stage phase — which is why the
+            // number appears to freeze (commonly around ~70%). To avoid that
+            // looking like a stall, a watchdog flips the message to a friendly
+            // "Preparing update…" whenever no new progress has arrived for a
+            // short while. Purely cosmetic: it never touches the Velopack
+            // download/apply flow itself.
+            var lastReported = -1;
+            var preparingShown = false;
+            var stallWatchdog = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+            stallWatchdog.Tick += (_, _) =>
             {
-                // Velopack reports 0..100 ints. Throttle the UI updates a bit
-                // so we don't spam the property change pipeline.
-                if (p % 5 == 0)
+                if (!preparingShown)
+                {
+                    preparingShown = true;
+                    StatusMessage = $"Preparing update v{result.AvailableVersion}… this can take a moment.";
+                }
+            };
+            stallWatchdog.Start();
+
+            try
+            {
+                var apply = await _updateService.DownloadAndApplyAsync(onProgress: p =>
                 {
                     Application.Current?.Dispatcher.BeginInvoke(() =>
                     {
-                        StatusMessage = $"Downloading v{result.AvailableVersion}… {p}%";
-                    });
-                }
-            });
+                        // Reset the watchdog: real progress just arrived, so
+                        // we're still in the active download phase.
+                        stallWatchdog.Stop();
+                        stallWatchdog.Start();
 
-            // We only reach this point if apply did NOT exit the process
-            // (typical case is it never returns because ApplyUpdatesAndRestart
-            // tears the process down). So this path == failure.
-            if (!apply.Success)
+                        if (p != lastReported)
+                        {
+                            lastReported = p;
+                            preparingShown = false;
+                            StatusMessage = $"Downloading v{result.AvailableVersion}… {p}%";
+                        }
+                    });
+                });
+
+                // We only reach this point if apply did NOT exit the process
+                // (typical case is it never returns because ApplyUpdatesAndRestart
+                // tears the process down). So this path == failure.
+                if (!apply.Success)
+                {
+                    StatusMessage = $"Update failed: {apply.ErrorMessage}";
+                    MessageBox.Show(
+                        $"The update could not be installed.\n\n{apply.ErrorMessage}\n\n" +
+                        "Your current version is unaffected.",
+                        "Update failed",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                }
+            }
+            finally
             {
-                StatusMessage = $"Update failed: {apply.ErrorMessage}";
-                MessageBox.Show(
-                    $"The update could not be installed.\n\n{apply.ErrorMessage}\n\n" +
-                    "Your current version is unaffected.",
-                    "Update failed",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+                stallWatchdog.Stop();
             }
         }
         finally
