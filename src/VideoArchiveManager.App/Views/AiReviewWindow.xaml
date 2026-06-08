@@ -4,7 +4,8 @@
         xmlns:ui="http://schemas.modernwpf.com/2019"
         xmlns:vm="clr-namespace:VideoArchiveManager.App.ViewModels"
         xmlns:helpers="clr-namespace:VideoArchiveManager.App.Helpers"
-        Title="Review AI suggestions"
+        xmlns:loc="clr-namespace:VideoArchiveManager.App.Localization"
+        Title="{loc:Tr AiReview_Title}"
         Width="820" Height="820"
         MinWidth="620" MinHeight="520"
         WindowStartupLocation="CenterOwner"
@@ -22,8 +23,6 @@
 
     <Window.Resources>
 
-        <!-- Rich best-frame preview shared by the chip's image icon (hover) so the
-             reviewer can verify a tag without leaving the queue. -->
         <ControlTemplate x:Key="AiPreviewTip" TargetType="ToolTip">
             <Border Background="{DynamicResource App.Background.Elevated}"
                     BorderBrush="{DynamicResource App.Border.Subtle}"
@@ -39,7 +38,7 @@
                         <Image Source="{Binding PreviewImage}"
                                Stretch="Uniform"
                                Visibility="{Binding PreviewImage, Converter={StaticResource NullToVisibility}}" />
-                        <TextBlock Text="Source file is offline — preview unavailable"
+                        <TextBlock Text="{loc:Tr AiReview_OfflinePreview}"
                                    TextWrapping="Wrap"
                                    TextAlignment="Center"
                                    VerticalAlignment="Center"
@@ -48,7 +47,7 @@
                                    Visibility="{Binding IsOffline, Converter={StaticResource BoolToVisibility}}" />
                     </Grid>
                     <TextBlock Margin="2,6,2,2" Style="{StaticResource App.Type.Caption}">
-                        <Run Text="Best frame for " />
+                        <Run Text="{loc:Tr AiReview_BestFramePrefix}" />
                         <Run Text="{Binding TagName, Mode=OneWay}" FontWeight="SemiBold" />
                         <Run Text=" · " />
                         <Run Text="{Binding ConfidenceText, Mode=OneWay}" />
@@ -57,8 +56,6 @@
             </Border>
         </ControlTemplate>
 
-        <!-- Hover affordance for the image icon: a subtle highlight so it reads
-             as interactive. -->
         <Style x:Key="AiChipIconHover" TargetType="Border">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="CornerRadius" Value="10" />
@@ -70,8 +67,6 @@
             </Style.Triggers>
         </Style>
 
-        <!-- One accept/reject chip for a suggested tag. An image icon (hover) shows
-             the exact best-scoring frame; a film icon (click) plays that moment. -->
         <DataTemplate x:Key="AiChipTemplate" DataType="{x:Type vm:AiReviewChipViewModel}">
             <Border Margin="0,0,8,8"
                     Padding="4,2,4,2"
@@ -83,7 +78,7 @@
                     <Button Width="22" Height="22" Padding="0" Margin="2,0,2,0"
                             Style="{StaticResource App.Button.Ghost}"
                             Command="{Binding AcceptCommand}"
-                            ToolTip="Accept — add this tag to the clip">
+                            ToolTip="{loc:Tr AiReview_Accept_Tip}">
                         <TextBlock Text="&#x2713;" FontWeight="Bold"
                                    Foreground="{DynamicResource App.Accent}" />
                     </Button>
@@ -96,7 +91,6 @@
                                Margin="0,0,2,0"
                                Style="{StaticResource App.Type.Caption}" />
 
-                    <!-- Image icon: hover to preview the best frame. -->
                     <Border Style="{StaticResource AiChipIconHover}"
                             Margin="2,0,0,0"
                             Cursor="Hand"
@@ -116,13 +110,12 @@
                                    VerticalAlignment="Center" />
                     </Border>
 
-                    <!-- Film icon: click to play this moment in the player. -->
                     <Button Width="24" Height="22" Padding="0" Margin="2,0,2,0"
                             Style="{StaticResource App.Button.Ghost}"
                             Cursor="Hand"
                             Command="{Binding JumpCommand}"
                             Visibility="{Binding CanPreview, Converter={StaticResource BoolToVisibility}}"
-                            ToolTip="Play this moment in the player">
+                            ToolTip="{loc:Tr AiReview_Play_Tip}">
                         <TextBlock FontFamily="{StaticResource App.Icon.FontFamily}"
                                    FontSize="12"
                                    Text="{StaticResource Icon.Movie}"
@@ -133,7 +126,7 @@
                     <Button Width="22" Height="22" Padding="0" Margin="0,0,2,0"
                             Style="{StaticResource App.Button.Ghost}"
                             Command="{Binding RejectCommand}"
-                            ToolTip="Reject — dismiss this suggestion">
+                            ToolTip="{loc:Tr AiReview_Reject_Tip}">
                         <TextBlock Text="&#x2715;"
                                    Foreground="{DynamicResource App.Foreground.Tertiary}" />
                     </Button>
@@ -141,7 +134,6 @@
             </Border>
         </DataTemplate>
 
-        <!-- One clip card: thumbnail + header + chips + accept-all / reject-all. -->
         <DataTemplate x:Key="AiGroupTemplate" DataType="{x:Type vm:AiReviewGroupViewModel}">
             <Border Margin="0,0,0,14"
                     Padding="16,14"
@@ -190,10 +182,10 @@
                         </ItemsControl>
 
                         <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                            <Button Content="Accept all"
+                            <Button Content="{loc:Tr Common_AcceptAll}"
                                     Style="{StaticResource App.Button.Ghost}"
                                     Command="{Binding AcceptAllCommand}" />
-                            <Button Content="Reject all"
+                            <Button Content="{loc:Tr Common_RejectAll}"
                                     Margin="8,0,0,0"
                                     Style="{StaticResource App.Button.Ghost}"
                                     Command="{Binding RejectAllCommand}" />
@@ -212,32 +204,30 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- Header -->
         <Grid Grid.Row="0" Margin="24,20,24,8">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0">
-                <TextBlock Text="Review AI suggestions" Style="{StaticResource App.Type.Display}" />
+                <TextBlock Text="{loc:Tr AiReview_Title}" Style="{StaticResource App.Type.Display}" />
                 <TextBlock Text="{Binding SummaryText}"
                            Style="{StaticResource App.Type.Caption}"
                            Margin="0,4,0,0" />
             </StackPanel>
             <Button Grid.Column="1"
-                    Content="Refresh"
+                    Content="{loc:Tr Common_Refresh}"
                     VerticalAlignment="Top"
                     Style="{StaticResource App.Button.Secondary}"
                     Command="{Binding LoadCommand}"
                     IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBool}}" />
         </Grid>
 
-        <!-- Body -->
         <Grid Grid.Row="1">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
                         Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibility}}">
                 <ui:ProgressRing IsActive="{Binding IsLoading}" Width="40" Height="40" />
-                <TextBlock Text="Loading suggestions…"
+                <TextBlock Text="{loc:Tr AiReview_Loading}"
                            Style="{StaticResource App.Type.BodyMuted}"
                            HorizontalAlignment="Center"
                            Margin="0,12,0,0" />
@@ -246,18 +236,16 @@
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
                         MaxWidth="420"
                         Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}">
-                <TextBlock Text="No suggestions to review"
+                <TextBlock Text="{loc:Tr AiReview_Empty_Headline}"
                            Style="{StaticResource App.Type.H1}"
                            HorizontalAlignment="Center" />
-                <TextBlock Text="Run Catalog → Generate AI tags… to score your clips, then come back here to accept or reject the proposals."
+                <TextBlock Text="{loc:Tr AiReview_Empty_Subtext}"
                            Style="{StaticResource App.Type.BodyMuted}"
                            TextWrapping="Wrap"
                            TextAlignment="Center"
                            Margin="0,8,0,0" />
             </StackPanel>
 
-            <!-- Virtualized so opening with hundreds of clips only realizes (and
-                 only decodes thumbnails for) the handful of cards on screen. -->
             <ListBox ItemsSource="{Binding Groups}"
                      ItemTemplate="{StaticResource AiGroupTemplate}"
                      Padding="24,4,24,16"
@@ -272,9 +260,6 @@
                      KeyboardNavigation.TabNavigation="Continue"
                      Visibility="{Binding HasData, Converter={StaticResource BoolToVisibility}}">
                 <ListBox.ItemContainerStyle>
-                    <!-- A bare ContentPresenter: no selection highlight, focus
-                         rectangle, or padding, so each card looks exactly as it
-                         did under the old ItemsControl. -->
                     <Style TargetType="ListBoxItem">
                         <Setter Property="Margin" Value="0" />
                         <Setter Property="Padding" Value="0" />

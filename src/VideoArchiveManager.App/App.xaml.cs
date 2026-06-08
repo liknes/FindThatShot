@@ -311,6 +311,18 @@ public partial class App : Application
             })
             .Build();
 
+        // Apply the persisted UI language before any window paints, so the
+        // first frame is already localized. Null/empty culture follows the OS.
+        try
+        {
+            var uiLanguage = Host.Services.GetRequiredService<ISettingsStore>().Current.Language;
+            Localization.LocalizationManager.Instance.SetCulture(uiLanguage);
+        }
+        catch
+        {
+            // Never let a localization hiccup block startup; fall back to OS culture.
+        }
+
         try
         {
             await using var ctx = await Host.Services
@@ -321,8 +333,8 @@ public partial class App : Application
         catch (Exception ex)
         {
             MessageBox.Show(
-                $"Failed to initialize the database:\n\n{ex.Message}",
-                "Find That Shot",
+                Localization.LocalizationManager.Instance.Format("App_DbInitFailed", ex.Message),
+                Localization.LocalizationManager.Instance["Common_AppName"],
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
             Shutdown(1);

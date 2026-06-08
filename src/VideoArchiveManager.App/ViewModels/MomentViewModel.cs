@@ -15,9 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Windows.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using VideoArchiveManager.App.Helpers;
+using VideoArchiveManager.App.Localization;
 using VideoArchiveManager.Core.Models;
 
 namespace VideoArchiveManager.App.ViewModels;
@@ -43,7 +45,21 @@ public partial class MomentViewModel : ObservableObject
             }
         }
         RefreshTagSummary();
+
+        // Keep the localized "Editing moment · …" header in sync with a live
+        // language switch. The handler must be a method group (target = this),
+        // not a lambda: PropertyChangedEventManager holds the listener weakly,
+        // so an orphaned closure would be collected and stop firing — whereas a
+        // method on this VM lives exactly as long as the VM does and lets the
+        // app-lifetime LocalizationManager singleton release it cleanly.
+        PropertyChangedEventManager.AddHandler(
+            LocalizationManager.Instance,
+            OnUiCultureChanged,
+            "Item[]");
     }
+
+    private void OnUiCultureChanged(object? sender, PropertyChangedEventArgs e)
+        => OnPropertyChanged(nameof(EditingHeader));
 
     public int Id => Model.Id;
     public int VideoItemId => Model.VideoItemId;
@@ -74,6 +90,12 @@ public partial class MomentViewModel : ObservableObject
         EndSeconds is double e && e > StartSeconds
             ? $"{Format(StartSeconds)} \u2192 {Format(e)}"
             : Format(StartSeconds);
+
+    // Localized header for the moment editor card, e.g. "Editing moment · 00:01:12".
+    // Composed here (rather than via XAML StringFormat) so the leading copy can be
+    // translated; refreshed live by OnUiCultureChanged on a language switch.
+    public string EditingHeader =>
+        LocalizationManager.Instance.Format("Main_Editor_Moment_EditingHeader", TimeRangeText);
 
     public string DurationText
     {

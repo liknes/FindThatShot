@@ -27,6 +27,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Navigation;
 using VideoArchiveManager.App.Helpers;
+using VideoArchiveManager.App.Localization;
 using VideoArchiveManager.App.ViewModels;
 using VideoArchiveManager.Core.Configuration;
 using VideoArchiveManager.Core.Models;
@@ -473,7 +474,7 @@ public partial class MainWindow : Window
                 PlayerCurrentTimeText.Text = "00:00";
                 PlayerDurationText.Text = "00:00";
                 PlayerSeekSlider.Value = 0;
-                PlayPauseButton.Content = "Play";
+                PlayPauseButton.Content = LocalizationManager.Instance["Main_Player_Play"];
                 if (TryFindResource("Icon.Play") is string playGlyph)
                 {
                     Helpers.Controls.Theme.SetIcon(PlayPauseButton, playGlyph);
@@ -526,7 +527,7 @@ public partial class MainWindow : Window
             PlayerCurrentTimeText.Text = "00:00";
             PlayerDurationText.Text = "00:00";
             PlayerSeekSlider.Value = 0;
-            PlayPauseButton.Content = "Play";
+            PlayPauseButton.Content = LocalizationManager.Instance["Main_Player_Play"];
             if (TryFindResource("Icon.Play") is string playGlyph)
             {
                 Helpers.Controls.Theme.SetIcon(PlayPauseButton, playGlyph);
@@ -1026,11 +1027,11 @@ public partial class MainWindow : Window
         var outText = FormatTimecode(pos);
         if (hadIn && inText is not null)
         {
-            ShowMarkerOverlaySaved("MOMENT SAVED", $"{inText} \u2192 {outText}");
+            ShowMarkerOverlaySaved(LocalizationManager.Instance["Main_Overlay_MomentSaved"], $"{inText} \u2192 {outText}");
         }
         else
         {
-            ShowMarkerOverlaySaved("MARKER SET", outText);
+            ShowMarkerOverlaySaved(LocalizationManager.Instance["Main_Overlay_MarkerSet"], outText);
         }
     }
 
@@ -1051,8 +1052,8 @@ public partial class MainWindow : Window
         MarkerOverlayPill.BorderBrush = accent;
         MarkerOverlayGlyph.Foreground = accent;
         MarkerOverlayGlyph.Text = "\u25CF"; // ●
-        MarkerOverlayTitle.Text = "IN POINT SET";
-        MarkerOverlaySubtitle.Text = $"{timeText}  ·  press O to set OUT";
+        MarkerOverlayTitle.Text = LocalizationManager.Instance["Main_Overlay_InPointSet"];
+        MarkerOverlaySubtitle.Text = LocalizationManager.Instance.Format("Main_Overlay_InPointSet_Sub", timeText);
 
         MarkerOverlayPill.Opacity = 1;
         MarkerOverlayPopup.IsOpen = true;
@@ -1588,11 +1589,8 @@ public partial class MainWindow : Window
     private void ReprocessAiTags_Click(object sender, RoutedEventArgs e)
     {
         var answer = MessageBox.Show(
-            "Re-score every clip with the AI model?\n\n" +
-            "This re-runs frame sampling and CLIP inference on all clips (not just new ones), " +
-            "so it can take a while on a large catalog. Existing accepted/rejected tags are kept; " +
-            "pending suggestions are refreshed.",
-            "Re-score all clips",
+            LocalizationManager.Instance["Main_ReprocessAi_Body"],
+            LocalizationManager.Instance["Main_ReprocessAi_Title"],
             MessageBoxButton.OKCancel,
             MessageBoxImage.Question);
         if (answer == MessageBoxResult.OK)
@@ -2010,7 +2008,7 @@ public partial class MainWindow : Window
         {
             var player = MpvPlayer.Player;
             var mpvPlaying = player is not null && !player.GetPaused();
-            PlayPauseButton.Content = mpvPlaying ? "Pause" : "Play";
+            PlayPauseButton.Content = LocalizationManager.Instance[mpvPlaying ? "Main_Player_Pause" : "Main_Player_Play"];
             var mpvGlyphKey = mpvPlaying ? "Icon.Pause" : "Icon.Play";
             if (TryFindResource(mpvGlyphKey) is string mpvGlyph)
             {
@@ -2027,7 +2025,7 @@ public partial class MainWindow : Window
         // (during refills) and get stuck on "Pause" after a real pause. The
         // intent flag is set at every deliberate transition and is unambiguous.
         var playing = _playerPlaying;
-        PlayPauseButton.Content = playing ? "Pause" : "Play";
+        PlayPauseButton.Content = LocalizationManager.Instance[playing ? "Main_Player_Pause" : "Main_Player_Play"];
         // Swap the Segoe Fluent glyph carried via the Theme.Icon attached
         // property so the button shows the *next* action visually instead
         // of the current state. Resource keys are defined in

@@ -20,6 +20,7 @@ using System.Windows.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using VideoArchiveManager.App.Helpers;
+using VideoArchiveManager.App.Localization;
 using VideoArchiveManager.Core.Services;
 
 namespace VideoArchiveManager.App.ViewModels;
@@ -34,6 +35,7 @@ namespace VideoArchiveManager.App.ViewModels;
 public partial class CalendarBrowseViewModel : ObservableObject
 {
     private readonly ISearchService _searchService;
+    private static LocalizationManager L => LocalizationManager.Instance;
 
     public CalendarBrowseViewModel(ISearchService searchService)
     {
@@ -101,11 +103,13 @@ public partial class CalendarBrowseViewModel : ObservableObject
 
             var totalClips = counts.Sum(c => c.Count);
             ResultSummary = totalClips == 0
-                ? ScopeWholeArchive
-                    ? "No dated clips in the catalog."
-                    : "No dated clips match the current filters."
-                : $"{totalClips} clip{(totalClips == 1 ? "" : "s")} across {Years.Count} year{(Years.Count == 1 ? "" : "s")}"
-                    + (ScopeWholeArchive ? "" : " (current filters)");
+                ? ScopeWholeArchive ? L["CalendarBrowse_NoDatedWhole"] : L["CalendarBrowse_NoDatedFiltered"]
+                : L.Format("CalendarBrowse_ResultSummary",
+                    totalClips,
+                    totalClips == 1 ? L["Common_ClipSingular"] : L["Common_ClipPlural"],
+                    Years.Count,
+                    Years.Count == 1 ? L["Common_YearSingular"] : L["Common_YearPlural"])
+                  + (ScopeWholeArchive ? "" : " " + L["Common_CurrentFilters"]);
 
             // A reload can orphan the selected month (e.g. scope change drops it).
             if (SelectedMonth is not null)
@@ -188,7 +192,9 @@ public partial class CalendarBrowseViewModel : ObservableObject
         }
 
         var monthName = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(cell.Month);
-        MonthClipsHeader = $"{monthName} {cell.Year} \u2014 {clips.Count} clip{(clips.Count == 1 ? "" : "s")}";
+        MonthClipsHeader = L.Format("CalendarBrowse_MonthHeader",
+            monthName, cell.Year, clips.Count,
+            clips.Count == 1 ? L["Common_ClipSingular"] : L["Common_ClipPlural"]);
     }
 
     /// <summary>Populates the side preview for the given catalog id.</summary>
@@ -275,10 +281,12 @@ public sealed class CalendarMonthCell
     {
         get
         {
+            var loc = LocalizationManager.Instance;
             var name = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(Month);
             return Count > 0
-                ? $"{name} {Year} \u2014 {Count} clip{(Count == 1 ? "" : "s")}"
-                : $"{name} {Year} \u2014 no clips";
+                ? loc.Format("CalendarBrowse_MonthTooltip", name, Year, Count,
+                    Count == 1 ? loc["Common_ClipSingular"] : loc["Common_ClipPlural"])
+                : loc.Format("CalendarBrowse_MonthTooltipEmpty", name, Year);
         }
     }
 }
@@ -301,7 +309,9 @@ public sealed class CalendarClipViewModel
 
     public bool FileExists => _clip.FileExists;
 
-    public string AvailabilityText => _clip.FileExists ? "Online" : "Offline";
+    public string AvailabilityText => _clip.FileExists
+        ? LocalizationManager.Instance["Common_Online"]
+        : LocalizationManager.Instance["Common_Offline"];
 
     public string RatingText => _clip.Rating > 0 ? new string('\u2605', _clip.Rating) : string.Empty;
 

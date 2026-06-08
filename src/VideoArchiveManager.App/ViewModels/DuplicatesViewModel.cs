@@ -20,6 +20,7 @@ using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using VideoArchiveManager.App.Helpers;
+using VideoArchiveManager.App.Localization;
 using VideoArchiveManager.Core.Models;
 using VideoArchiveManager.Core.Services;
 using System.Windows.Media.Imaging;
@@ -32,6 +33,9 @@ namespace VideoArchiveManager.App.ViewModels;
 // IVideoLibraryService. No source video file is ever read or modified here.
 public partial class DuplicatesViewModel : ObservableObject
 {
+    // Shorthand for localized string lookup throughout this view-model.
+    private static LocalizationManager L => LocalizationManager.Instance;
+
     private readonly IDuplicateDetectionService _detector;
     private readonly IVideoLibraryService _library;
 
@@ -98,7 +102,7 @@ public partial class DuplicatesViewModel : ObservableObject
         {
             HasData = false;
             IsEmpty = false;
-            ErrorMessage = $"Couldn't scan for duplicates: {ex.Message}";
+            ErrorMessage = L.Format("Dup_ScanFailed", ex.Message);
         }
         finally
         {
@@ -156,24 +160,21 @@ public partial class DuplicatesViewModel : ObservableObject
             marked.Take(6).Select(i => "  • " + i.FileName));
         if (marked.Count > 6)
         {
-            preview += Environment.NewLine + $"  …and {marked.Count - 6} more";
+            preview += Environment.NewLine + L.Format("Main_RemoveVideos_AndMore", marked.Count - 6);
         }
 
         var warning = groupsFullySelected > 0
-            ? $"\n\nWARNING: {groupsFullySelected} duplicate set(s) have EVERY copy selected — " +
-              "removing them leaves no catalog entry for that clip at all."
+            ? "\n\n" + L.Format("Dup_Warning", groupsFullySelected)
             : string.Empty;
 
         var message =
-            $"Remove {ids.Count} duplicate catalog entr(y/ies) from the database?\n\n" +
+            L.Format("Dup_Confirm_Header", ids.Count) + "\n\n" +
             preview + warning + "\n\n" +
-            "This removes the catalog rows (tags, ratings, notes) and their cached " +
-            "thumbnails only. The source video files on disk will NOT be touched, " +
-            "moved, or deleted.";
+            L["Dup_Confirm_Footer"];
 
         var result = MessageBox.Show(
             message,
-            "Remove duplicates from database",
+            L["Dup_Confirm_Title"],
             MessageBoxButton.OKCancel,
             MessageBoxImage.Question,
             MessageBoxResult.Cancel);
@@ -204,7 +205,7 @@ public partial class DuplicatesViewModel : ObservableObject
 
         if (count == 0)
         {
-            SelectionText = "No copies selected";
+            SelectionText = L["Dup_NoneSelected"];
         }
         else
         {
@@ -212,7 +213,7 @@ public partial class DuplicatesViewModel : ObservableObject
                 .SelectMany(g => g.Items)
                 .Where(i => i.MarkedForRemoval)
                 .Sum(i => i.FileSizeBytes);
-            SelectionText = $"{count:N0} selected \u00b7 {FormatSize(bytes)} of disk no longer cataloged";
+            SelectionText = L.Format("Dup_SelectionText", count.ToString("N0", L.CurrentCulture), FormatSize(bytes));
         }
     }
 
@@ -221,9 +222,11 @@ public partial class DuplicatesViewModel : ObservableObject
         var sets = groups.Count;
         var redundant = groups.Sum(g => g.RedundantCount);
         var reclaim = groups.Sum(g => g.RedundantBytes);
-        return $"{sets:N0} duplicate set{(sets == 1 ? "" : "s")} \u00b7 " +
-               $"{redundant:N0} redundant cop{(redundant == 1 ? "y" : "ies")} \u00b7 " +
-               $"{FormatSize(reclaim)} reclaimable on disk";
+        return L.Format(
+            "Dup_Summary",
+            sets.ToString("N0", L.CurrentCulture),
+            redundant.ToString("N0", L.CurrentCulture),
+            FormatSize(reclaim));
     }
 
     partial void OnIsLoadingChanged(bool value) => OnPropertyChanged(nameof(CanRemove));
@@ -256,15 +259,19 @@ public class DuplicateGroupViewModel
 {
     public DuplicateGroupViewModel(DuplicateGroup model, Action onSelectionChanged)
     {
+        var loc = LocalizationManager.Instance;
         var resolution = model.Width is > 0 && model.Height is > 0
             ? $"{model.Width}\u00d7{model.Height}"
-            : "resolution unknown";
+            : loc["Dup_ResolutionUnknown"];
 
-        HeaderText =
-            $"{model.Videos.Count} copies \u00b7 {DuplicatesViewModel.FormatSize(model.FileSizeBytes)} each \u00b7 " +
-            $"{resolution} \u00b7 {DuplicatesViewModel.FormatDuration(model.DurationSeconds)}";
+        HeaderText = loc.Format(
+            "Dup_GroupHeader",
+            model.Videos.Count,
+            DuplicatesViewModel.FormatSize(model.FileSizeBytes),
+            resolution,
+            DuplicatesViewModel.FormatDuration(model.DurationSeconds));
 
-        ReclaimText = $"{DuplicatesViewModel.FormatSize(model.RedundantBytes)} redundant";
+        ReclaimText = loc.Format("Dup_Reclaim", DuplicatesViewModel.FormatSize(model.RedundantBytes));
 
         Items = new ObservableCollection<DuplicateItemViewModel>(
             model.Videos.Select(v => new DuplicateItemViewModel(v, onSelectionChanged)));
@@ -310,7 +317,7 @@ public partial class DuplicateItemViewModel : ObservableObject
     public bool FileExists { get; }
     public string DetailText { get; }
 
-    public string StatusText => FileExists ? "Online" : "Offline";
+    public string StatusText => LocalizationManager.Instance[FileExists ? "Dup_Online" : "Dup_Offline"];
 
     private readonly string? _thumbnailPath;
     public BitmapImage? Thumbnail => ThumbnailLoader.Load(_thumbnailPath);

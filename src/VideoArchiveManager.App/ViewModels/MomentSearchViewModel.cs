@@ -19,6 +19,7 @@ using System.Windows.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using VideoArchiveManager.App.Helpers;
+using VideoArchiveManager.App.Localization;
 using VideoArchiveManager.Core.Models;
 using VideoArchiveManager.Core.Services;
 
@@ -30,6 +31,8 @@ namespace VideoArchiveManager.App.ViewModels;
 public partial class MomentSearchViewModel : ObservableObject
 {
     private readonly IMomentService _momentService;
+
+    private static LocalizationManager L => LocalizationManager.Instance;
 
     public MomentSearchViewModel(IMomentService momentService)
     {
@@ -81,10 +84,12 @@ public partial class MomentSearchViewModel : ObservableObject
             }
 
             ResultSummary = result.TotalCount == 0
-                ? "No moments match."
+                ? L["MomentSearch_NoMatches"]
                 : result.TotalCount > Results.Count
-                    ? $"Showing {Results.Count} of {result.TotalCount} moments"
-                    : $"{Results.Count} moment{(Results.Count == 1 ? "" : "s")}";
+                    ? L.Format("MomentSearch_ShowingCount", Results.Count, result.TotalCount)
+                    : Results.Count == 1
+                        ? L.Format("MomentSearch_MomentCountSingular", Results.Count)
+                        : L.Format("MomentSearch_MomentCountPlural", Results.Count);
         }
         finally
         {

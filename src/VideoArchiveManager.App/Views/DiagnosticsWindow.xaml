@@ -3,7 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.modernwpf.com/2019"
         xmlns:helpers="clr-namespace:VideoArchiveManager.App.Helpers.Controls"
-        Title="Diagnostics"
+        xmlns:loc="clr-namespace:VideoArchiveManager.App.Localization"
+        Title="{loc:Tr Diagnostics_Title}"
         Width="940" Height="680"
         MinWidth="640" MinHeight="420"
         WindowStartupLocation="CenterOwner"
@@ -35,7 +36,7 @@
                 BorderThickness="1"
                 CornerRadius="8">
             <StackPanel>
-                <TextBlock Text="ENVIRONMENT" Style="{StaticResource App.Type.Section}" Margin="0,0,0,8" />
+                <TextBlock Text="{loc:Tr Diagnostics_Environment}" Style="{StaticResource App.Type.Section}" Margin="0,0,0,8" />
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
@@ -49,7 +50,7 @@
 
         <!-- Section label for the live log. -->
         <TextBlock Grid.Row="1"
-                   Text="RECENT LOG"
+                   Text="{loc:Tr Diagnostics_RecentLog}"
                    Style="{StaticResource App.Type.Section}"
                    Margin="0,18,0,8" />
 
@@ -68,11 +69,11 @@
                       Width="150"
                       VerticalAlignment="Center"
                       SelectionChanged="LevelFilter_OnSelectionChanged"
-                      ToolTip="Show only entries at this level or more severe.">
-                <ComboBoxItem Content="All levels" />
-                <ComboBoxItem Content="Info &amp; up" IsSelected="True" />
-                <ComboBoxItem Content="Warnings &amp; up" />
-                <ComboBoxItem Content="Errors only" />
+                      ToolTip="{loc:Tr Diagnostics_LevelFilter_Tip}">
+                <ComboBoxItem Content="{loc:Tr Diagnostics_Level_All}" />
+                <ComboBoxItem Content="{loc:Tr Diagnostics_Level_InfoUp}" IsSelected="True" />
+                <ComboBoxItem Content="{loc:Tr Diagnostics_Level_WarnUp}" />
+                <ComboBoxItem Content="{loc:Tr Diagnostics_Level_Errors}" />
             </ComboBox>
 
             <TextBox x:Name="SearchBox"
@@ -80,39 +81,39 @@
                      Width="220"
                      Margin="8,0,0,0"
                      VerticalAlignment="Center"
-                     ui:ControlHelper.PlaceholderText="Filter text…"
+                     ui:ControlHelper.PlaceholderText="{loc:Tr Diagnostics_FilterPlaceholder}"
                      TextChanged="SearchBox_OnTextChanged" />
 
             <CheckBox x:Name="AutoScrollCheck"
                       Grid.Column="2"
-                      Content="Auto-scroll"
+                      Content="{loc:Tr Diagnostics_AutoScroll}"
                       IsChecked="True"
                       VerticalAlignment="Center"
                       Margin="12,0,0,0"
                       Foreground="{DynamicResource App.Foreground.Secondary}" />
 
             <StackPanel Grid.Column="3" Orientation="Horizontal">
-                <Button Content="Copy log"
+                <Button Content="{loc:Tr Diagnostics_CopyLog}"
                         Style="{StaticResource App.Button.Secondary}"
                         helpers:Theme.Icon="{StaticResource Icon.Copy}"
                         Click="CopyLog_Click"
-                        ToolTip="Copy the currently shown log lines to the clipboard." />
-                <Button Content="Open log file"
+                        ToolTip="{loc:Tr Diagnostics_CopyLog_Tip}" />
+                <Button Content="{loc:Tr Diagnostics_OpenLogFile}"
                         Margin="8,0,0,0"
                         Style="{StaticResource App.Button.Secondary}"
                         helpers:Theme.Icon="{StaticResource Icon.Document}"
                         Click="OpenLogFile_Click" />
-                <Button Content="Open folder"
+                <Button Content="{loc:Tr Diagnostics_OpenFolder}"
                         Margin="8,0,0,0"
                         Style="{StaticResource App.Button.Secondary}"
                         helpers:Theme.Icon="{StaticResource Icon.Folder}"
                         Click="OpenLogFolder_Click" />
-                <Button Content="Clear"
+                <Button Content="{loc:Tr Diagnostics_Clear}"
                         Margin="8,0,0,0"
                         Style="{StaticResource App.Button.Ghost}"
                         helpers:Theme.Icon="{StaticResource Icon.Trash}"
                         Click="ClearLog_Click"
-                        ToolTip="Clear the on-screen buffer (the on-disk log file is kept)." />
+                        ToolTip="{loc:Tr Diagnostics_Clear_Tip}" />
             </StackPanel>
         </Grid>
 
@@ -232,12 +233,12 @@
                        Style="{StaticResource App.Type.Caption}" />
 
             <StackPanel Grid.Column="2" Orientation="Horizontal">
-                <Button Content="Copy full report"
+                <Button Content="{loc:Tr Diagnostics_CopyReport}"
                         Style="{StaticResource App.Button.Secondary}"
                         helpers:Theme.Icon="{StaticResource Icon.Copy}"
                         Click="CopyReport_Click"
-                        ToolTip="Copy the environment summary and the visible log to the clipboard." />
-                <Button Content="Close"
+                        ToolTip="{loc:Tr Diagnostics_CopyReport_Tip}" />
+                <Button Content="{loc:Tr Common_Close}"
                         Margin="8,0,0,0"
                         IsDefault="True" IsCancel="True"
                         Style="{StaticResource App.Button.Primary}"

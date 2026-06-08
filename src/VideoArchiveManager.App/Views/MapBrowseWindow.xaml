@@ -4,7 +4,8 @@
         xmlns:ui="http://schemas.modernwpf.com/2019"
         xmlns:helpers="clr-namespace:VideoArchiveManager.App.Helpers.Controls"
         xmlns:vm="clr-namespace:VideoArchiveManager.App.ViewModels"
-        Title="Browse on map"
+        xmlns:loc="clr-namespace:VideoArchiveManager.App.Localization"
+        Title="{loc:Tr MapBrowse_Title}"
         Width="1100" Height="760"
         MinWidth="720" MinHeight="480"
         WindowStartupLocation="CenterOwner"
@@ -28,14 +29,13 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0">
-            <TextBlock Text="Browse on map" Style="{StaticResource App.Type.Display}" />
+            <TextBlock Text="{loc:Tr MapBrowse_Title}" Style="{StaticResource App.Type.Display}" />
             <TextBlock Margin="0,4,0,0"
-                       Text="Every geotagged clip in your archive, clustered by location. Click a cluster to scope the catalog grid to it, click a marker to preview a clip, or filter the grid to whatever's in view."
+                       Text="{loc:Tr MapBrowse_Description}"
                        TextWrapping="Wrap"
                        Style="{StaticResource App.Type.Caption}" />
         </StackPanel>
 
-        <!-- Toolbar: scope toggle, filter-to-view, summary -->
         <Grid Grid.Row="1" Margin="0,16,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
@@ -46,9 +46,9 @@
 
             <CheckBox Grid.Column="0"
                       VerticalAlignment="Center"
-                      Content="Whole archive"
+                      Content="{loc:Tr Common_WholeArchive}"
                       IsChecked="{Binding ScopeWholeArchive}"
-                      ToolTip="On: plot every geotagged clip in the catalog. Off: plot only the clips matching the current grid filters." />
+                      ToolTip="{loc:Tr MapBrowse_WholeArchive_Tip}" />
 
             <TextBlock Grid.Column="2"
                        Margin="16,0,16,0"
@@ -57,14 +57,13 @@
                        Foreground="{DynamicResource App.Foreground.Secondary}" />
 
             <Button Grid.Column="3"
-                    Content="Filter grid to this view"
+                    Content="{loc:Tr Common_FilterGridToView}"
                     Click="FilterToView_Click"
                     Style="{StaticResource App.Button.Secondary}"
                     helpers:Theme.Icon="{StaticResource Icon.Filter}"
-                    ToolTip="Scope the catalog grid to every clip currently inside the map viewport." />
+                    ToolTip="{loc:Tr MapBrowse_FilterGrid_Tip}" />
         </Grid>
 
-        <!-- Map + side preview panel -->
         <Grid Grid.Row="2" Margin="0,12,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
@@ -85,16 +84,14 @@
                     CornerRadius="6"
                     Background="{DynamicResource App.Background.Inset}">
                 <Grid>
-                    <!-- Placeholder when nothing is selected -->
                     <TextBlock VerticalAlignment="Center"
                                HorizontalAlignment="Center"
                                TextAlignment="Center"
                                TextWrapping="Wrap"
-                               Text="Click a marker to preview the clip here."
+                               Text="{loc:Tr MapBrowse_ClickMarker}"
                                Foreground="{DynamicResource App.Foreground.Tertiary}"
                                Visibility="{Binding SelectedClip, Converter={StaticResource NullToVisibilityInverted}}" />
 
-                    <!-- Clip preview -->
                     <StackPanel Visibility="{Binding SelectedClip, Converter={StaticResource NullToVisibility}}">
                         <Border CornerRadius="4"
                                 ClipToBounds="True"
@@ -136,13 +133,13 @@
 
                         <Button Margin="0,14,0,0"
                                 HorizontalAlignment="Stretch"
-                                Content="Show in grid"
+                                Content="{loc:Tr Common_ShowInGrid}"
                                 Command="{Binding ShowInGridCommand}"
                                 Style="{StaticResource App.Button.Primary}"
                                 helpers:Theme.Icon="{StaticResource Icon.Map}" />
                         <Button Margin="0,8,0,0"
                                 HorizontalAlignment="Stretch"
-                                Content="Play in app"
+                                Content="{loc:Tr Common_PlayInApp}"
                                 Command="{Binding PlayCommand}"
                                 Style="{StaticResource App.Button.Secondary}"
                                 helpers:Theme.Icon="{StaticResource Icon.Play}" />

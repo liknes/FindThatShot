@@ -3,7 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.modernwpf.com/2019"
         xmlns:helpers="clr-namespace:VideoArchiveManager.App.Helpers.Controls"
-        Title="Bulk edit selected videos"
+        xmlns:loc="clr-namespace:VideoArchiveManager.App.Localization"
+        Title="{loc:Tr BulkEdit_Title}"
         Width="540" Height="560"
         WindowStartupLocation="CenterOwner"
         Background="{DynamicResource App.Background.Base}"
@@ -24,25 +25,25 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0" Margin="0,0,0,16">
-            <TextBlock Text="Bulk edit" Style="{StaticResource App.Type.H1}" />
-            <TextBlock Text="Apply changes to every clip in the current selection."
+            <TextBlock Text="{loc:Tr BulkEdit_Header}" Style="{StaticResource App.Type.H1}" />
+            <TextBlock Text="{loc:Tr BulkEdit_Desc}"
                        Style="{StaticResource App.Type.BodyMuted}"
                        Margin="0,4,0,0" />
         </StackPanel>
 
         <StackPanel Grid.Row="1">
-            <CheckBox Content="Set status" IsChecked="{Binding ApplyStatus}" />
+            <CheckBox Content="{loc:Tr BulkEdit_SetStatus}" IsChecked="{Binding ApplyStatus}" />
             <ComboBox Margin="24,4,0,16"
                       ItemsSource="{Binding AvailableStatuses}"
                       SelectedItem="{Binding Status}"
                       IsEnabled="{Binding ApplyStatus}" />
 
-            <CheckBox Content="Set rating" IsChecked="{Binding ApplyRating}" />
+            <CheckBox Content="{loc:Tr BulkEdit_SetRating}" IsChecked="{Binding ApplyRating}" />
             <ui:NumberBox Margin="24,4,0,16" Minimum="0" Maximum="5"
                           Value="{Binding Rating}"
                           IsEnabled="{Binding ApplyRating}" />
 
-            <CheckBox Content="Append to notes" IsChecked="{Binding ApplyNotesAppend}" />
+            <CheckBox Content="{loc:Tr BulkEdit_AppendNotes}" IsChecked="{Binding ApplyNotesAppend}" />
             <TextBox Margin="24,4,0,16"
                      Text="{Binding NotesToAppend, UpdateSourceTrigger=PropertyChanged}"
                      AcceptsReturn="True"
@@ -50,12 +51,12 @@
                      MinHeight="80"
                      IsEnabled="{Binding ApplyNotesAppend}" />
 
-            <CheckBox Content="Add a tag" IsChecked="{Binding ApplyTag}" />
+            <CheckBox Content="{loc:Tr BulkEdit_AddTag}" IsChecked="{Binding ApplyTag}" />
             <StackPanel Orientation="Horizontal" Margin="24,4,0,12" IsEnabled="{Binding ApplyTag}">
                 <ui:AutoSuggestBox Width="180"
                                    Text="{Binding NewTagName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                    ItemsSource="{Binding TagSuggestions}"
-                                   PlaceholderText="Tag name" />
+                                   PlaceholderText="{loc:Tr BulkEdit_TagNamePlaceholder}" />
                 <ComboBox Width="140" Margin="6,0,0,0"
                           ItemsSource="{Binding AvailableTagTypes}"
                           SelectedItem="{Binding NewTagType}" />
@@ -63,10 +64,10 @@
         </StackPanel>
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
-            <Button Content="Cancel"
+            <Button Content="{loc:Tr Common_Cancel}"
                     Style="{StaticResource App.Button.Ghost}"
                     Command="{Binding CancelCommand}" />
-            <Button Content="Apply"
+            <Button Content="{loc:Tr Common_Apply}"
                     Margin="8,0,0,0"
                     Style="{StaticResource App.Button.Primary}"
                     helpers:Theme.Icon="{StaticResource Icon.Save}"

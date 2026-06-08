@@ -18,6 +18,7 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using VideoArchiveManager.App.Localization;
 using VideoArchiveManager.Core.Models;
 using VideoArchiveManager.Core.Services;
 
@@ -29,6 +30,7 @@ namespace VideoArchiveManager.App.ViewModels;
 public partial class CatalogStatsViewModel : ObservableObject
 {
     private readonly ICatalogStatisticsService _statsService;
+    private static LocalizationManager L => LocalizationManager.Instance;
 
     public CatalogStatsViewModel(ICatalogStatisticsService statsService)
     {
@@ -76,7 +78,7 @@ public partial class CatalogStatsViewModel : ObservableObject
         {
             HasData = false;
             IsEmpty = false;
-            ErrorMessage = $"Couldn't compute statistics: {ex.Message}";
+            ErrorMessage = L.Format("CatalogStats_Error", ex.Message);
         }
         finally
         {
@@ -90,53 +92,53 @@ public partial class CatalogStatsViewModel : ObservableObject
 
         Overview.Add(new OverviewMetric(
             s.TotalClips.ToString("N0", CultureInfo.CurrentCulture),
-            "Clips",
-            $"{s.OnlineClips:N0} online \u00b7 {s.OfflineClips:N0} offline"));
+            L["CatalogStats_Metric_Clips"],
+            L.Format("CatalogStats_Metric_ClipsDetail", s.OnlineClips.ToString("N0", CultureInfo.CurrentCulture), s.OfflineClips.ToString("N0", CultureInfo.CurrentCulture))));
 
         Overview.Add(new OverviewMetric(
             FormatSize(s.TotalSizeBytes),
-            "Total size",
-            "across the catalog"));
+            L["CatalogStats_Metric_TotalSize"],
+            L["CatalogStats_Metric_TotalSizeDetail"]));
 
         Overview.Add(new OverviewMetric(
             FormatDuration(s.TotalDurationSeconds),
-            "Total footage",
-            "combined runtime"));
+            L["CatalogStats_Metric_TotalFootage"],
+            L["CatalogStats_Metric_TotalFootageDetail"]));
 
         Overview.Add(new OverviewMetric(
             s.DistinctFolders.ToString("N0", CultureInfo.CurrentCulture),
-            "Folders",
-            $"{s.RootFolderCount:N0} root folder{(s.RootFolderCount == 1 ? "" : "s")}"));
+            L["CatalogStats_Metric_Folders"],
+            L.Format("CatalogStats_Metric_FoldersDetail", s.RootFolderCount)));
 
         Overview.Add(new OverviewMetric(
             s.DistinctCameras.ToString("N0", CultureInfo.CurrentCulture),
-            "Cameras",
-            "distinct models"));
+            L["CatalogStats_Metric_Cameras"],
+            L["CatalogStats_Metric_CamerasDetail"]));
 
         Overview.Add(new OverviewMetric(
             s.TotalTags.ToString("N0", CultureInfo.CurrentCulture),
-            "Tags",
-            "in the catalog"));
+            L["CatalogStats_Metric_Tags"],
+            L["CatalogStats_Metric_TagsDetail"]));
 
         var reviewed = s.TotalClips - s.UnreviewedClips;
         Overview.Add(new OverviewMetric(
             FormatPercent(reviewed, s.TotalClips),
-            "Reviewed",
-            $"{reviewed:N0} of {s.TotalClips:N0} clips"));
+            L["CatalogStats_Metric_Reviewed"],
+            L.Format("CatalogStats_Metric_ReviewedDetail", reviewed.ToString("N0", CultureInfo.CurrentCulture), s.TotalClips.ToString("N0", CultureInfo.CurrentCulture))));
 
         Overview.Add(new OverviewMetric(
             FormatPercent(s.GeotaggedClips, s.TotalClips),
-            "Geotagged",
-            $"{s.GeotaggedClips:N0} with GPS"));
+            L["CatalogStats_Metric_Geotagged"],
+            L.Format("CatalogStats_Metric_GeotaggedDetail", s.GeotaggedClips.ToString("N0", CultureInfo.CurrentCulture))));
 
         Sections.Clear();
-        AddSection("By status", s.ByStatus, s.TotalClips);
-        AddSection("By rating", s.ByRating, s.TotalClips);
-        AddSection("By resolution", s.ByResolution, s.TotalClips);
-        AddSection("By year", s.ByYear, s.TotalClips);
-        AddSection("Top cameras", s.TopCameras, s.TotalClips);
-        AddSection("Top codecs", s.TopCodecs, s.TotalClips);
-        AddSection("Top tags", s.TopTags, s.TotalClips);
+        AddSection(L["CatalogStats_Section_Status"], s.ByStatus, s.TotalClips);
+        AddSection(L["CatalogStats_Section_Rating"], s.ByRating, s.TotalClips);
+        AddSection(L["CatalogStats_Section_Resolution"], s.ByResolution, s.TotalClips);
+        AddSection(L["CatalogStats_Section_Year"], s.ByYear, s.TotalClips);
+        AddSection(L["CatalogStats_Section_Cameras"], s.TopCameras, s.TotalClips);
+        AddSection(L["CatalogStats_Section_Codecs"], s.TopCodecs, s.TotalClips);
+        AddSection(L["CatalogStats_Section_Tags"], s.TopTags, s.TotalClips);
     }
 
     private void AddSection(string title, IReadOnlyList<StatCount> source, int totalClips)
@@ -169,7 +171,7 @@ public partial class CatalogStatsViewModel : ObservableObject
         if (whole <= 0) return "0%";
         var pct = 100.0 * part / whole;
         // Sub-1% but non-zero shares round up to "<1%" so they don't read as 0.
-        if (pct > 0 && pct < 1) return "<1%";
+        if (pct > 0 && pct < 1) return LocalizationManager.Instance["CatalogStats_PercentUnder1"];
         return $"{Math.Round(pct, MidpointRounding.AwayFromZero):0}%";
     }
 

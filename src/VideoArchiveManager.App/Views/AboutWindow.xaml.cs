@@ -19,6 +19,7 @@ using System.IO;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Navigation;
+using VideoArchiveManager.App.Localization;
 
 namespace VideoArchiveManager.App.Views;
 
@@ -28,15 +29,17 @@ public partial class AboutWindow : Window
     {
         InitializeComponent();
 
+        var loc = LocalizationManager.Instance;
+
         var version = Assembly.GetExecutingAssembly().GetName().Version;
         VersionText.Text = version is null
-            ? "Version unknown"
-            : $"Version {version.Major}.{version.Minor}.{version.Build}";
+            ? loc["About_VersionUnknown"]
+            : loc.Format("About_VersionFormat", version.Major, version.Minor, version.Build);
 
         var noticesPath = TryFindNoticesPath();
         NoticesPathText.Text = noticesPath is null
-            ? "Full third-party license texts ship in THIRD-PARTY-NOTICES.md next to the application."
-            : $"Full third-party license texts: {noticesPath}";
+            ? loc["About_NoticesPathFallback"]
+            : loc.Format("About_NoticesPathFormat", noticesPath);
     }
 
     private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e)
@@ -60,14 +63,14 @@ public partial class AboutWindow : Window
 
     private void ViewNotices_Click(object sender, RoutedEventArgs e)
     {
+        var loc = LocalizationManager.Instance;
         var path = TryFindNoticesPath();
         if (path is null)
         {
             MessageBox.Show(
                 this,
-                "THIRD-PARTY-NOTICES.md could not be found next to the application. " +
-                "You can read it online at https://github.com/liknes/FindThatShot/blob/main/THIRD-PARTY-NOTICES.md.",
-                "Notices not found",
+                loc["About_NoticesNotFound_Body"],
+                loc["About_NoticesNotFound_Title"],
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
             return;
@@ -85,8 +88,8 @@ public partial class AboutWindow : Window
         {
             MessageBox.Show(
                 this,
-                $"Could not open {path}: {ex.Message}",
-                "Open notices",
+                loc.Format("About_OpenNoticesFailed", ex.Message),
+                loc["About_NoticesNotFound_Title"],
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
         }

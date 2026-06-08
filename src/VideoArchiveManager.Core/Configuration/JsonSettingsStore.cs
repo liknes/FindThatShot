@@ -84,6 +84,9 @@ public class JsonSettingsStore : ISettingsStore
 
             return new AppSettings
             {
+                // Language: empty/whitespace in the file means "follow the OS",
+                // so only override the baseline when a real culture is present.
+                Language = !string.IsNullOrWhiteSpace(loaded.Language) ? loaded.Language : baseline.Language,
                 FfmpegPath = !string.IsNullOrWhiteSpace(loaded.FfmpegPath) ? loaded.FfmpegPath : baseline.FfmpegPath,
                 FfprobePath = !string.IsNullOrWhiteSpace(loaded.FfprobePath) ? loaded.FfprobePath : baseline.FfprobePath,
                 ThumbnailDirectory = !string.IsNullOrWhiteSpace(loaded.ThumbnailDirectory) ? loaded.ThumbnailDirectory : baseline.ThumbnailDirectory,

@@ -23,6 +23,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;
+using VideoArchiveManager.App.Localization;
 using VideoArchiveManager.App.Views;
 using VideoArchiveManager.Core.Configuration;
 using VideoArchiveManager.Core.Models;
@@ -140,8 +141,10 @@ public partial class MainViewModel : ObservableObject
     // Live indicator for the bottom status bar; reflects the current
     // WriteSidecarFiles setting. Re-evaluated after the Settings dialog
     // closes (see OpenSettings).
+    public bool IsSidecarEnabled => _settingsStore.Current.WriteSidecarFiles;
+
     public string SidecarStatusText =>
-        _settingsStore.Current.WriteSidecarFiles ? "Sidecars: ON" : "Sidecars: OFF";
+        IsSidecarEnabled ? L["Main_Status_Sidecar_On"] : L["Main_Status_Sidecar_Off"];
 
     public ObservableCollection<RootFolder> RootFolders { get; } = new();
 
@@ -233,7 +236,10 @@ public partial class MainViewModel : ObservableObject
     private bool _mainSubjectOnly;
 
     [ObservableProperty]
-    private string _statusMessage = "Ready";
+    private string _statusMessage = LocalizationManager.Instance["Main_Status_Ready"];
+
+    // Shorthand for localized string lookup throughout this view-model.
+    private static LocalizationManager L => LocalizationManager.Instance;
 
     [ObservableProperty]
     private double _progressValue;
@@ -577,7 +583,7 @@ public partial class MainViewModel : ObservableObject
 
         _mapSelectionIds = ids.Distinct().ToArray();
         HasMapSelection = true;
-        MapSelectionText = $"Map selection: {_mapSelectionIds.Count} clip{(_mapSelectionIds.Count == 1 ? "" : "s")}";
+        MapSelectionText = L.Format("Main_Status_MapSelection", _mapSelectionIds.Count);
         await SearchAsync();
     }
 
@@ -671,7 +677,7 @@ public partial class MainViewModel : ObservableObject
     {
         if (!_ffprobeService.IsAvailable() || !_thumbnailService.IsAvailable())
         {
-            StatusMessage = "FFmpeg/FFprobe not found. Configure paths in Settings.";
+            StatusMessage = L["Main_Status_FfmpegMissing"];
         }
 
         // Hydrate the sidebar panel collapse state from persisted settings
@@ -1268,7 +1274,7 @@ public partial class MainViewModel : ObservableObject
         if (IsAiTagging) return;
         if (!IsAiEnabled)
         {
-            StatusMessage = "AI tagging is off or the model isn't installed — enable it in Settings → AI tagging.";
+            StatusMessage = L["Main_Status_AiOff"];
             return;
         }
 
@@ -1286,8 +1292,8 @@ public partial class MainViewModel : ObservableObject
             if (pending == 0)
             {
                 StatusMessage = reprocessAll
-                    ? "No clips in the catalog to score."
-                    : "All clips already have AI embeddings. Nothing to score.";
+                    ? L["Main_Status_AiNoClips"]
+                    : L["Main_Status_AiNoNew"];
                 return;
             }
 
@@ -1298,8 +1304,8 @@ public partial class MainViewModel : ObservableObject
                 ? pending
                 : await _aiTaggingService.CountPendingAsync(reprocessAll: true, cts.Token);
             StatusMessage = reprocessAll
-                ? $"Re-scoring all {pending} clip(s) with the AI model"
-                : $"Scoring {pending} new clip(s) with the AI model ({catalogTotal} total)";
+                ? L.Format("Main_Status_AiRescoring", pending)
+                : L.Format("Main_Status_AiScoring", pending, catalogTotal);
             var progress = new Progress<AiTaggingProgress>(p =>
             {
                 if (!string.IsNullOrEmpty(p.Message)) StatusMessage = p.Message;
@@ -1313,13 +1319,13 @@ public partial class MainViewModel : ObservableObject
         }
         catch (OperationCanceledException)
         {
-            StatusMessage = "AI tagging cancelled.";
+            StatusMessage = L["Main_Status_AiCancelled"];
             // Clips processed before cancel still produced suggestions worth a look.
             ranToSomeResult = true;
         }
         catch (Exception ex)
         {
-            StatusMessage = $"AI tagging failed: {ex.Message}";
+            StatusMessage = L.Format("Main_Status_AiFailed", ex.Message);
         }
         finally
         {
@@ -1340,8 +1346,8 @@ public partial class MainViewModel : ObservableObject
             catch { /* best effort — fall back to a count-less label */ }
 
             AiTaggingResultText = pendingSuggestions > 0
-                ? $"Review {pendingSuggestions} AI suggestion(s)"
-                : "AI tagging done";
+                ? L.Format("Main_Ai_ResultReview", pendingSuggestions)
+                : L["Main_Ai_ResultDone"];
             AiTaggingFinished = true;
         }
     }
@@ -1366,7 +1372,7 @@ public partial class MainViewModel : ObservableObject
         {
             Videos.Clear();
             TotalCount = 0;
-            StatusMessage = $"No semantic matches for \u201c{SearchText}\u201d.";
+            StatusMessage = L.Format("Main_Status_NoSemantic", SearchText);
             return true;
         }
 
@@ -1388,7 +1394,7 @@ public partial class MainViewModel : ObservableObject
         Videos.Clear();
         foreach (var v in items) Videos.Add(new VideoItemViewModel(v));
         TotalCount = items.Count;
-        StatusMessage = $"Showing {Videos.Count} semantic match(es) for \u201c{SearchText}\u201d";
+        StatusMessage = L.Format("Main_Status_SemanticResults", Videos.Count, SearchText);
         return true;
     }
 
@@ -1454,7 +1460,7 @@ public partial class MainViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Semantic search failed: {ex.Message}";
+            StatusMessage = L.Format("Main_Status_SemanticFailed", ex.Message);
         }
 
         var query = BuildCurrentQuery();
@@ -1474,7 +1480,7 @@ public partial class MainViewModel : ObservableObject
                 Videos.Add(new VideoItemViewModel(v));
             }
             TotalCount = result.TotalCount;
-            StatusMessage = $"Showing {Videos.Count} of {TotalCount} videos";
+            StatusMessage = L.Format("Main_Status_ShowingVideos", Videos.Count, TotalCount);
         }
         catch (OperationCanceledException)
         {
@@ -1497,7 +1503,7 @@ public partial class MainViewModel : ObservableObject
     {
         var dialog = new OpenFolderDialog
         {
-            Title = "Select a root folder to scan"
+            Title = L["Main_Dlg_PickRoot"]
         };
         if (dialog.ShowDialog() != true) return;
         await AddRootFoldersByPathsAsync(new[] { dialog.FolderName });
@@ -1540,7 +1546,7 @@ public partial class MainViewModel : ObservableObject
 
         if (candidates.Count == 0)
         {
-            StatusMessage = "No folders to add — drop one or more folders.";
+            StatusMessage = L["Main_Status_NoFolders"];
             return Array.Empty<RootFolder>();
         }
 
@@ -1601,14 +1607,14 @@ public partial class MainViewModel : ObservableObject
         if (added.Count == 0)
         {
             return skipped > 0
-                ? (skipped == 1 ? "Root folder already exists" : $"{skipped} folders already in the catalog")
-                : "No folders added";
+                ? (skipped == 1 ? L["Main_AddRoots_OneExists"] : L.Format("Main_AddRoots_ManyExist", skipped))
+                : L["Main_AddRoots_None"];
         }
 
         var addedPart = added.Count == 1
-            ? $"Added root folder: {added[0].Path}"
-            : $"Added {added.Count} root folders";
-        return skipped > 0 ? $"{addedPart} ({skipped} already existed)" : addedPart;
+            ? L.Format("Main_AddRoots_AddedOne", added[0].Path)
+            : L.Format("Main_AddRoots_AddedMany", added.Count);
+        return skipped > 0 ? L.Format("Main_AddRoots_AddedSkipped", addedPart, skipped) : addedPart;
     }
 
     // Canonical, separator-trimmed full path for case-insensitive folder
@@ -1644,15 +1650,12 @@ public partial class MainViewModel : ObservableObject
         var videoCount = await _libraryService.CountUnderRootAsync(folder.Path);
 
         var message = videoCount > 0
-            ? $"Remove the root folder \"{folder.Path}\" and {videoCount} video record(s) imported from it?\n\n" +
-              "This affects the catalog database and the app's thumbnail cache only. " +
-              "The source video files on disk will NOT be touched."
-            : $"Remove the root folder \"{folder.Path}\"?\n\n" +
-              "No video records were imported from this folder. The folder on disk will NOT be touched.";
+            ? L.Format("Main_RemoveRoot_ConfirmWithVideos", folder.Path, videoCount)
+            : L.Format("Main_RemoveRoot_ConfirmEmpty", folder.Path);
 
         var result = MessageBox.Show(
             message,
-            "Remove root folder",
+            L["Main_RemoveRoot_Title"],
             MessageBoxButton.OKCancel,
             MessageBoxImage.Question,
             MessageBoxResult.Cancel);
@@ -1667,8 +1670,8 @@ public partial class MainViewModel : ObservableObject
         if (SelectedRootFolder?.Id == folder.Id) SelectedRootFolder = null;
 
         StatusMessage = removedVideos > 0
-            ? $"Removed root folder and {removedVideos} video record(s) from the catalog. Source video files untouched."
-            : "Removed root folder. Source video files untouched.";
+            ? L.Format("Main_RemoveRoot_DoneWithVideos", removedVideos)
+            : L["Main_RemoveRoot_Done"];
 
         await ReloadFiltersAsync();
         await SearchAsync();
@@ -1680,7 +1683,7 @@ public partial class MainViewModel : ObservableObject
         var ids = SelectedVideos.Select(v => v.Id).ToList();
         if (ids.Count == 0)
         {
-            StatusMessage = "Select one or more videos to remove";
+            StatusMessage = L["Main_RemoveVideos_None"];
             return;
         }
 
@@ -1689,18 +1692,17 @@ public partial class MainViewModel : ObservableObject
             SelectedVideos.Take(5).Select(v => "  • " + v.FileName));
         if (SelectedVideos.Count > 5)
         {
-            preview += Environment.NewLine + $"  …and {SelectedVideos.Count - 5} more";
+            preview += Environment.NewLine + L.Format("Main_RemoveVideos_AndMore", SelectedVideos.Count - 5);
         }
 
         var message =
-            $"Remove {ids.Count} video record(s) from the database?\n\n" +
+            L.Format("Main_RemoveVideos_ConfirmHeader", ids.Count) + "\n\n" +
             preview + "\n\n" +
-            "This removes the catalog entries (tags, ratings, notes, etc.) and their " +
-            "cached thumbnails. The source video files on disk will NOT be touched.";
+            L["Main_RemoveVideos_ConfirmFooter"];
 
         var result = MessageBox.Show(
             message,
-            "Remove videos from database",
+            L["Main_RemoveVideos_Title"],
             MessageBoxButton.OKCancel,
             MessageBoxImage.Question,
             MessageBoxResult.Cancel);
@@ -1714,7 +1716,7 @@ public partial class MainViewModel : ObservableObject
         }
         SelectedVideos.Clear();
 
-        StatusMessage = $"Removed {removed} video record(s) from the catalog. Source video files untouched.";
+        StatusMessage = L.Format("Main_RemoveVideos_Done", removed);
         await SearchAsync();
     }
 
@@ -1727,20 +1729,16 @@ public partial class MainViewModel : ObservableObject
             if (offlineCount == 0)
             {
                 MessageBox.Show(
-                    "There are no offline video records to remove.",
-                    "Remove offline videos",
+                    L["Main_RemoveOffline_None"],
+                    L["Main_RemoveOffline_Title"],
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);
                 return;
             }
 
             var result = MessageBox.Show(
-                $"Remove all {offlineCount} offline video record(s) from the database?\n\n" +
-                "These are records whose source file is no longer found on disk " +
-                "(based on the latest Refresh / scan).\n\n" +
-                "This cleans up the catalog and the app's thumbnail cache. " +
-                "No source video files will be touched.",
-                "Remove offline videos",
+                L.Format("Main_RemoveOffline_Confirm", offlineCount),
+                L["Main_RemoveOffline_Title"],
                 MessageBoxButton.OKCancel,
                 MessageBoxImage.Question,
                 MessageBoxResult.Cancel);
@@ -1748,7 +1746,7 @@ public partial class MainViewModel : ObservableObject
         }
 
         var removed = await _libraryService.RemoveOfflineAsync();
-        StatusMessage = $"Removed {removed} offline video record(s) from the catalog. Source video files untouched.";
+        StatusMessage = L.Format("Main_RemoveOffline_Done", removed);
         await ReloadFiltersAsync();
         await SearchAsync();
     }
@@ -1758,7 +1756,7 @@ public partial class MainViewModel : ObservableObject
     {
         if (RootFolders.Count == 0)
         {
-            StatusMessage = "Add at least one root folder before scanning";
+            StatusMessage = L["Main_Status_NoRootsToScan"];
             return;
         }
 
@@ -1780,8 +1778,8 @@ public partial class MainViewModel : ObservableObject
         if (!_ffprobeService.IsAvailable())
         {
             MessageBox.Show(
-                "ffprobe.exe was not found. Open Settings to configure the FFmpeg paths.",
-                "Find That Shot",
+                L["Main_Scan_FfprobeMissing"],
+                L["Common_AppName"],
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
             return;
@@ -1795,7 +1793,7 @@ public partial class MainViewModel : ObservableObject
         _scanStartedAt = DateTime.UtcNow;
         _currentFileStartedAt = _scanStartedAt;
         _currentFilePath = null;
-        ScanElapsedText = "Elapsed 00:00";
+        ScanElapsedText = L["Main_Scan_ElapsedInit"];
         StartHeartbeat();
 
         var progress = new Progress<ScanProgress>(p =>
@@ -1816,11 +1814,11 @@ public partial class MainViewModel : ObservableObject
         }
         catch (OperationCanceledException)
         {
-            StatusMessage = "Scan cancelled";
+            StatusMessage = L["Main_Status_ScanCancelled"];
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Scan failed: {ex.Message}";
+            StatusMessage = L.Format("Main_Status_ScanFailed", ex.Message);
         }
         finally
         {
@@ -1861,7 +1859,7 @@ public partial class MainViewModel : ObservableObject
         IsGeocodingLocations = true;
         ProgressValue = 0;
         ProgressMaximum = 1;
-        StatusMessage = "Looking up missing locations…";
+        StatusMessage = L["Main_Status_GeocodeRunning"];
 
         var progress = new Progress<GeocodeProgress>(p =>
         {
@@ -1874,8 +1872,8 @@ public partial class MainViewModel : ObservableObject
         {
             var filled = await _locationService.FillMissingLocationsAsync(progress, _geocodeCts.Token);
             StatusMessage = filled > 0
-                ? $"Filled {filled} location(s) from GPS."
-                : "No locations needed updating.";
+                ? L.Format("Main_Status_GeocodeFilled", filled)
+                : L["Main_Status_GeocodeNone"];
             if (filled > 0)
             {
                 await SearchAsync();
@@ -1883,11 +1881,11 @@ public partial class MainViewModel : ObservableObject
         }
         catch (OperationCanceledException)
         {
-            StatusMessage = "Location lookup cancelled.";
+            StatusMessage = L["Main_Status_GeocodeCancelled"];
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Location lookup failed: {ex.Message}";
+            StatusMessage = L.Format("Main_Status_GeocodeFailed", ex.Message);
         }
         finally
         {
@@ -1915,6 +1913,7 @@ public partial class MainViewModel : ObservableObject
         // Settings may have flipped WriteSidecarFiles; refresh the status
         // bar indicator regardless of how the window was closed (Save / X
         // / Cancel all funnel through this point).
+        OnPropertyChanged(nameof(IsSidecarEnabled));
         OnPropertyChanged(nameof(SidecarStatusText));
 
         // Settings may also have enabled AI / installed a model; refresh so the
@@ -1981,16 +1980,16 @@ public partial class MainViewModel : ObservableObject
         IsCheckingForUpdates = true;
         try
         {
-            StatusMessage = "Checking for updates…";
+            StatusMessage = L["Main_Update_Checking"];
 
             var result = await _updateService.CheckAsync();
 
             if (!result.Success)
             {
-                StatusMessage = $"Update check failed: {result.ErrorMessage}";
+                StatusMessage = L.Format("Main_Update_CheckFailedStatus", result.ErrorMessage);
                 MessageBox.Show(
-                    $"Could not check for updates.\n\n{result.ErrorMessage}",
-                    "Check for updates",
+                    L.Format("Main_Update_CheckFailedBody", result.ErrorMessage),
+                    L["Main_Update_Title"],
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning);
                 return;
@@ -1998,16 +1997,12 @@ public partial class MainViewModel : ObservableObject
 
             if (result.NotInstalledMode)
             {
-                var msg = "This build is not running from an installer, so updates can't be applied.\n\n" +
-                          "To test the update flow:\n" +
-                          "  1. Run scripts/publish.ps1\n" +
-                          "  2. Install the produced VideoArchiveManager-win-Setup.exe\n" +
-                          "  3. Open the installed app and try Check for updates again.\n\n" +
-                          (result.CurrentVersion is null
-                              ? string.Empty
-                              : $"Current build version: {result.CurrentVersion}");
-                StatusMessage = "Update check skipped (not an installed build)";
-                MessageBox.Show(msg, "Check for updates", MessageBoxButton.OK, MessageBoxImage.Information);
+                var currentLine = result.CurrentVersion is null
+                    ? string.Empty
+                    : L.Format("Main_Update_CurrentBuildLine", result.CurrentVersion);
+                var msg = L.Format("Main_Update_NotInstalledBody", currentLine);
+                StatusMessage = L["Main_Update_SkippedStatus"];
+                MessageBox.Show(msg, L["Main_Update_Title"], MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
@@ -2020,10 +2015,10 @@ public partial class MainViewModel : ObservableObject
                 AvailableUpdateVersion = null;
 
                 var v = result.CurrentVersion is null ? string.Empty : $" (v{result.CurrentVersion})";
-                StatusMessage = $"Up to date{v}";
+                StatusMessage = L.Format("Main_Update_UpToDateStatus", v);
                 MessageBox.Show(
-                    $"You're on the latest version{v}.",
-                    "Check for updates",
+                    L.Format("Main_Update_UpToDateBody", v),
+                    L["Main_Update_Title"],
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);
                 return;
@@ -2036,24 +2031,20 @@ public partial class MainViewModel : ObservableObject
             IsUpdateAvailable = true;
             AvailableUpdateVersion = result.AvailableVersion;
 
-            StatusMessage = $"Update available: v{result.AvailableVersion}";
+            StatusMessage = L.Format("Main_Update_AvailableStatus", result.AvailableVersion);
             var confirm = MessageBox.Show(
-                $"An update is available.\n\n" +
-                $"Current: v{result.CurrentVersion}\n" +
-                $"New:     v{result.AvailableVersion}\n\n" +
-                "Download and install it now? The app will close and restart on the new version when ready.\n\n" +
-                "Your catalog database, settings, and sidecar files will NOT be affected.",
-                "Update available",
+                L.Format("Main_Update_ConfirmBody", result.CurrentVersion, result.AvailableVersion),
+                L["Main_Update_AvailableTitle"],
                 MessageBoxButton.OKCancel,
                 MessageBoxImage.Question,
                 MessageBoxResult.OK);
             if (confirm != MessageBoxResult.OK)
             {
-                StatusMessage = $"Update deferred (v{result.AvailableVersion} available)";
+                StatusMessage = L.Format("Main_Update_DeferredStatus", result.AvailableVersion);
                 return;
             }
 
-            StatusMessage = $"Downloading v{result.AvailableVersion}…";
+            StatusMessage = L.Format("Main_Update_DownloadingStatus", result.AvailableVersion);
 
             // Velopack's progress meter covers the network download but then
             // goes quiet during its verify/stage phase — which is why the
@@ -2070,7 +2061,7 @@ public partial class MainViewModel : ObservableObject
                 if (!preparingShown)
                 {
                     preparingShown = true;
-                    StatusMessage = $"Preparing update v{result.AvailableVersion}… this can take a moment.";
+                    StatusMessage = L.Format("Main_Update_PreparingStatus", result.AvailableVersion);
                 }
             };
             stallWatchdog.Start();
@@ -2090,7 +2081,7 @@ public partial class MainViewModel : ObservableObject
                         {
                             lastReported = p;
                             preparingShown = false;
-                            StatusMessage = $"Downloading v{result.AvailableVersion}… {p}%";
+                            StatusMessage = L.Format("Main_Update_DownloadingPercent", result.AvailableVersion, p);
                         }
                     });
                 });
@@ -2100,11 +2091,10 @@ public partial class MainViewModel : ObservableObject
                 // tears the process down). So this path == failure.
                 if (!apply.Success)
                 {
-                    StatusMessage = $"Update failed: {apply.ErrorMessage}";
+                    StatusMessage = L.Format("Main_Update_FailedStatus", apply.ErrorMessage);
                     MessageBox.Show(
-                        $"The update could not be installed.\n\n{apply.ErrorMessage}\n\n" +
-                        "Your current version is unaffected.",
-                        "Update failed",
+                        L.Format("Main_Update_FailedBody", apply.ErrorMessage),
+                        L["Main_Update_FailedTitle"],
                         MessageBoxButton.OK,
                         MessageBoxImage.Error);
                 }
@@ -2178,11 +2168,11 @@ public partial class MainViewModel : ObservableObject
         if (Videos.Count > 0)
         {
             SelectedVideo = Videos[0];
-            StatusMessage = $"Review session: {Videos.Count} clip(s) waiting";
+            StatusMessage = L.Format("Main_Status_ReviewWaiting", Videos.Count);
         }
         else
         {
-            StatusMessage = "Review session: nothing to review — you're caught up.";
+            StatusMessage = L["Main_Status_ReviewCaughtUp"];
         }
     }
 
@@ -2255,11 +2245,11 @@ public partial class MainViewModel : ObservableObject
         {
             await _savedSearchService.SaveAsync(name, BuildCurrentCriteria());
             await ReloadSavedSearchesAsync();
-            StatusMessage = $"Saved search \"{name.Trim()}\"";
+            StatusMessage = L.Format("Main_Status_SavedSearch", name.Trim());
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Couldn't save search: {ex.Message}";
+            StatusMessage = L.Format("Main_Status_SaveSearchFailed", ex.Message);
         }
     }
 
@@ -2309,7 +2299,7 @@ public partial class MainViewModel : ObservableObject
         }
 
         await SearchAsync();
-        StatusMessage = $"Applied saved search \"{saved.Name}\" · {Videos.Count} of {TotalCount} videos";
+        StatusMessage = L.Format("Main_Status_AppliedSearch", saved.Name, Videos.Count, TotalCount);
     }
 
     [RelayCommand]
@@ -2320,7 +2310,7 @@ public partial class MainViewModel : ObservableObject
         var dialog = new SaveSearchDialog(saved.Name)
         {
             Owner = App.Current.MainWindow,
-            Title = "Rename saved search"
+            Title = L["Main_RenameSearch_Title"]
         };
         if (dialog.ShowDialog() != true) return;
 
@@ -2334,11 +2324,11 @@ public partial class MainViewModel : ObservableObject
         {
             await _savedSearchService.RenameAsync(saved.Id, name);
             await ReloadSavedSearchesAsync();
-            StatusMessage = $"Renamed saved search to \"{name.Trim()}\"";
+            StatusMessage = L.Format("Main_Status_RenamedSearch", name.Trim());
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Couldn't rename search: {ex.Message}";
+            StatusMessage = L.Format("Main_Status_RenameSearchFailed", ex.Message);
         }
     }
 
@@ -2348,10 +2338,8 @@ public partial class MainViewModel : ObservableObject
         if (saved is null) return;
 
         var result = MessageBox.Show(
-            $"Delete the saved search \"{saved.Name}\"?\n\n" +
-            "This only removes the saved filter. No videos, tags, or catalog " +
-            "records are affected.",
-            "Delete saved search",
+            L.Format("Main_DeleteSearch_Confirm", saved.Name),
+            L["Main_DeleteSearch_Title"],
             MessageBoxButton.OKCancel,
             MessageBoxImage.Question,
             MessageBoxResult.Cancel);
@@ -2359,7 +2347,7 @@ public partial class MainViewModel : ObservableObject
 
         await _savedSearchService.DeleteAsync(saved.Id);
         await ReloadSavedSearchesAsync();
-        StatusMessage = $"Deleted saved search \"{saved.Name}\"";
+        StatusMessage = L.Format("Main_Status_DeletedSearch", saved.Name);
     }
 
     // Walks the folder tree for the node whose FullPath matches, selects it,
@@ -2436,11 +2424,11 @@ public partial class MainViewModel : ObservableObject
         if (!string.IsNullOrWhiteSpace(CameraFilter)) parts.Add(CameraFilter!);
         if (SelectedTagFilters.Count > 0) parts.Add(string.Join(", ", SelectedTagFilters.Take(3).Select(t => t.Name)));
         if (SelectedFolderNode is not null) parts.Add(SelectedFolderNode.Name);
-        if (OnlyUnreviewed) parts.Add("Unreviewed");
-        if (MainSubjectOnly && SelectedTagFilters.Count > 0) parts.Add("main subject");
-        if (DateFrom.HasValue || DateTo.HasValue) parts.Add("date range");
+        if (OnlyUnreviewed) parts.Add(L["Main_Suggest_Unreviewed"]);
+        if (MainSubjectOnly && SelectedTagFilters.Count > 0) parts.Add(L["Main_Suggest_MainSubject"]);
+        if (DateFrom.HasValue || DateTo.HasValue) parts.Add(L["Main_Suggest_DateRange"]);
 
-        return parts.Count == 0 ? "All clips" : string.Join(" \u00b7 ", parts);
+        return parts.Count == 0 ? L["Main_Suggest_AllClips"] : string.Join(" \u00b7 ", parts);
     }
 
     private void StartHeartbeat()
@@ -2469,8 +2457,8 @@ public partial class MainViewModel : ObservableObject
         var total = now - _scanStartedAt;
         var onFile = now - _currentFileStartedAt;
         ScanElapsedText = _currentFilePath is null
-            ? $"Elapsed {FormatDuration(total)}"
-            : $"Elapsed {FormatDuration(total)} · current file {FormatDuration(onFile)}";
+            ? L.Format("Main_Scan_Elapsed", FormatDuration(total))
+            : L.Format("Main_Scan_ElapsedWithFile", FormatDuration(total), FormatDuration(onFile));
     }
 
     private static string FormatDuration(TimeSpan t)

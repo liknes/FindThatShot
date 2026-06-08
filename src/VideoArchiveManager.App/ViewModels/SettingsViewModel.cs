@@ -21,6 +21,7 @@ using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
+using VideoArchiveManager.App.Localization;
 using VideoArchiveManager.Core.Configuration;
 using VideoArchiveManager.Core.Models;
 using VideoArchiveManager.Core.Services;
@@ -57,7 +58,20 @@ public partial class SettingsViewModel : ObservableObject
             PinnedTagSlots.Add(new PinnedTagSlotViewModel(i));
         }
 
+        // Populate the language picker and select the saved language (falling
+        // back to whatever culture the app is currently running under).
+        foreach (var lang in LocalizationManager.Instance.AvailableLanguages)
+        {
+            Languages.Add(lang);
+        }
+
         var current = store.Current;
+
+        _selectedLanguage =
+            Languages.FirstOrDefault(l => string.Equals(l.Culture, current.Language, StringComparison.OrdinalIgnoreCase))
+            ?? Languages.FirstOrDefault(l => string.Equals(l.Culture, LocalizationManager.Instance.CurrentCulture.Name, StringComparison.OrdinalIgnoreCase))
+            ?? Languages.FirstOrDefault();
+
         _ffmpegPath = current.FfmpegPath ?? string.Empty;
         _ffprobePath = current.FfprobePath ?? string.Empty;
         _thumbnailDirectory = current.EffectiveThumbnailDirectory;
@@ -88,6 +102,9 @@ public partial class SettingsViewModel : ObservableObject
 
     public ObservableCollection<CatalogBackupInfo> Backups { get; } = new();
 
+    // The languages offered by the picker (sourced from LocalizationManager).
+    public ObservableCollection<LanguageOption> Languages { get; } = new();
+
     // Every tag in the catalog, shown in each slot's picker. Loaded once on
     // open by LoadPinnedTagsAsync (ordered by type then name, matching the
     // sidebar picker).
@@ -99,6 +116,9 @@ public partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     private CatalogBackupInfo? _selectedBackup;
+
+    [ObservableProperty]
+    private LanguageOption? _selectedLanguage;
 
     [ObservableProperty]
     private string _ffmpegPath;
@@ -195,14 +215,14 @@ public partial class SettingsViewModel : ObservableObject
     [RelayCommand]
     private void BrowseFfmpeg()
     {
-        var path = PickExecutable("Select ffmpeg.exe", FfmpegPath);
+        var path = PickExecutable(LocalizationManager.Instance["Settings_Dlg_PickFfmpeg"], FfmpegPath);
         if (!string.IsNullOrEmpty(path)) FfmpegPath = path;
     }
 
     [RelayCommand]
     private void BrowseFfprobe()
     {
-        var path = PickExecutable("Select ffprobe.exe", FfprobePath);
+        var path = PickExecutable(LocalizationManager.Instance["Settings_Dlg_PickFfprobe"], FfprobePath);
         if (!string.IsNullOrEmpty(path)) FfprobePath = path;
     }
 
@@ -211,7 +231,7 @@ public partial class SettingsViewModel : ObservableObject
     {
         var dialog = new OpenFolderDialog
         {
-            Title = "Select catalog backup folder",
+            Title = LocalizationManager.Instance["Settings_Dlg_PickBackupFolder"],
             InitialDirectory = string.IsNullOrWhiteSpace(BackupDirectory) ? null! : BackupDirectory
         };
         if (dialog.ShowDialog() == true && !string.IsNullOrWhiteSpace(dialog.FolderName))
@@ -225,7 +245,8 @@ public partial class SettingsViewModel : ObservableObject
     {
         if (IsBackingUp) return;
         IsBackingUp = true;
-        BackupStatusMessage = "Backing up catalog...";
+        var loc = LocalizationManager.Instance;
+        BackupStatusMessage = loc["Settings_Backup_InProgress"];
 
         var settings = BuildSettings();
         await _store.SaveAsync(settings);
@@ -234,12 +255,12 @@ public partial class SettingsViewModel : ObservableObject
         if (result.Success)
         {
             BackupStatusMessage = result.Pruned > 0
-                ? $"Backup saved to {result.BackupPath} ({FormatBytes(result.Bytes)}). Pruned {result.Pruned} old backup(s)."
-                : $"Backup saved to {result.BackupPath} ({FormatBytes(result.Bytes)}).";
+                ? loc.Format("Settings_Backup_SavedPruned", result.BackupPath, FormatBytes(result.Bytes), result.Pruned)
+                : loc.Format("Settings_Backup_Saved", result.BackupPath, FormatBytes(result.Bytes));
         }
         else
         {
-            BackupStatusMessage = $"Backup failed: {result.ErrorMessage}";
+            BackupStatusMessage = loc.Format("Settings_Backup_Failed", result.ErrorMessage);
         }
 
         await RefreshBackupsAsync();
@@ -259,42 +280,45 @@ public partial class SettingsViewModel : ObservableObject
     {
         if (SelectedBackup is null) return;
 
+        var loc = LocalizationManager.Instance;
+        var title = loc["Settings_Restore_Title"];
+
         var confirm = MessageBox.Show(
-            $"Restore catalog from this backup?\n\n{SelectedBackup.FileName}\n" +
-            $"Created: {SelectedBackup.CreatedAtUtc.ToLocalTime():yyyy-MM-dd HH:mm:ss}\n" +
-            $"Size: {FormatBytes(SelectedBackup.Bytes)}\n\n" +
-            "Your current catalog will first be copied into the Backups folder as a " +
-            "safety snapshot ('catalog-pre-restore-...'). The app will then need to RESTART " +
-            "to swap the database file in safely. Source video files are not affected.",
-            "Restore catalog",
+            loc.Format(
+                "Settings_Restore_Confirm",
+                SelectedBackup.FileName,
+                SelectedBackup.CreatedAtUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss"),
+                FormatBytes(SelectedBackup.Bytes)),
+            title,
             MessageBoxButton.OKCancel,
             MessageBoxImage.Warning,
             MessageBoxResult.Cancel);
         if (confirm != MessageBoxResult.OK) return;
 
-        BackupStatusMessage = "Staging restore...";
+        BackupStatusMessage = loc["Settings_Restore_Staging"];
         var result = await _backupService.RestoreAsync(SelectedBackup.Path);
 
         if (!result.Success)
         {
-            BackupStatusMessage = $"Restore failed: {result.ErrorMessage}";
+            BackupStatusMessage = loc.Format("Settings_Restore_FailedStatus", result.ErrorMessage);
             MessageBox.Show(
-                $"Restore failed:\n\n{result.ErrorMessage}\n\nYour catalog has not been changed.",
-                "Restore catalog",
+                loc.Format("Settings_Restore_FailedBody", result.ErrorMessage),
+                title,
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
             return;
         }
 
-        BackupStatusMessage = $"Restore staged. Safety copy: {result.SafetyBackupPath}";
+        BackupStatusMessage = loc.Format("Settings_Restore_StagedStatus", result.SafetyBackupPath);
 
+        var safetyLine = result.SafetyBackupPath is null
+            ? string.Empty
+            : loc.Format("Settings_Restore_SafetyCopyLine", result.SafetyBackupPath) + "\n\n";
         var restartNow = MessageBox.Show(
-            "Restore staged successfully.\n\n" +
-            (result.SafetyBackupPath is null
-                ? string.Empty
-                : $"Safety copy of the previous catalog: {result.SafetyBackupPath}\n\n") +
-            "The app needs to restart to complete the restore. Restart now?",
-            "Restore catalog",
+            loc["Settings_Restore_StagedSuccess"] + "\n\n" +
+            safetyLine +
+            loc["Settings_Restore_RestartQuestion"],
+            title,
             MessageBoxButton.OKCancel,
             MessageBoxImage.Information,
             MessageBoxResult.OK);
@@ -306,8 +330,8 @@ public partial class SettingsViewModel : ObservableObject
         else
         {
             MessageBox.Show(
-                "The restore will be applied automatically the next time you start the app.",
-                "Restore catalog",
+                loc["Settings_Restore_DeferredBody"],
+                title,
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
         }
@@ -409,6 +433,7 @@ public partial class SettingsViewModel : ObservableObject
     {
         return new AppSettings
         {
+            Language = SelectedLanguage?.Culture ?? _store.Current.Language,
             FfmpegPath = string.IsNullOrWhiteSpace(FfmpegPath) ? null : FfmpegPath,
             FfprobePath = string.IsNullOrWhiteSpace(FfprobePath) ? null : FfprobePath,
             ThumbnailDirectory = ThumbnailDirectory,
@@ -491,17 +516,28 @@ public partial class SettingsViewModel : ObservableObject
         // Persist the latest enable/path choice into the live store first so
         // the provider resolves against what the user currently sees.
         AiModelInstalled = _aiModelProvider.IsModelInstalled();
+        var loc = LocalizationManager.Instance;
         if (!EnableAiTagging)
         {
-            AiModelStatus = "Disabled. Turn on to enable AI tagging and natural-language search.";
+            AiModelStatus = loc["Settings_AiStatus_Disabled"];
         }
         else if (AiModelInstalled)
         {
-            AiModelStatus = $"Model ready ({_aiModelProvider.ModelDirectory}).";
+            AiModelStatus = loc.Format("Settings_AiStatus_Ready", _aiModelProvider.ModelDirectory);
         }
         else
         {
-            AiModelStatus = "Model not installed. Download it, or point at a folder containing the CLIP ONNX bundle.";
+            AiModelStatus = loc["Settings_AiStatus_NotInstalled"];
+        }
+    }
+
+    // Apply the language immediately so the picker doubles as a live preview;
+    // the choice is only persisted to settings.json when the dialog is saved.
+    partial void OnSelectedLanguageChanged(LanguageOption? value)
+    {
+        if (value is not null)
+        {
+            LocalizationManager.Instance.SetCulture(value.Culture);
         }
     }
 
@@ -521,7 +557,7 @@ public partial class SettingsViewModel : ObservableObject
     {
         var dialog = new OpenFolderDialog
         {
-            Title = "Select the CLIP model folder",
+            Title = LocalizationManager.Instance["Settings_Dlg_PickModelFolder"],
             InitialDirectory = string.IsNullOrWhiteSpace(AiModelDirectory) ? null! : AiModelDirectory
         };
         if (dialog.ShowDialog() == true && !string.IsNullOrWhiteSpace(dialog.FolderName))
@@ -540,18 +576,19 @@ public partial class SettingsViewModel : ObservableObject
 
         IsDownloadingModel = true;
         AiDownloadProgress = 0;
-        AiModelStatus = "Downloading model…";
+        var loc = LocalizationManager.Instance;
+        AiModelStatus = loc["Settings_AiStatus_Downloading"];
         try
         {
             var progress = new Progress<double>(p => AiDownloadProgress = p);
             var ok = await _aiModelProvider.EnsureDownloadedAsync(progress);
             AiModelStatus = ok
-                ? "Model downloaded and ready."
-                : "Download failed. Check the model URL / your connection, or supply the bundle manually.";
+                ? loc["Settings_AiStatus_Downloaded"]
+                : loc["Settings_AiStatus_DownloadFailed"];
         }
         catch (Exception ex)
         {
-            AiModelStatus = $"Download failed: {ex.Message}";
+            AiModelStatus = loc.Format("Settings_AiStatus_DownloadError", ex.Message);
         }
         finally
         {
@@ -563,28 +600,34 @@ public partial class SettingsViewModel : ObservableObject
     [RelayCommand]
     private async Task ClearAiDataAsync()
     {
+        var loc = LocalizationManager.Instance;
         var confirm = MessageBox.Show(
-            "Remove all AI-generated data (embeddings and pending tag suggestions) from the catalog?\n\n" +
-            "Tags you've already accepted stay. Source files are never touched. You can regenerate later.",
-            "Clear AI data",
+            loc["Settings_ClearAi_Confirm"],
+            loc["Settings_ClearAi_Title"],
             MessageBoxButton.OKCancel,
             MessageBoxImage.Question,
             MessageBoxResult.Cancel);
         if (confirm != MessageBoxResult.OK) return;
 
         var removed = await _aiTaggingService.ClearAllAiDataAsync();
-        AiModelStatus = $"Cleared {removed:N0} AI row(s).";
+        AiModelStatus = loc.Format("Settings_AiStatus_Cleared", removed.ToString("N0", LocalizationManager.Instance.CurrentCulture));
     }
 
     [RelayCommand]
-    private void Cancel() => Cancelled?.Invoke();
+    private void Cancel()
+    {
+        // The language picker previews live; if the user backs out, restore the
+        // language that's actually persisted so Cancel really means "no change".
+        LocalizationManager.Instance.SetCulture(_store.Current.Language);
+        Cancelled?.Invoke();
+    }
 
     private static string? PickExecutable(string title, string? initial)
     {
         var dialog = new OpenFileDialog
         {
             Title = title,
-            Filter = "Executables (*.exe)|*.exe|All files (*.*)|*.*",
+            Filter = LocalizationManager.Instance["Settings_Dlg_ExeFilter"],
             FileName = initial ?? string.Empty
         };
         var result = dialog.ShowDialog();

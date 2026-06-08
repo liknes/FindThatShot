@@ -8,6 +8,7 @@
         xmlns:enums="clr-namespace:VideoArchiveManager.Core.Models.Enums;assembly=VideoArchiveManager.Core"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         xmlns:ffme="clr-namespace:Unosquare.FFME;assembly=ffme.win"
+        xmlns:loc="clr-namespace:VideoArchiveManager.App.Localization"
         Title="Find That Shot"
         Width="1400" Height="880"
         MinWidth="1024" MinHeight="640"
@@ -84,129 +85,129 @@
                       VerticalAlignment="Center"
                       Margin="8,0,0,0"
                       Padding="4,2">
-                    <MenuItem Header="_File">
-                        <MenuItem Header="_Add folder…"
+                    <MenuItem Header="{loc:Tr Main_Menu_File}">
+                        <MenuItem Header="{loc:Tr Main_Menu_AddFolder}"
                                   Command="{Binding AddRootFolderCommand}"
                                   InputGestureText="Ctrl+O" />
-                        <MenuItem Header="_Remove selected folder…"
+                        <MenuItem Header="{loc:Tr Main_Menu_RemoveSelectedFolder}"
                                   Command="{Binding RemoveRootFolderCommand}"
                                   CommandParameter="{Binding SelectedRootFolder}"
-                                  ToolTip="Remove the selected root folder and any catalog entries imported from it. Source video files will NOT be touched." />
+                                  ToolTip="{loc:Tr Main_Menu_RemoveSelectedFolder_Tip}" />
                         <Separator />
-                        <MenuItem Header="_Settings…"
+                        <MenuItem Header="{loc:Tr Main_Menu_Settings}"
                                   Command="{Binding OpenSettingsCommand}"
                                   InputGestureText="Ctrl+," />
                         <Separator />
-                        <MenuItem Header="E_xit" Click="ExitMenu_Click" InputGestureText="Alt+F4" />
+                        <MenuItem Header="{loc:Tr Main_Menu_Exit}" Click="ExitMenu_Click" InputGestureText="Alt+F4" />
                     </MenuItem>
-                    <MenuItem Header="_Catalog">
-                        <MenuItem Header="_Scan"
+                    <MenuItem Header="{loc:Tr Main_Menu_Catalog}">
+                        <MenuItem Header="{loc:Tr Main_Menu_Scan}"
                                   Command="{Binding ScanCommand}"
                                   IsEnabled="{Binding IsScanning, Converter={StaticResource InverseBool}}"
                                   InputGestureText="F5" />
-                        <MenuItem Header="_Cancel scan"
+                        <MenuItem Header="{loc:Tr Main_Menu_CancelScan}"
                                   Command="{Binding CancelScanCommand}"
                                   IsEnabled="{Binding IsScanning}" />
-                        <MenuItem Header="_Refresh"
+                        <MenuItem Header="{loc:Tr Main_Menu_Refresh}"
                                   Command="{Binding RefreshCommand}"
                                   InputGestureText="Ctrl+R" />
                         <Separator />
-                        <MenuItem Header="Catalog stat_istics…"
+                        <MenuItem Header="{loc:Tr Main_Menu_Stats}"
                                   Click="CatalogStats_Click"
-                                  ToolTip="See aggregate metrics for the whole catalog — counts, total size and runtime, and status / rating / camera / codec / resolution / tag / year breakdowns. Read-only." />
-                        <MenuItem Header="Find _duplicates…"
+                                  ToolTip="{loc:Tr Main_Menu_Stats_Tip}" />
+                        <MenuItem Header="{loc:Tr Main_Menu_Duplicates}"
                                   Click="Duplicates_Click"
-                                  ToolTip="Find clips that share the same file size, duration, and resolution — almost certainly the same footage in more than one place — and prune the redundant catalog entries. Source video files are never moved or deleted." />
-                        <MenuItem Header="Find _moments…"
+                                  ToolTip="{loc:Tr Main_Menu_Duplicates_Tip}" />
+                        <MenuItem Header="{loc:Tr Main_Menu_Moments}"
                                   Click="Moments_Click"
-                                  ToolTip="Search across every timestamped moment (sub-clip) you've marked — by label, note, tag, or rating — and jump straight to the shot in the player." />
-                        <MenuItem Header="Browse on _map…"
+                                  ToolTip="{loc:Tr Main_Menu_Moments_Tip}" />
+                        <MenuItem Header="{loc:Tr Main_Menu_Map}"
                                   Click="Map_Click"
-                                  ToolTip="See every geotagged clip clustered on a map. Click a cluster to scope the grid to it, click a marker to preview a clip, or filter the grid to whatever's in view. Read-only." />
-                        <MenuItem Header="Browse by da_te…"
+                                  ToolTip="{loc:Tr Main_Menu_Map_Tip}" />
+                        <MenuItem Header="{loc:Tr Main_Menu_Calendar}"
                                   Click="Calendar_Click"
-                                  ToolTip="See a year-by-month heatmap of when you shot. Click a month to list its clips, preview one, and jump to it in the grid or player, or scope the grid to that month. Read-only." />
+                                  ToolTip="{loc:Tr Main_Menu_Calendar_Tip}" />
                         <Separator />
-                        <MenuItem Header="_Generate AI tags…"
+                        <MenuItem Header="{loc:Tr Main_Menu_GenerateAi}"
                                   Click="GenerateAiTags_Click"
                                   Visibility="{Binding IsAiEnabled, Converter={StaticResource BoolToVisibility}}"
-                                  ToolTip="Score clips that don't have AI embeddings yet with a local CLIP model (sampling frames across each clip) to propose tags. Nothing is auto-applied; review proposals afterwards. Source files are only read." />
-                        <MenuItem Header="Re-score _all clips with AI…"
+                                  ToolTip="{loc:Tr Main_Menu_GenerateAi_Tip}" />
+                        <MenuItem Header="{loc:Tr Main_Menu_RescoreAi}"
                                   Click="ReprocessAiTags_Click"
                                   Visibility="{Binding IsAiEnabled, Converter={StaticResource BoolToVisibility}}"
-                                  ToolTip="Re-run AI scoring on EVERY clip (not just new ones) — use after changing the sampling settings, label vocabulary, or model. Accepted/rejected tags are kept; pending suggestions are refreshed." />
-                        <MenuItem Header="Review _AI suggestions…"
+                                  ToolTip="{loc:Tr Main_Menu_RescoreAi_Tip}" />
+                        <MenuItem Header="{loc:Tr Main_Menu_ReviewAi}"
                                   Click="AiReview_Click"
                                   Visibility="{Binding IsAiEnabled, Converter={StaticResource BoolToVisibility}}"
-                                  ToolTip="Accept or reject the AI's proposed tags. Accepting adds a real tag to the clip." />
+                                  ToolTip="{loc:Tr Main_Menu_ReviewAi_Tip}" />
                         <Separator Visibility="{Binding IsAiEnabled, Converter={StaticResource BoolToVisibility}}" />
-                        <MenuItem Header="_Bulk edit selection…"
+                        <MenuItem Header="{loc:Tr Main_Menu_BulkEdit}"
                                   Command="{Binding OpenBulkEditCommand}"
                                   InputGestureText="Ctrl+B" />
                         <Separator />
-                        <MenuItem Header="Fill missing _locations from GPS…"
+                        <MenuItem Header="{loc:Tr Main_Menu_FillLocations}"
                                   Command="{Binding FillMissingLocationsCommand}"
                                   IsEnabled="{Binding IsGeocodingLocations, Converter={StaticResource InverseBool}}"
-                                  ToolTip="For any video that has GPS coordinates but no location, look up a place name from OpenStreetMap and fill it in. Existing locations are not changed." />
-                        <MenuItem Header="Ca_ncel location lookup"
+                                  ToolTip="{loc:Tr Main_Menu_FillLocations_Tip}" />
+                        <MenuItem Header="{loc:Tr Main_Menu_CancelLocation}"
                                   Command="{Binding CancelFillMissingLocationsCommand}"
                                   IsEnabled="{Binding IsGeocodingLocations}" />
                         <Separator />
-                        <MenuItem Header="Remove _offline videos…"
+                        <MenuItem Header="{loc:Tr Main_Menu_RemoveOffline}"
                                   Command="{Binding RemoveOfflineVideosCommand}"
-                                  ToolTip="Remove catalog entries whose source file is no longer on disk. Source video files will NOT be touched." />
-                        <MenuItem Header="Remove _selected from catalog…"
+                                  ToolTip="{loc:Tr Main_Menu_RemoveOffline_Tip}" />
+                        <MenuItem Header="{loc:Tr Main_Menu_RemoveSelected}"
                                   Command="{Binding RemoveSelectedVideosCommand}"
                                   InputGestureText="Del" />
                     </MenuItem>
-                    <MenuItem Header="_View">
-                        <MenuItem Header="Show only _available files"
+                    <MenuItem Header="{loc:Tr Main_Menu_View}">
+                        <MenuItem Header="{loc:Tr Main_Menu_ShowAvailable}"
                                   IsCheckable="True"
                                   IsChecked="{Binding ShowOnlyAvailable}" />
-                        <MenuItem Header="Show only _unreviewed"
+                        <MenuItem Header="{loc:Tr Main_Menu_ShowUnreviewed}"
                                   IsCheckable="True"
                                   IsChecked="{Binding OnlyUnreviewed}"
-                                  ToolTip="Limit the catalog to clips whose status is still Unreviewed OR that have no tags yet." />
-                        <MenuItem Header="Tag filter: _main subject only"
+                                  ToolTip="{loc:Tr Main_Menu_ShowUnreviewed_Tip}" />
+                        <MenuItem Header="{loc:Tr Main_Menu_MainSubject}"
                                   IsCheckable="True"
                                   IsChecked="{Binding MainSubjectOnly}"
-                                  ToolTip="When filtering by tags, only match clips where the tag is a primary subject — hide clips where it's just an incidental/background element." />
-                        <MenuItem Header="Search by _description (AI)"
+                                  ToolTip="{loc:Tr Main_Menu_MainSubject_Tip}" />
+                        <MenuItem Header="{loc:Tr Main_Menu_SemanticSearch}"
                                   IsCheckable="True"
                                   IsChecked="{Binding UseSemanticSearch}"
                                   Visibility="{Binding IsAiEnabled, Converter={StaticResource BoolToVisibility}}"
-                                  ToolTip="Treat the search box as a natural-language description (e.g. &quot;drone shot over snowy mountains at sunset&quot;) and rank clips by AI visual similarity instead of literal text matching." />
+                                  ToolTip="{loc:Tr Main_Menu_SemanticSearch_Tip}" />
                         <Separator />
-                        <MenuItem Header="_Start review session"
+                        <MenuItem Header="{loc:Tr Main_Menu_StartReview}"
                                   Command="{Binding StartReviewSessionCommand}"
                                   InputGestureText="Ctrl+Shift+R"
-                                  ToolTip="Clear all filters, show only unreviewed clips, and select the first one." />
+                                  ToolTip="{loc:Tr Main_Menu_StartReview_Tip}" />
                         <Separator />
-                        <MenuItem Header="Focus _search"
+                        <MenuItem Header="{loc:Tr Main_Menu_FocusSearch}"
                                   Click="FocusSearchMenu_Click"
                                   InputGestureText="Ctrl+F" />
-                        <MenuItem Header="_Clear all filters"
+                        <MenuItem Header="{loc:Tr Main_Menu_ClearFilters}"
                                   Command="{Binding ClearFiltersCommand}"
                                   InputGestureText="Ctrl+Shift+L" />
                     </MenuItem>
-                    <MenuItem Header="_Help">
-                        <MenuItem Header="Check for _updates…"
+                    <MenuItem Header="{loc:Tr Main_Menu_Help}">
+                        <MenuItem Header="{loc:Tr Main_Menu_CheckUpdates}"
                                   Command="{Binding CheckForUpdatesCommand}"
                                   IsEnabled="{Binding IsCheckingForUpdates, Converter={StaticResource InverseBool}}"
-                                  ToolTip="Look for a newer version on GitHub Releases and install it. Only works when running from an installed build (Setup.exe)." />
+                                  ToolTip="{loc:Tr Main_Menu_CheckUpdates_Tip}" />
                         <Separator />
-                        <MenuItem Header="_Diagnostics…"
+                        <MenuItem Header="{loc:Tr Main_Menu_Diagnostics}"
                                   Click="Diagnostics_Click"
-                                  ToolTip="View environment info and the recent application log for troubleshooting." />
+                                  ToolTip="{loc:Tr Main_Menu_Diagnostics_Tip}" />
                         <Separator />
-                        <MenuItem Header="_Report a bug (GitHub)…"
+                        <MenuItem Header="{loc:Tr Main_Menu_ReportBug}"
                                   Click="ReportBug_Click"
-                                  ToolTip="Open the GitHub issue tracker in your browser. Tip: use Diagnostics → Copy full report and paste it into the issue." />
-                        <MenuItem Header="Send _feedback (email)…"
+                                  ToolTip="{loc:Tr Main_Menu_ReportBug_Tip}" />
+                        <MenuItem Header="{loc:Tr Main_Menu_Feedback}"
                                   Click="SendFeedback_Click"
-                                  ToolTip="Open a new email to the developer. Tip: use Diagnostics → Copy full report and paste it into the message." />
+                                  ToolTip="{loc:Tr Main_Menu_Feedback_Tip}" />
                         <Separator />
-                        <MenuItem Header="_About Find That Shot…" Click="About_Click" />
+                        <MenuItem Header="{loc:Tr Main_Menu_About}" Click="About_Click" />
                     </MenuItem>
                 </Menu>
 
@@ -234,11 +235,11 @@
                         <TextBox.Style>
                             <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
                                 <Setter Property="ui:ControlHelper.PlaceholderText"
-                                        Value="Search filename, folder, tags, notes, camera..." />
+                                        Value="{loc:Tr Main_Search_Placeholder}" />
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding UseSemanticSearch}" Value="True">
                                         <Setter Property="ui:ControlHelper.PlaceholderText"
-                                                Value="Describe a shot, e.g. &quot;cruise ship at sunset&quot;" />
+                                                Value="{loc:Tr Main_Search_Placeholder_Ai}" />
                                         <Setter Property="BorderBrush" Value="{DynamicResource App.Accent}" />
                                         <Setter Property="BorderThickness" Value="1.5" />
                                     </DataTrigger>
@@ -264,7 +265,7 @@
                                   VerticalAlignment="Center"
                                   IsChecked="{Binding UseSemanticSearch}"
                                   Visibility="{Binding IsAiEnabled, Converter={StaticResource BoolToVisibility}}"
-                                  ToolTip="Search by description (AI): type a natural-language description (e.g. &quot;cruise ship at sunset&quot;) and rank clips by AI visual similarity instead of literal keyword matching.">
+                                  ToolTip="{loc:Tr Main_Search_AiToggle_Tip}">
                         <ToggleButton.Template>
                             <ControlTemplate TargetType="ToggleButton">
                                 <Border x:Name="Bd"
@@ -283,7 +284,7 @@
                                                    VerticalAlignment="Center"
                                                    Foreground="{DynamicResource App.Accent}" />
                                         <TextBlock x:Name="Label"
-                                                   Text="AI search"
+                                                   Text="{loc:Tr Main_Search_AiToggle_Label}"
                                                    FontSize="12"
                                                    FontWeight="SemiBold"
                                                    VerticalAlignment="Center"
@@ -384,25 +385,25 @@
                                   Style="{StaticResource App.Expander}"
                                   IsExpanded="{Binding IsSavedSearchesPanelExpanded, Mode=TwoWay}">
                             <Expander.Header>
-                                <TextBlock Text="SAVED SEARCHES"
+                                <TextBlock Text="{loc:Tr Main_Saved_Header}"
                                            Style="{StaticResource App.Type.Section}"
                                            Margin="0" />
                             </Expander.Header>
                             <Expander.Tag>
-                                <Button Content="Save"
+                                <Button Content="{loc:Tr Main_Saved_Save}"
                                         Style="{StaticResource App.Button.Ghost}"
                                         helpers:Theme.Icon="{StaticResource Icon.Save}"
                                         Height="24"
                                         FontSize="11"
                                         Padding="6,0"
                                         VerticalAlignment="Center"
-                                        ToolTip="Save the current filters as a reusable search"
+                                        ToolTip="{loc:Tr Main_Saved_Save_Tip}"
                                         Command="{Binding SaveCurrentSearchCommand}" />
                             </Expander.Tag>
                             <Grid>
                                 <!-- Empty state: shown until the user saves their
                                      first search. -->
-                                <TextBlock Text="No saved searches yet. Set up filters above, then click Save."
+                                <TextBlock Text="{loc:Tr Main_Saved_Empty}"
                                            Style="{StaticResource App.Type.BodyMuted}"
                                            TextWrapping="Wrap"
                                            Margin="0,4,0,4"
@@ -458,7 +459,7 @@
                                                             Height="24"
                                                             Padding="6,0"
                                                             VerticalAlignment="Center"
-                                                            ToolTip="Rename this saved search"
+                                                            ToolTip="{loc:Tr Main_Saved_Rename_Tip}"
                                                             Command="{Binding DataContext.RenameSavedSearchCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                             CommandParameter="{Binding}" />
 
@@ -468,7 +469,7 @@
                                                             Height="24"
                                                             Padding="6,0"
                                                             VerticalAlignment="Center"
-                                                            ToolTip="Delete this saved search"
+                                                            ToolTip="{loc:Tr Main_Saved_Delete_Tip}"
                                                             Command="{Binding DataContext.DeleteSavedSearchCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                             CommandParameter="{Binding}" />
             </Grid>
@@ -501,7 +502,7 @@
                                   Drop="FoldersPanel_OnDrop"
                                   IsExpanded="{Binding IsFoldersPanelExpanded, Mode=TwoWay}">
                             <Expander.Header>
-                                <TextBlock Text="FOLDERS"
+                                <TextBlock Text="{loc:Tr Main_Folders_Header}"
                                            Style="{StaticResource App.Type.Section}"
                                            Margin="0" />
                             </Expander.Header>
@@ -512,7 +513,7 @@
                                         FontSize="11"
                                         Padding="6,0"
                                         VerticalAlignment="Center"
-                                        ToolTip="Add a root folder to catalogue (Ctrl+O)"
+                                        ToolTip="{loc:Tr Main_Folders_Add_Tip}"
                                         Command="{Binding AddRootFolderCommand}"
                                         Visibility="{Binding RootFolders.Count, Converter={StaticResource NotEmptyToVisibility}}" />
                             </Expander.Tag>
@@ -554,7 +555,7 @@
                                                    HorizontalAlignment="Center"
                                                    Foreground="{DynamicResource App.Accent}"
                                                    Text="{StaticResource Icon.Add}" />
-                                        <TextBlock Text="Drop folders to add"
+                                        <TextBlock Text="{loc:Tr Main_Folders_Drop}"
                                                    Margin="0,4,0,0"
                                                    FontSize="12"
                                                    HorizontalAlignment="Center"
@@ -570,9 +571,9 @@
                                         Padding="0,4,0,8"
                                         Visibility="{Binding RootFolders.Count, Converter={StaticResource EmptyToVisibility}}">
                                     <helpers:EmptyState Glyph="{StaticResource Icon.Folder}"
-                                                        Headline="No folders yet"
-                                                        Subtext="Add a folder to start cataloguing your video archive."
-                                                        CtaText="Add folder"
+                                                        Headline="{loc:Tr Main_Folders_Empty_Headline}"
+                                                        Subtext="{loc:Tr Main_Folders_Empty_Subtext}"
+                                                        CtaText="{loc:Tr Main_Folders_Empty_Cta}"
                                                         CtaIcon="{StaticResource Icon.Add}"
                                                         CtaCommand="{Binding AddRootFolderCommand}"
                                                         Padding="0" />
@@ -606,14 +607,14 @@
                                          on the VM gates Remove + the menu's enabled state
                                          so right-clicking an intermediate folder does
                                          nothing dangerous. -->
-                                    <MenuItem Header="_Remove folder…"
+                                    <MenuItem Header="{loc:Tr Main_Folders_Ctx_Remove}"
                                               InputGestureText=""
                                               Command="{Binding RemoveRootFolderCommand}"
                                               CommandParameter="{Binding SelectedRootFolder}"
                                               IsEnabled="{Binding CanRemoveSelectedFolder}"
-                                              ToolTip="Remove this root folder and any catalog entries imported from it. Source video files will NOT be touched." />
+                                              ToolTip="{loc:Tr Main_Folders_Ctx_Remove_Tip}" />
                                     <Separator />
-                                    <MenuItem Header="_Add folder…"
+                                    <MenuItem Header="{loc:Tr Main_Folders_Ctx_Add}"
                                               InputGestureText="Ctrl+O"
                                               Command="{Binding AddRootFolderCommand}" />
                                 </ContextMenu>
@@ -716,18 +717,18 @@
                                   Style="{StaticResource App.Expander}"
                                   IsExpanded="{Binding IsTagsPanelExpanded, Mode=TwoWay}">
                             <Expander.Header>
-                                <TextBlock Text="TAGS"
+                                <TextBlock Text="{loc:Tr Main_Tags_Header}"
                                            Style="{StaticResource App.Type.Section}"
                                            Margin="0" />
                             </Expander.Header>
                             <Expander.Tag>
-                                <Button Content="Clear"
+                                <Button Content="{loc:Tr Main_Filter_Clear}"
                                         Style="{StaticResource App.Button.Ghost}"
                                         Height="24"
                                         FontSize="11"
                                         Padding="8,0"
                                         VerticalAlignment="Center"
-                                        ToolTip="Remove all selected tag filters."
+                                        ToolTip="{loc:Tr Main_Tags_Clear_Tip}"
                                         Command="{Binding ClearTagFiltersCommand}" />
                             </Expander.Tag>
                             <!-- Body Grid: chips (Auto) + filter input (Auto)
@@ -758,7 +759,7 @@
                                                     <Button Style="{StaticResource App.Button.ChipClose}"
                                                             helpers:Theme.Icon="{StaticResource Icon.Cancel}"
                                                             Margin="6,0,-2,0"
-                                                            ToolTip="Remove this tag filter."
+                                                            ToolTip="{loc:Tr Main_Tags_RemoveChip_Tip}"
                                                             Command="{Binding DataContext.RemoveTagFilterCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                             CommandParameter="{Binding}" />
                                     </StackPanel>
@@ -769,7 +770,7 @@
 
                                 <TextBox Grid.Row="1"
                                          Text="{Binding TagFilterSearchText, UpdateSourceTrigger=PropertyChanged}"
-                                         ui:ControlHelper.PlaceholderText="Type to filter tags…"
+                                         ui:ControlHelper.PlaceholderText="{loc:Tr Main_Tags_FilterPlaceholder}"
                                          Margin="0,0,0,4" />
 
                                 <!-- MinHeight ensures the picker stays usable
@@ -788,7 +789,7 @@
                                          SelectionChanged="TagFilterList_OnSelectionChanged"
                                          VirtualizingPanel.IsVirtualizing="True"
                                          VirtualizingPanel.VirtualizationMode="Recycling"
-                                         ToolTip="Click a tag to add it as a filter. Multiple tags are combined with AND (videos must have every selected tag)." />
+                                         ToolTip="{loc:Tr Main_Tags_List_Tip}" />
                             </Grid>
                         </Expander>
 
@@ -798,18 +799,18 @@
                                   Style="{StaticResource App.Expander}"
                                   IsExpanded="{Binding IsCamerasPanelExpanded, Mode=TwoWay}">
                             <Expander.Header>
-                                <TextBlock Text="CAMERAS"
+                                <TextBlock Text="{loc:Tr Main_Cameras_Header}"
                                            Style="{StaticResource App.Type.Section}"
                                            Margin="0" />
                             </Expander.Header>
                             <Expander.Tag>
-                                <Button Content="Clear"
+                                <Button Content="{loc:Tr Main_Filter_Clear}"
                                         Style="{StaticResource App.Button.Ghost}"
                                         Height="24"
                                         FontSize="11"
                                         Padding="8,0"
                                         VerticalAlignment="Center"
-                                        ToolTip="Remove the camera filter."
+                                        ToolTip="{loc:Tr Main_Cameras_Clear_Tip}"
                                         Command="{Binding ClearCameraFilterCommand}" />
                             </Expander.Tag>
                             <!-- MinHeight keeps the camera picker usable in
@@ -832,7 +833,7 @@
                                   Style="{StaticResource App.Expander}"
                                   IsExpanded="{Binding IsDatePanelExpanded, Mode=TwoWay}">
                             <Expander.Header>
-                                <TextBlock Text="DATE"
+                                <TextBlock Text="{loc:Tr Main_Date_Header}"
                                            Style="{StaticResource App.Type.Section}"
                                            Margin="0" />
                             </Expander.Header>
@@ -841,13 +842,13 @@
                                  and the panels keep an even vertical rhythm. Disabled
                                  (greyed) until a From / To date is set. -->
                             <Expander.Tag>
-                                <Button Content="Clear"
+                                <Button Content="{loc:Tr Main_Filter_Clear}"
                                         Style="{StaticResource App.Button.Ghost}"
                                         Height="24"
                                         FontSize="11"
                                         Padding="8,0"
                                         VerticalAlignment="Center"
-                                        ToolTip="Clear the date range filter."
+                                        ToolTip="{loc:Tr Main_Date_Clear_Tip}"
                                         Command="{Binding ClearDateFilterCommand}" />
                             </Expander.Tag>
                             <StackPanel>
@@ -857,13 +858,13 @@
                                             HorizontalContentAlignment="Stretch"
                                             CalendarStyle="{StaticResource App.Calendar}"
                                             SelectedDate="{Binding DateFrom}"
-                                            ui:ControlHelper.PlaceholderText="From" />
+                                            ui:ControlHelper.PlaceholderText="{loc:Tr Main_Date_From}" />
                                 <DatePicker FontSize="13"
                                             HorizontalAlignment="Stretch"
                                             HorizontalContentAlignment="Stretch"
                                             CalendarStyle="{StaticResource App.Calendar}"
                                             SelectedDate="{Binding DateTo}"
-                                            ui:ControlHelper.PlaceholderText="To" />
+                                            ui:ControlHelper.PlaceholderText="{loc:Tr Main_Date_To}" />
                     </StackPanel>
                         </Expander>
 
@@ -872,13 +873,13 @@
                              bottom beneath the filter stack it resets. Mirrors
                              View → Clear all filters (Ctrl+Shift+L). -->
                         <Button Grid.Row="5"
-                                Content="Clear filters"
+                                Content="{loc:Tr Main_ClearFilters}"
                                 Margin="0,10,0,0"
                                 HorizontalAlignment="Stretch"
                                 Command="{Binding ClearFiltersCommand}"
                                 Style="{StaticResource App.Button.Ghost}"
                                 helpers:Theme.Icon="{StaticResource Icon.Filter}"
-                                ToolTip="Reset search box, all filters, and date range (Ctrl+Shift+L)" />
+                                ToolTip="{loc:Tr Main_ClearFilters_Tip}" />
                     </Grid>
             </Border>
 
@@ -903,9 +904,9 @@
             <helpers:EmptyState Grid.Column="2"
                                 Panel.ZIndex="1"
                                 Glyph="{StaticResource Icon.Search}"
-                                Headline="No clips match"
-                                Subtext="Try adjusting filters, clearing your search, or scanning a folder to bring videos into the catalog."
-                                CtaText="Clear filters"
+                                Headline="{loc:Tr Main_NoClips_Headline}"
+                                Subtext="{loc:Tr Main_NoClips_Subtext}"
+                                CtaText="{loc:Tr Main_ClearFilters}"
                                 CtaIcon="{StaticResource Icon.Filter}"
                                 CtaCommand="{Binding ClearFiltersCommand}"
                                 Visibility="{Binding Videos.Count, Converter={StaticResource EmptyToVisibility}}" />
@@ -937,19 +938,19 @@
                          and Remove commands both operate on the current selection — make
                          sure the right-clicked clip is actually selected first. -->
                     <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
-                        <MenuItem Header="Show clip _info..."
+                        <MenuItem Header="{loc:Tr Main_Ctx_ShowInfo}"
                                   InputGestureText="Alt+Enter"
                                   Command="{Binding Detail.ShowInfoCommand}"
-                                  ToolTip="Open the full clip-info popup (file system, video, camera, location, catalog, internal)." />
+                                  ToolTip="{loc:Tr Main_Ctx_ShowInfo_Tip}" />
                         <Separator />
-                        <MenuItem Header="Play _externally"
+                        <MenuItem Header="{loc:Tr Main_Ctx_PlayExternal}"
                                   Command="{Binding Detail.PlayCommand}"
-                                  ToolTip="Open the source video in the OS default media player (shell-associated for the file extension)." />
-                        <MenuItem Header="_Open file location"
+                                  ToolTip="{loc:Tr Main_Ctx_PlayExternal_Tip}" />
+                        <MenuItem Header="{loc:Tr Main_Ctx_OpenLocation}"
                                   Command="{Binding Detail.OpenFileLocationCommand}"
-                                  ToolTip="Reveal the source video file in Windows Explorer." />
+                                  ToolTip="{loc:Tr Main_Ctx_OpenLocation_Tip}" />
                         <Separator />
-                        <MenuItem Header="_Remove from database…"
+                        <MenuItem Header="{loc:Tr Main_Ctx_RemoveDb}"
                                   InputGestureText="Del"
                                   Command="{Binding RemoveSelectedVideosCommand}" />
                     </ContextMenu>
@@ -1047,7 +1048,7 @@
                                                        Text="&#xE783;"
                                                        VerticalAlignment="Center"
                                                        Margin="0,0,6,0" />
-                                        <TextBlock Text="Offline"
+                                        <TextBlock Text="{loc:Tr Main_Offline}"
                                                    Foreground="White"
                                            FontWeight="SemiBold"
                                            FontSize="11"
@@ -1167,7 +1168,7 @@
                         <Button Width="34" Height="34"
                                 Cursor="Hand"
                                 Command="{Binding ClosePlayerCommand}"
-                                ToolTip="Close player and return to the catalog (Esc)">
+                                ToolTip="{loc:Tr Main_Player_Close_Tip}">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
                                     <Border x:Name="bg"
@@ -1283,27 +1284,27 @@
                             </WrapPanel.Resources>
 
                             <StackPanel Visibility="{Binding TelemetryIso, Converter={StaticResource NullToVisibility}}">
-                                <TextBlock Text="ISO" Style="{StaticResource TelemetryLabel}" />
+                                <TextBlock Text="{loc:Tr Main_Tel_Iso}" Style="{StaticResource TelemetryLabel}" />
                                 <TextBlock Text="{Binding TelemetryIso}" Style="{StaticResource TelemetryValue}" />
                             </StackPanel>
                             <StackPanel Visibility="{Binding TelemetryShutter, Converter={StaticResource NullToVisibility}}">
-                                <TextBlock Text="SHUTTER" Style="{StaticResource TelemetryLabel}" />
+                                <TextBlock Text="{loc:Tr Main_Tel_Shutter}" Style="{StaticResource TelemetryLabel}" />
                                 <TextBlock Text="{Binding TelemetryShutter}" Style="{StaticResource TelemetryValue}" />
                             </StackPanel>
                             <StackPanel Visibility="{Binding TelemetryAperture, Converter={StaticResource NullToVisibility}}">
-                                <TextBlock Text="APERTURE" Style="{StaticResource TelemetryLabel}" />
+                                <TextBlock Text="{loc:Tr Main_Tel_Aperture}" Style="{StaticResource TelemetryLabel}" />
                                 <TextBlock Text="{Binding TelemetryAperture}" Style="{StaticResource TelemetryValue}" />
                             </StackPanel>
                             <StackPanel Visibility="{Binding TelemetryFocalLength, Converter={StaticResource NullToVisibility}}">
-                                <TextBlock Text="FOCAL" Style="{StaticResource TelemetryLabel}" />
+                                <TextBlock Text="{loc:Tr Main_Tel_Focal}" Style="{StaticResource TelemetryLabel}" />
                                 <TextBlock Text="{Binding TelemetryFocalLength}" Style="{StaticResource TelemetryValue}" />
                             </StackPanel>
                             <StackPanel Visibility="{Binding TelemetryAltitude, Converter={StaticResource NullToVisibility}}">
-                                <TextBlock Text="ALT" Style="{StaticResource TelemetryLabel}" />
+                                <TextBlock Text="{loc:Tr Main_Tel_Alt}" Style="{StaticResource TelemetryLabel}" />
                                 <TextBlock Text="{Binding TelemetryAltitude}" Style="{StaticResource TelemetryValue}" />
                             </StackPanel>
                             <StackPanel Visibility="{Binding TelemetryGps, Converter={StaticResource NullToVisibility}}">
-                                <TextBlock Text="GPS" Style="{StaticResource TelemetryLabel}" />
+                                <TextBlock Text="{loc:Tr Main_Tel_Gps}" Style="{StaticResource TelemetryLabel}" />
                                 <TextBlock Text="{Binding TelemetryGps}" Style="{StaticResource TelemetryValue}" />
                             </StackPanel>
                         </WrapPanel>
@@ -1385,7 +1386,7 @@
                                         Padding="6,2"
                                         Visibility="{Binding IsPlayingProxy, Converter={StaticResource BoolToVisibility}}"
                                         ToolTip="{Binding ActiveProxyPath, StringFormat='Playing proxy: {0}'}">
-                                    <TextBlock Text="PROXY"
+                                    <TextBlock Text="{loc:Tr Main_Player_ProxyBadge}"
                                                FontFamily="Consolas"
                                                FontSize="11"
                                                FontWeight="SemiBold"
@@ -1399,8 +1400,8 @@
                                         CornerRadius="3"
                                         Padding="6,2"
                                         Visibility="{Binding IsPlayingProxy, Converter={StaticResource BoolToVisibilityInverted}}"
-                                        ToolTip="Playing the original, full-resolution source file">
-                                    <TextBlock Text="ORIGINAL"
+                                        ToolTip="{loc:Tr Main_Player_Original_Tip}">
+                                    <TextBlock Text="{loc:Tr Main_Player_OriginalBadge}"
                                                FontFamily="Consolas"
                                                FontSize="11"
                                                FontWeight="SemiBold"
@@ -1411,47 +1412,47 @@
                                             Command="{Binding DataContext.PlayPreviousCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                             Style="{StaticResource App.Button.IconOnly}"
                                             helpers:Theme.Icon="{StaticResource Icon.Previous}"
-                                            ToolTip="Play previous clip" />
+                                            ToolTip="{loc:Tr Main_Player_PrevClip_Tip}" />
                                     <Button Margin="6,4,0,4"
                                             Click="PlayerSkipBack_Click"
                                             Style="{StaticResource App.Button.IconOnly}"
                                             helpers:Theme.Icon="{StaticResource Icon.SkipBack}"
-                                            ToolTip="Skip back 5 seconds" />
+                                            ToolTip="{loc:Tr Main_Player_SkipBack_Tip}" />
                                     <Button x:Name="PlayPauseButton"
-                                            Content="Pause"
+                                            Content="{loc:Tr Main_Player_Pause}"
                                             MinWidth="110"
                                             Margin="6,4,0,4"
                                             Click="PlayerPlayPause_Click"
                                             Style="{StaticResource App.Button.Primary}"
                                             helpers:Theme.Icon="{StaticResource Icon.Pause}"
-                                            ToolTip="Toggle play / pause (Space)" />
+                                            ToolTip="{loc:Tr Main_Player_PlayPause_Tip}" />
                                     <Button Margin="6,4,0,4"
                                             Click="PlayerSkipForward_Click"
                                             Style="{StaticResource App.Button.IconOnly}"
                                             helpers:Theme.Icon="{StaticResource Icon.SkipForward}"
-                                            ToolTip="Skip forward 5 seconds" />
+                                            ToolTip="{loc:Tr Main_Player_SkipForward_Tip}" />
                                     <Button Margin="6,4,0,4"
                                             Command="{Binding DataContext.PlayNextCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                             Style="{StaticResource App.Button.IconOnly}"
                                             helpers:Theme.Icon="{StaticResource Icon.Next}"
-                                            ToolTip="Play next clip" />
-                                    <Button Content="Stop" MinWidth="80" Margin="6,4,0,4"
+                                            ToolTip="{loc:Tr Main_Player_NextClip_Tip}" />
+                                    <Button Content="{loc:Tr Main_Player_Stop}" MinWidth="80" Margin="6,4,0,4"
                                             Click="PlayerStop_Click"
                                             Style="{StaticResource App.Button.Secondary}"
                                             helpers:Theme.Icon="{StaticResource Icon.Stop}"
-                                            ToolTip="Stop playback (resets position)" />
+                                            ToolTip="{loc:Tr Main_Player_Stop_Tip}" />
                                     <!-- Moment capture: stamp the in / out points of a
                                          shot at the current playback position. Same
                                          action as the I / O keys; kept on the bar so the
                                          gesture is discoverable without the shortcut. -->
-                                    <Button Content="Mark in" MinWidth="78" Margin="16,4,0,4"
+                                    <Button Content="{loc:Tr Main_Player_MarkIn}" MinWidth="78" Margin="16,4,0,4"
                                             Click="PlayerMarkIn_Click"
                                             Style="{StaticResource App.Button.Secondary}"
-                                            ToolTip="Set the in-point of a moment here (I)" />
-                                    <Button Content="Mark out" MinWidth="84" Margin="6,4,0,4"
+                                            ToolTip="{loc:Tr Main_Player_MarkIn_Tip}" />
+                                    <Button Content="{loc:Tr Main_Player_MarkOut}" MinWidth="84" Margin="6,4,0,4"
                                             Click="PlayerMarkOut_Click"
                                             Style="{StaticResource App.Button.Secondary}"
-                                            ToolTip="Set the out-point and save the moment (O)" />
+                                            ToolTip="{loc:Tr Main_Player_MarkOut_Tip}" />
                                 </WrapPanel>
                             </Grid>
 
@@ -1488,8 +1489,8 @@
                 </Border.Style>
                 <Grid>
                     <helpers:EmptyState Glyph="{StaticResource Icon.Movie}"
-                                        Headline="No clip selected"
-                                        Subtext="Pick a clip from the catalog to view its metadata, tag it, set a status or rating, and add notes."
+                                        Headline="{loc:Tr Main_NoClipSelected_Headline}"
+                                        Subtext="{loc:Tr Main_NoClipSelected_Subtext}"
                                         Visibility="{Binding Detail.Current, Converter={StaticResource NullToVisibilityInverted}}" />
 
                     <ScrollViewer VerticalScrollBarVisibility="Auto"
@@ -1502,7 +1503,7 @@
                                       Visibility="{Binding IsMapVisible, Converter={StaticResource BoolToVisibility}}"
                                       IsExpanded="{Binding DataContext.IsDetailMapPanelExpanded, RelativeSource={RelativeSource AncestorType=Window}, Mode=TwoWay}">
                                 <Expander.Header>
-                                    <TextBlock Text="MAP" Style="{StaticResource App.Type.Section}" Margin="0" />
+                                    <TextBlock Text="{loc:Tr Main_Editor_Map_Header}" Style="{StaticResource App.Type.Section}" Margin="0" />
                                 </Expander.Header>
                                 <StackPanel>
                             <!-- Location preview. Always rendered (the control itself
@@ -1554,12 +1555,12 @@
                                 <!-- State A: no GPS, not picking → primary CTA. -->
                                 <Border Visibility="{Binding Current.HasGps, Converter={StaticResource BoolToVisibilityInverted}}">
                                     <Border Visibility="{Binding IsPickingLocation, Converter={StaticResource BoolToVisibilityInverted}}">
-                                        <Button Content="Set location"
+                                        <Button Content="{loc:Tr Main_Editor_Loc_Set}"
                                                 HorizontalAlignment="Stretch"
                                                 Command="{Binding BeginPickLocationCommand}"
                                                 Style="{StaticResource App.Button.Primary}"
                                                 helpers:Theme.Icon="{StaticResource Icon.Add}"
-                                                ToolTip="Assign GPS coordinates to this clip by clicking the map or typing them in." />
+                                                ToolTip="{loc:Tr Main_Editor_Loc_Set_Tip}" />
                                     </Border>
                                 </Border>
 
@@ -1567,23 +1568,23 @@
                                 <Border Visibility="{Binding Current.HasGps, Converter={StaticResource BoolToVisibility}}">
                                     <Border Visibility="{Binding IsPickingLocation, Converter={StaticResource BoolToVisibilityInverted}}">
                                         <StackPanel Orientation="Horizontal">
-                                            <Button Content="Edit location"
+                                            <Button Content="{loc:Tr Main_Editor_Loc_Edit}"
                                                     Command="{Binding BeginPickLocationCommand}"
                                                     Style="{StaticResource App.Button.Secondary}"
                                                     helpers:Theme.Icon="{StaticResource Icon.Edit}"
-                                                    ToolTip="Click the map or type a new coordinate pair to replace the saved GPS." />
-                                            <Button Content="Clear"
+                                                    ToolTip="{loc:Tr Main_Editor_Loc_Edit_Tip}" />
+                                            <Button Content="{loc:Tr Main_Filter_Clear}"
                                                     Margin="6,0,0,0"
                                                     Command="{Binding ClearLocationCommand}"
                                                     Style="{StaticResource App.Button.Ghost}"
                                                     helpers:Theme.Icon="{StaticResource Icon.Trash}"
-                                                    ToolTip="Remove the GPS coordinates on this clip (the LocationText label is left alone)." />
-                                            <Button Content="Copy"
+                                                    ToolTip="{loc:Tr Main_Editor_Loc_Clear_Tip}" />
+                                            <Button Content="{loc:Tr Main_Editor_Loc_Copy}"
                                                     Margin="6,0,0,0"
                                                     Command="{Binding CopyLocationCommand}"
                                                     Style="{StaticResource App.Button.Ghost}"
                                                     helpers:Theme.Icon="{StaticResource Icon.Copy}"
-                                                    ToolTip="Copy 'lat, lon' to the clipboard in invariant-culture format." />
+                                                    ToolTip="{loc:Tr Main_Editor_Loc_Copy_Tip}" />
                                         </StackPanel>
                                     </Border>
                                 </Border>
@@ -1600,22 +1601,22 @@
                                                  VerticalContentAlignment="Center"
                                                  FontFamily="{StaticResource App.FontFamily.Mono}"
                                                  FontSize="12"
-                                                 ToolTip="Click on the map, or type/paste 'lat, lon' (e.g. 60.482, 6.902)."
-                                                 ui:ControlHelper.PlaceholderText="Click the map, or type: 60.482, 6.902" />
+                                                 ToolTip="{loc:Tr Main_Editor_Loc_Pick_Tip}"
+                                                 ui:ControlHelper.PlaceholderText="{loc:Tr Main_Editor_Loc_Pick_Placeholder}" />
                                         <StackPanel Grid.Row="1"
                                                     Orientation="Horizontal"
                                                     HorizontalAlignment="Right"
                                                     Margin="0,6,0,0">
-                                            <Button Content="Cancel"
+                                            <Button Content="{loc:Tr Common_Cancel}"
                                                     Command="{Binding CancelPickLocationCommand}"
                                                     Style="{StaticResource App.Button.Ghost}"
                                                     helpers:Theme.Icon="{StaticResource Icon.Cancel}" />
-                                            <Button Content="Save"
+                                            <Button Content="{loc:Tr Common_Save}"
                                                     Margin="6,0,0,0"
                                                     Command="{Binding SaveLocationCommand}"
                                                     Style="{StaticResource App.Button.Primary}"
                                                     helpers:Theme.Icon="{StaticResource Icon.Save}"
-                                                    ToolTip="Save the GPS coordinates to the catalog, reverse-geocode for Location Text, and write the sidecar." />
+                                                    ToolTip="{loc:Tr Main_Editor_Loc_Save_Tip}" />
                                         </StackPanel>
                                     </Grid>
                                 </Border>
@@ -1633,7 +1634,7 @@
                             <Expander Style="{StaticResource App.Expander}"
                                       IsExpanded="{Binding DataContext.IsDetailTagsPanelExpanded, RelativeSource={RelativeSource AncestorType=Window}, Mode=TwoWay}">
                                 <Expander.Header>
-                                    <TextBlock Text="TAGS" Style="{StaticResource App.Type.Section}" Margin="0" />
+                                    <TextBlock Text="{loc:Tr Main_Tags_Header}" Style="{StaticResource App.Type.Section}" Margin="0" />
                                 </Expander.Header>
                                 <StackPanel>
                             <ItemsControl ItemsSource="{Binding Tags}">
@@ -1646,10 +1647,10 @@
                                     <DataTemplate>
                                         <Border Style="{StaticResource App.TagChip}"
                                                 Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                ToolTip="Right-click to mark this tag as a background (incidental) subject.">
+                                                ToolTip="{loc:Tr Main_Editor_Tag_Prominence_Tip}">
                                             <Border.ContextMenu>
                                                 <ContextMenu>
-                                                    <MenuItem Header="Background subject"
+                                                    <MenuItem Header="{loc:Tr Main_Editor_Tag_Background}"
                                                               IsCheckable="True"
                                                               IsChecked="{Binding PlacementTarget.DataContext.IsBackground, RelativeSource={RelativeSource AncestorType=ContextMenu}, Mode=OneWay}"
                                                               Command="{Binding PlacementTarget.Tag.ToggleTagProminenceCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
@@ -1686,7 +1687,7 @@
                                                 <Button Style="{StaticResource App.Button.ChipClose}"
                                                         helpers:Theme.Icon="{StaticResource Icon.Cancel}"
                                                         Margin="6,0,-2,0"
-                                                        ToolTip="Remove this tag from the clip."
+                                                        ToolTip="{loc:Tr Main_Editor_Tag_Remove_Tip}"
                                                         Command="{Binding DataContext.RemoveTagCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                         CommandParameter="{Binding}" />
                                             </StackPanel>
@@ -1698,12 +1699,12 @@
                                 <ui:AutoSuggestBox Width="140"
                                                    Text="{Binding NewTagName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                    ItemsSource="{Binding TagSuggestions}"
-                                                   PlaceholderText="New tag"
+                                                   PlaceholderText="{loc:Tr Main_Editor_Tag_New}"
                                                    QuerySubmitted="NewTagSuggest_QuerySubmitted" />
                                 <ComboBox Width="110" Margin="6,0,0,0"
                                           ItemsSource="{Binding AvailableTagTypes}"
                                           SelectedItem="{Binding NewTagType}" />
-                                <Button Content="Add" Margin="6,0,0,0"
+                                <Button Content="{loc:Tr Main_Editor_Tag_Add}" Margin="6,0,0,0"
                                         Command="{Binding AddTagCommand}"
                                         Style="{StaticResource App.Button.Secondary}"
                                         helpers:Theme.Icon="{StaticResource Icon.Add}" />
@@ -1757,10 +1758,10 @@
                             <Expander Style="{StaticResource App.Expander}"
                                       IsExpanded="{Binding DataContext.IsDetailNotesPanelExpanded, RelativeSource={RelativeSource AncestorType=Window}, Mode=TwoWay}">
                                 <Expander.Header>
-                                    <TextBlock Text="NOTES &amp; RATING" Style="{StaticResource App.Type.Section}" Margin="0" />
+                                    <TextBlock Text="{loc:Tr Main_Editor_Notes_Header}" Style="{StaticResource App.Type.Section}" Margin="0" />
                                 </Expander.Header>
                                 <StackPanel>
-                            <TextBlock Text="NOTES" Style="{StaticResource App.Type.Section}" />
+                            <TextBlock Text="{loc:Tr Main_Editor_Notes}" Style="{StaticResource App.Type.Section}" />
                             <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
                                      AcceptsReturn="True" TextWrapping="Wrap"
                                      MinHeight="80" />
@@ -1772,20 +1773,20 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0">
-                                    <TextBlock Text="STATUS" Style="{StaticResource App.Type.Section}" />
+                                    <TextBlock Text="{loc:Tr Main_Editor_Status}" Style="{StaticResource App.Type.Section}" />
                                     <ComboBox ItemsSource="{Binding AvailableStatuses}"
                                               SelectedItem="{Binding Status}"
                                               HorizontalAlignment="Stretch" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="2">
-                                    <TextBlock Text="RATING" Style="{StaticResource App.Type.Section}" />
+                                    <TextBlock Text="{loc:Tr Main_Editor_Rating}" Style="{StaticResource App.Type.Section}" />
                                     <ComboBox Width="80"
                                               ItemsSource="{Binding RatingValues}"
                                               SelectedItem="{Binding Rating}" />
                                 </StackPanel>
                             </Grid>
 
-                            <Button Content="Save changes"
+                            <Button Content="{loc:Tr Main_Editor_SaveChanges}"
                                     Command="{Binding SaveCommand}"
                                     HorizontalAlignment="Right"
                                     Margin="0,16,0,0"
@@ -1798,7 +1799,7 @@
                             <Expander Style="{StaticResource App.Expander}"
                                       IsExpanded="{Binding DataContext.IsDetailMomentsPanelExpanded, RelativeSource={RelativeSource AncestorType=Window}, Mode=TwoWay}">
                                 <Expander.Header>
-                                    <TextBlock Text="MOMENTS" Style="{StaticResource App.Type.Section}" Margin="0" />
+                                    <TextBlock Text="{loc:Tr Main_Editor_Moments_Header}" Style="{StaticResource App.Type.Section}" Margin="0" />
                                 </Expander.Header>
                                 <Expander.Tag>
                                     <TextBlock VerticalAlignment="Center"
@@ -1814,7 +1815,7 @@
                                                TextWrapping="Wrap"
                                                FontSize="12"
                                                Foreground="{DynamicResource App.Foreground.Secondary}"
-                                               Text="Play the clip, then press I to set an in-point and O to set the out-point — each moment becomes a searchable shot with its own thumbnail, label, rating, note and tags."
+                                               Text="{loc:Tr Main_Editor_Moments_Hint}"
                                                Visibility="{Binding HasMoments, Converter={StaticResource BoolToVisibilityInverted}}" />
 
                                     <ListBox ItemsSource="{Binding Moments}"
@@ -1883,13 +1884,13 @@
                                                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                                                         <Button Style="{StaticResource App.Button.IconOnly}"
                                                                 helpers:Theme.Icon="{StaticResource Icon.Play}"
-                                                                ToolTip="Jump to this moment"
+                                                                ToolTip="{loc:Tr Main_Editor_Moment_Jump_Tip}"
                                                                 Command="{Binding DataContext.PlayMomentCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
                                                                 CommandParameter="{Binding}" />
                                                         <Button Style="{StaticResource App.Button.IconOnly}"
                                                                 helpers:Theme.Icon="{StaticResource Icon.Trash}"
                                                                 Margin="4,0,0,0"
-                                                                ToolTip="Delete this moment"
+                                                                ToolTip="{loc:Tr Main_Editor_Moment_Delete_Tip}"
                                                                 Command="{Binding DataContext.DeleteMomentCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
                                                                 CommandParameter="{Binding}" />
                                                     </StackPanel>
@@ -1914,14 +1915,14 @@
                                             <TextBlock Margin="0,0,0,8"
                                                        FontWeight="SemiBold"
                                                        TextTrimming="CharacterEllipsis"
-                                                       Text="{Binding TimeRangeText, StringFormat='Editing moment · {0}'}"
+                                                       Text="{Binding EditingHeader}"
                                                        Foreground="{DynamicResource App.Foreground.Secondary}" />
 
-                                            <TextBlock Text="LABEL" Style="{StaticResource App.Type.Section}" />
+                                            <TextBlock Text="{loc:Tr Main_Editor_Moment_Label}" Style="{StaticResource App.Type.Section}" />
                                             <TextBox Text="{Binding Label, UpdateSourceTrigger=PropertyChanged}"
-                                                     ui:ControlHelper.PlaceholderText="e.g. hero drone reveal" />
+                                                     ui:ControlHelper.PlaceholderText="{loc:Tr Main_Editor_Moment_Label_Placeholder}" />
 
-                                            <TextBlock Text="NOTE" Style="{StaticResource App.Type.Section}" Margin="0,8,0,0" />
+                                            <TextBlock Text="{loc:Tr Main_Editor_Moment_Note}" Style="{StaticResource App.Type.Section}" Margin="0,8,0,0" />
                                             <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
                                                      AcceptsReturn="True" TextWrapping="Wrap" MinHeight="44" />
 
@@ -1969,7 +1970,7 @@
                                                     </TextBlock.Style>
                                                 </TextBlock>
                                                 <Button Grid.Column="1"
-                                                        Content="Save"
+                                                        Content="{loc:Tr Common_Save}"
                                                         HorizontalAlignment="Right"
                                                         Style="{StaticResource App.Button.Primary}"
                                                         helpers:Theme.Icon="{StaticResource Icon.Save}"
@@ -2045,7 +2046,7 @@
                                 </EventTrigger>
                             </TextBlock.Triggers>
                         </TextBlock>
-                        <TextBlock Text="Scanning"
+                        <TextBlock Text="{loc:Tr Main_Status_Scanning}"
                                    FontSize="11"
                                    FontWeight="Medium"
                                    Foreground="{DynamicResource App.Accent}"
@@ -2075,7 +2076,7 @@
                         Cursor="Hand"
                         Click="AiPill_Click"
                         Visibility="{Binding IsAiTagging, Converter={StaticResource BoolToVisibility}}"
-                        ToolTip="A local AI scoring pass is running. You can keep working; click to open the review window and triage clips already scored.">
+                        ToolTip="{loc:Tr Main_Status_AiTagging_Tip}">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
                             <Border Padding="10,3"
@@ -2106,7 +2107,7 @@
                                             </EventTrigger>
                                         </TextBlock.Triggers>
                                     </TextBlock>
-                                    <TextBlock Text="AI tagging"
+                                    <TextBlock Text="{loc:Tr Main_Status_AiTagging}"
                                                FontSize="11"
                                                FontWeight="Medium"
                                                Foreground="{DynamicResource App.Accent}"
@@ -2129,7 +2130,7 @@
                         Cursor="Hand"
                         Click="AiPill_Click"
                         Visibility="{Binding AiTaggingFinished, Converter={StaticResource BoolToVisibility}}"
-                        ToolTip="The AI scoring pass finished. Click to open the review window and accept/reject the proposed tags.">
+                        ToolTip="{loc:Tr Main_Status_AiDone_Tip}">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
                             <Border x:Name="DoneBd"
@@ -2179,7 +2180,7 @@
                         Cursor="Hand"
                         Command="{Binding CheckForUpdatesCommand}"
                         Visibility="{Binding IsUpdateAvailable, Converter={StaticResource BoolToVisibility}}"
-                        ToolTip="A new version is available on GitHub. Click to view details and install (the app will close and restart on the new version when ready).">
+                        ToolTip="{loc:Tr Main_Status_Update_Tip}">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
                             <!-- TextElement.Foreground on the Border drives the
@@ -2202,7 +2203,7 @@
                                                Text="{StaticResource Icon.Download}"
                                                VerticalAlignment="Center"
                                                Margin="0,0,6,0" />
-                                    <TextBlock Text="Update available"
+                                    <TextBlock Text="{loc:Tr Main_Status_UpdateAvailable}"
                                                FontSize="11"
                                                FontWeight="Medium"
                                                VerticalAlignment="Center" />
@@ -2238,7 +2239,7 @@
                         Background="{DynamicResource App.Background.Highest}"
                         BorderBrush="{DynamicResource App.Border.Subtle}"
                         BorderThickness="1"
-                        ToolTip="Shows whether sidecar JSON files are being written next to videos. Toggle in Settings → Sidecar files.">
+                        ToolTip="{loc:Tr Main_Status_Sidecar_Tip}">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <Ellipse Width="6" Height="6"
                                  VerticalAlignment="Center"
@@ -2247,7 +2248,7 @@
                                 <Style TargetType="Ellipse">
                                     <Setter Property="Fill" Value="{DynamicResource App.Foreground.Tertiary}" />
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding SidecarStatusText}" Value="Sidecars: ON">
+                                        <DataTrigger Binding="{Binding IsSidecarEnabled}" Value="True">
                                             <Setter Property="Fill" Value="{DynamicResource App.Success}" />
                                         </DataTrigger>
                                     </Style.Triggers>
@@ -2273,7 +2274,7 @@
                         Cursor="Hand"
                         Command="{Binding ClearMapSelectionCommand}"
                         Visibility="{Binding HasMapSelection, Converter={StaticResource BoolToVisibility}}"
-                        ToolTip="The catalog grid is scoped to clips picked on the map. Click to clear and show all matches again.">
+                        ToolTip="{loc:Tr Main_Status_MapScope_Tip}">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
                             <Border x:Name="MapBd"

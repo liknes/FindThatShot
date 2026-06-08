@@ -3,7 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.modernwpf.com/2019"
         xmlns:vm="clr-namespace:VideoArchiveManager.App.ViewModels"
-        Title="Find duplicates"
+        xmlns:loc="clr-namespace:VideoArchiveManager.App.Localization"
+        Title="{loc:Tr Dup_Title}"
         Width="820" Height="820"
         MinWidth="620" MinHeight="520"
         WindowStartupLocation="CenterOwner"
@@ -39,7 +40,7 @@
                               VerticalAlignment="Center"
                               Margin="0,0,10,0"
                               IsChecked="{Binding MarkedForRemoval, Mode=TwoWay}"
-                              ToolTip="Mark this copy to be removed from the catalog (the file on disk is never touched)." />
+                              ToolTip="{loc:Tr Dup_MarkTip}" />
 
                     <Border Grid.Column="1"
                             Width="104" Height="59"
@@ -66,7 +67,7 @@
                                     VerticalAlignment="Center"
                                     Background="{DynamicResource App.Accent}"
                                     Visibility="{Binding IsSuggestedKeep, Converter={StaticResource BoolToVisibility}}">
-                                <TextBlock Text="Suggested keep"
+                                <TextBlock Text="{loc:Tr Dup_SuggestedKeep}"
                                            FontSize="10"
                                            FontWeight="SemiBold"
                                            Foreground="{DynamicResource App.Accent.OnAccent}" />
@@ -79,7 +80,7 @@
                                     BorderBrush="{DynamicResource App.Border.Subtle}"
                                     BorderThickness="1"
                                     Visibility="{Binding FileExists, Converter={StaticResource BoolToVisibilityInverted}}">
-                                <TextBlock Text="Offline"
+                                <TextBlock Text="{loc:Tr Dup_Offline}"
                                            FontSize="10"
                                            Foreground="{DynamicResource App.Foreground.Tertiary}" />
                             </Border>
@@ -145,8 +146,8 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0">
-                <TextBlock Text="Find duplicates" Style="{StaticResource App.Type.Display}" />
-                <TextBlock Text="Clips that share the same file size, duration, and resolution — almost certainly the same footage in more than one place. Read-only: your source video files are never moved or deleted."
+                <TextBlock Text="{loc:Tr Dup_Title}" Style="{StaticResource App.Type.Display}" />
+                <TextBlock Text="{loc:Tr Dup_Desc}"
                            Style="{StaticResource App.Type.Caption}"
                            TextWrapping="Wrap"
                            MaxWidth="560"
@@ -154,7 +155,7 @@
                            Margin="0,4,0,0" />
             </StackPanel>
             <Button Grid.Column="1"
-                    Content="Rescan"
+                    Content="{loc:Tr Dup_Rescan}"
                     VerticalAlignment="Top"
                     Style="{StaticResource App.Button.Secondary}"
                     Command="{Binding LoadCommand}"
@@ -173,11 +174,11 @@
                        Style="{StaticResource App.Type.BodyMuted}"
                        VerticalAlignment="Center" />
             <StackPanel Grid.Column="1" Orientation="Horizontal">
-                <Button Content="Select all redundant"
+                <Button Content="{loc:Tr Dup_SelectRedundant}"
                         Style="{StaticResource App.Button.Ghost}"
                         Command="{Binding SelectRedundantCommand}"
-                        ToolTip="Mark every copy except the suggested keep in each set." />
-                <Button Content="Clear"
+                        ToolTip="{loc:Tr Dup_SelectRedundant_Tip}" />
+                <Button Content="{loc:Tr Dup_Clear}"
                         Margin="8,0,0,0"
                         Style="{StaticResource App.Button.Ghost}"
                         Command="{Binding ClearSelectionCommand}" />
@@ -191,7 +192,7 @@
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
                         Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibility}}">
                 <ui:ProgressRing IsActive="{Binding IsLoading}" Width="40" Height="40" />
-                <TextBlock Text="Scanning for duplicates…"
+                <TextBlock Text="{loc:Tr Dup_Scanning}"
                            Style="{StaticResource App.Type.BodyMuted}"
                            HorizontalAlignment="Center"
                            Margin="0,12,0,0" />
@@ -201,10 +202,10 @@
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
                         MaxWidth="400"
                         Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}">
-                <TextBlock Text="No duplicates found"
+                <TextBlock Text="{loc:Tr Dup_EmptyTitle}"
                            Style="{StaticResource App.Type.H1}"
                            HorizontalAlignment="Center" />
-                <TextBlock Text="No two clips in the catalog share the same file size, duration, and resolution. Rescan after importing more footage to check again."
+                <TextBlock Text="{loc:Tr Dup_EmptyDesc}"
                            Style="{StaticResource App.Type.BodyMuted}"
                            TextWrapping="Wrap"
                            TextAlignment="Center"
@@ -246,7 +247,7 @@
                            Style="{StaticResource App.Type.Body}"
                            VerticalAlignment="Center" />
                 <Button Grid.Column="1"
-                        Content="Remove selected from database…"
+                        Content="{loc:Tr Dup_RemoveSelected}"
                         Style="{StaticResource App.Button.Destructive}"
                         Command="{Binding RemoveSelectedCommand}"
                         IsEnabled="{Binding CanRemove}" />

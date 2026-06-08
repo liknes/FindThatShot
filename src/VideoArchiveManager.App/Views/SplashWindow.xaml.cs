@@ -17,6 +17,7 @@
 using System.Reflection;
 using System.Windows;
 using System.Windows.Media.Animation;
+using VideoArchiveManager.App.Localization;
 
 namespace VideoArchiveManager.App.Views;
 
@@ -50,6 +51,8 @@ public partial class SplashWindow : Window
     private static string BuildVersionText()
     {
         var v = Assembly.GetExecutingAssembly().GetName().Version;
-        return v is null ? "version unknown" : $"version {v.Major}.{v.Minor}.{v.Build}";
+        return v is null
+            ? LocalizationManager.Instance["Splash_VersionUnknown"]
+            : LocalizationManager.Instance.Format("Splash_VersionFormat", v.Major, v.Minor, v.Build);
     }
 }

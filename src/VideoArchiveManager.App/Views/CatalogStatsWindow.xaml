@@ -3,7 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.modernwpf.com/2019"
         xmlns:vm="clr-namespace:VideoArchiveManager.App.ViewModels"
-        Title="Catalog statistics"
+        xmlns:loc="clr-namespace:VideoArchiveManager.App.Localization"
+        Title="{loc:Tr CatalogStats_Title}"
         Width="760" Height="780"
         MinWidth="560" MinHeight="480"
         WindowStartupLocation="CenterOwner"
@@ -131,13 +132,13 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0">
-                <TextBlock Text="Catalog statistics" Style="{StaticResource App.Type.Display}" />
-                <TextBlock Text="A live snapshot of your catalog. Read-only — your source video files are never touched."
+                <TextBlock Text="{loc:Tr CatalogStats_Title}" Style="{StaticResource App.Type.Display}" />
+                <TextBlock Text="{loc:Tr CatalogStats_Description}"
                            Style="{StaticResource App.Type.Caption}"
                            Margin="0,4,0,0" />
             </StackPanel>
             <Button Grid.Column="1"
-                    Content="Refresh"
+                    Content="{loc:Tr Common_Refresh}"
                     VerticalAlignment="Top"
                     Style="{StaticResource App.Button.Secondary}"
                     Command="{Binding LoadCommand}"
@@ -151,7 +152,7 @@
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
                         Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibility}}">
                 <ui:ProgressRing IsActive="{Binding IsLoading}" Width="40" Height="40" />
-                <TextBlock Text="Computing statistics…"
+                <TextBlock Text="{loc:Tr CatalogStats_Loading}"
                            Style="{StaticResource App.Type.BodyMuted}"
                            HorizontalAlignment="Center"
                            Margin="0,12,0,0" />
@@ -161,10 +162,10 @@
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
                         MaxWidth="380"
                         Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}">
-                <TextBlock Text="Nothing to summarise yet"
+                <TextBlock Text="{loc:Tr CatalogStats_Empty_Headline}"
                            Style="{StaticResource App.Type.H1}"
                            HorizontalAlignment="Center" />
-                <TextBlock Text="Add a root folder and run a scan, then reopen this window to see your catalog at a glance."
+                <TextBlock Text="{loc:Tr CatalogStats_Empty_Subtext}"
                            Style="{StaticResource App.Type.BodyMuted}"
                            TextWrapping="Wrap"
                            TextAlignment="Center"
@@ -185,7 +186,7 @@
                           Padding="24,0,24,20"
                           Visibility="{Binding HasData, Converter={StaticResource BoolToVisibility}}">
                 <StackPanel>
-                    <TextBlock Text="OVERVIEW" Style="{StaticResource App.Type.Section}" Margin="0,0,0,10" />
+                    <TextBlock Text="{loc:Tr CatalogStats_Overview}" Style="{StaticResource App.Type.Section}" Margin="0,0,0,10" />
                     <ItemsControl ItemsSource="{Binding Overview}"
                                   ItemTemplate="{StaticResource OverviewMetricTemplate}">
                         <ItemsControl.ItemsPanel>
@@ -195,7 +196,7 @@
                         </ItemsControl.ItemsPanel>
                     </ItemsControl>
 
-                    <TextBlock Text="BREAKDOWNS" Style="{StaticResource App.Type.Section}" Margin="0,16,0,10" />
+                    <TextBlock Text="{loc:Tr CatalogStats_Breakdowns}" Style="{StaticResource App.Type.Section}" Margin="0,16,0,10" />
                     <ItemsControl ItemsSource="{Binding Sections}"
                                   ItemTemplate="{StaticResource StatSectionTemplate}">
                         <ItemsControl.ItemsPanel>

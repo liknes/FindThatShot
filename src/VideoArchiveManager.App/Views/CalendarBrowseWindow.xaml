@@ -4,7 +4,8 @@
         xmlns:ui="http://schemas.modernwpf.com/2019"
         xmlns:helpers="clr-namespace:VideoArchiveManager.App.Helpers.Controls"
         xmlns:vm="clr-namespace:VideoArchiveManager.App.ViewModels"
-        Title="Browse by date"
+        xmlns:loc="clr-namespace:VideoArchiveManager.App.Localization"
+        Title="{loc:Tr CalendarBrowse_Title}"
         Width="1100" Height="760"
         MinWidth="760" MinHeight="480"
         WindowStartupLocation="CenterOwner"
@@ -63,9 +64,9 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0">
-            <TextBlock Text="Browse by date" Style="{StaticResource App.Type.Display}" />
+            <TextBlock Text="{loc:Tr CalendarBrowse_Title}" Style="{StaticResource App.Type.Display}" />
             <TextBlock Margin="0,4,0,0"
-                       Text="A year-by-month heatmap of when you shot. Brighter cells hold more clips; click a month to list its clips, preview one, and jump to it in the grid or player."
+                       Text="{loc:Tr CalendarBrowse_Description}"
                        TextWrapping="Wrap"
                        Style="{StaticResource App.Type.Caption}" />
         </StackPanel>
@@ -80,9 +81,9 @@
 
             <CheckBox Grid.Column="0"
                       VerticalAlignment="Center"
-                      Content="Whole archive"
+                      Content="{loc:Tr Common_WholeArchive}"
                       IsChecked="{Binding ScopeWholeArchive}"
-                      ToolTip="On: count every clip in the catalog. Off: count only the clips matching the current grid filters." />
+                      ToolTip="{loc:Tr CalendarBrowse_WholeArchive_Tip}" />
 
             <TextBlock Grid.Column="1"
                        Margin="16,0,16,0"
@@ -91,11 +92,11 @@
                        Foreground="{DynamicResource App.Foreground.Secondary}" />
 
             <Button Grid.Column="2"
-                    Content="Filter grid to this month"
+                    Content="{loc:Tr Common_FilterGridToMonth}"
                     Command="{Binding FilterMonthToGridCommand}"
                     Style="{StaticResource App.Button.Secondary}"
                     helpers:Theme.Icon="{StaticResource Icon.Filter}"
-                    ToolTip="Scope the catalog grid to the selected month's date range." />
+                    ToolTip="{loc:Tr CalendarBrowse_FilterMonth_Tip}" />
         </Grid>
 
         <!-- Heatmap + side panel -->
@@ -115,7 +116,7 @@
                                HorizontalAlignment="Center"
                                TextAlignment="Center"
                                TextWrapping="Wrap"
-                               Text="No dated clips to chart yet. Scan some footage first."
+                               Text="{loc:Tr CalendarBrowse_EmptyHeatmap}"
                                Foreground="{DynamicResource App.Foreground.Tertiary}"
                                Visibility="{Binding HasYears, Converter={StaticResource BoolToVisibilityInverted}}" />
 
@@ -187,7 +188,7 @@
                                HorizontalAlignment="Center"
                                TextAlignment="Center"
                                TextWrapping="Wrap"
-                               Text="Click a month in the heatmap to list its clips here."
+                               Text="{loc:Tr CalendarBrowse_ClickMonth}"
                                Foreground="{DynamicResource App.Foreground.Tertiary}"
                                Visibility="{Binding HasMonthSelection, Converter={StaticResource BoolToVisibilityInverted}}" />
 
@@ -273,13 +274,13 @@
 
                             <Button Margin="0,12,0,0"
                                     HorizontalAlignment="Stretch"
-                                    Content="Show in grid"
+                                    Content="{loc:Tr Common_ShowInGrid}"
                                     Command="{Binding ShowInGridCommand}"
                                     Style="{StaticResource App.Button.Primary}"
                                     helpers:Theme.Icon="{StaticResource Icon.Calendar}" />
                             <Button Margin="0,8,0,0"
                                     HorizontalAlignment="Stretch"
-                                    Content="Play in app"
+                                    Content="{loc:Tr Common_PlayInApp}"
                                     Command="{Binding PlayCommand}"
                                     Style="{StaticResource App.Button.Secondary}"
                                     helpers:Theme.Icon="{StaticResource Icon.Play}" />

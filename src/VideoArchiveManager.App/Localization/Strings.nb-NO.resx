@@ -1,0 +1,881 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!--
+    Norwegian (Bokmål) translations for Find That Shot.
+
+    Only the keys translated here override the neutral English in Strings.resx;
+    any key omitted falls back to English automatically. Keep the keys identical
+    to the neutral file. This file compiles into a "nb-NO" satellite assembly.
+  -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <data name="Common_OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="Common_Cancel" xml:space="preserve">
+    <value>Avbryt</value>
+  </data>
+  <data name="Common_Save" xml:space="preserve">
+    <value>Lagre</value>
+  </data>
+  <data name="Common_Browse" xml:space="preserve">
+    <value>Bla gjennom</value>
+  </data>
+
+  <data name="Settings_Language_Header" xml:space="preserve">
+    <value>SPRÅK</value>
+  </data>
+  <data name="Settings_Language_Label" xml:space="preserve">
+    <value>Applikasjonsspråk</value>
+  </data>
+  <data name="Settings_Language_Hint" xml:space="preserve">
+    <value>Endringer trer i kraft umiddelbart. Noe tekst oppdateres først når et vindu åpnes på nytt.</value>
+  </data>
+
+  <!-- ===== Innstillinger: vinduskrom + navigasjon ===== -->
+  <data name="Settings_Title" xml:space="preserve"><value>Innstillinger</value></data>
+  <data name="Settings_Nav_General" xml:space="preserve"><value>Generelt</value></data>
+  <data name="Settings_Nav_Storage" xml:space="preserve"><value>Bibliotek og lagring</value></data>
+  <data name="Settings_Nav_Playback" xml:space="preserve"><value>Avspilling og kart</value></data>
+  <data name="Settings_Nav_Review" xml:space="preserve"><value>Gjennomgang</value></data>
+  <data name="Settings_Nav_Ai" xml:space="preserve"><value>AI-tagging</value></data>
+
+  <!-- ===== Innstillinger: Generelt-side ===== -->
+  <data name="Settings_Scanning_Header" xml:space="preserve"><value>SKANNING</value></data>
+  <data name="Settings_MaxParallelism" xml:space="preserve"><value>Maks skanneparallellitet</value></data>
+  <data name="Settings_ExcludedFolders" xml:space="preserve"><value>Ekskluderte mappenavn (kommaseparert, matches mot ethvert banesegment, skiller ikke mellom store/små bokstaver)</value></data>
+  <data name="Settings_ExcludedPatterns" xml:space="preserve"><value>Ekskluderte filnavnmønstre (kommaseparerte glob-mønstre, f.eks. *_proxy.mp4, *.LRV)</value></data>
+  <data name="Settings_SavedTo" xml:space="preserve"><value>Innstillinger lagres i %APPDATA%\VideoArchiveManager\settings.json.</value></data>
+
+  <!-- ===== Innstillinger: Bibliotek og lagring-side ===== -->
+  <data name="Settings_Storage_Header" xml:space="preserve"><value>LAGRING</value></data>
+  <data name="Settings_ThumbnailDir" xml:space="preserve"><value>Miniatyrmappe</value></data>
+  <data name="Settings_DatabaseFile" xml:space="preserve"><value>Databasefil</value></data>
+  <data name="Settings_DbRestart" xml:space="preserve"><value>Endring av databasebanen krever omstart av appen.</value></data>
+  <data name="Settings_Sidecar_Header" xml:space="preserve"><value>SIDECAR-FILER</value></data>
+  <data name="Settings_Sidecar_Desc" xml:space="preserve"><value>Når dette er på, skrives en liten "&lt;filnavn&gt;.findthatshot.json"-fil ved siden av hver video ved lagring, med taggene, vurderingen, statusen og notatene. Andre verktøy (DaVinci Resolve, Premiere, Lightroom, FCP osv.) ignorerer disse filene. Kildevideofilene endres aldri. Feil på skrivebeskyttede / frakoblede stasjoner hoppes stille over.</value></data>
+  <data name="Settings_Sidecar_Check" xml:space="preserve"><value>Skriv sidecar-JSON-filer ved siden av videoene</value></data>
+  <data name="Settings_Backup_Header" xml:space="preserve"><value>KATALOGSIKKERHETSKOPI</value></data>
+  <data name="Settings_Backup_Desc" xml:space="preserve"><value>Appen kan sikkerhetskopiere katalogdatabasen (taggene, vurderingene, notatene og statusen din) til en mappe du velger. Kildevideofilene røres aldri.</value></data>
+  <data name="Settings_Backup_Dir" xml:space="preserve"><value>Sikkerhetskopimappe</value></data>
+  <data name="Settings_Backup_Auto" xml:space="preserve"><value>Sikkerhetskopier automatisk ved oppstart av appen</value></data>
+  <data name="Settings_Backup_KeepLast" xml:space="preserve"><value>Behold siste</value></data>
+  <data name="Settings_Backup_KeepSuffix" xml:space="preserve"><value>sikkerhetskopi(er); eldre kopier slettes.</value></data>
+  <data name="Settings_Backup_Now" xml:space="preserve"><value>Sikkerhetskopier nå</value></data>
+  <data name="Settings_Backup_RefreshList" xml:space="preserve"><value>Oppdater liste</value></data>
+  <data name="Settings_Backup_Available" xml:space="preserve"><value>Tilgjengelige sikkerhetskopier (velg én for å gjenopprette)</value></data>
+  <data name="Settings_Backup_Restore" xml:space="preserve"><value>Gjenopprett valgt</value></data>
+  <data name="Settings_Backup_Restore_Tip" xml:space="preserve"><value>Klargjør en gjenoppretting fra den valgte sikkerhetskopien. Appen starter på nytt for å bytte databasefilen trygt.</value></data>
+
+  <!-- ===== Innstillinger: Avspilling og kart-side ===== -->
+  <data name="Settings_Ffmpeg_Header" xml:space="preserve"><value>FFMPEG</value></data>
+  <data name="Settings_FfmpegPath" xml:space="preserve"><value>Bane til ffmpeg.exe (la stå tom for å bruke PATH)</value></data>
+  <data name="Settings_FfprobePath" xml:space="preserve"><value>Bane til ffprobe.exe (la stå tom for å bruke PATH)</value></data>
+  <data name="Settings_Playback_Header" xml:space="preserve"><value>AVSPILLING</value></data>
+  <data name="Settings_Proxy_Desc" xml:space="preserve"><value>Når dette er på, foretrekker den innebygde spilleren en DaVinci Resolve-stil proxy når en finnes. For hvert klipp ser vi etter en søsken-"Proxy"-mappe som inneholder en fil med samme grunnavn (uansett filtype) og spiller den i stedet — mye raskere på 4K 60p-kilder med høy bitrate. Faller stille tilbake til originalklippet når ingen proxy finnes. Katalogen, miniatyrene, metadataene og «Spill av eksternt»-kommandoen peker alltid på originalfilen.</value></data>
+  <data name="Settings_Proxy_Check" xml:space="preserve"><value>Foretrekk DaVinci Resolve-proxyer for innebygd avspilling</value></data>
+  <data name="Settings_Telemetry_Desc" xml:space="preserve"><value>Når dette er på, viser den innebygde spilleren en telemetristripe under videoen for DJI-klipp som har en søsken-".SRT"-fil — ISO, lukker, blender, brennvidde, høyde og GPS, synkronisert med gjeldende bilde. Kun visning og leses live fra filen; spilleren har også sin egen innebygde av/på-bryter.</value></data>
+  <data name="Settings_Telemetry_Check" xml:space="preserve"><value>Vis dronetelemetri-overlegg i spilleren</value></data>
+  <data name="Settings_Map_Header" xml:space="preserve"><value>KART</value></data>
+  <data name="Settings_FlightPath_Desc" xml:space="preserve"><value>Når dette er på, tegner sidefeltkartet hele droneflygeruten for klipp som har en søsken-DJI-".SRT"-fil, som en linje med start-/sluttmarkører. Dette er kun visning: å slå det av skjuler bare ruten — klippene er fortsatt geotagget med stedet sitt og enkeltmarkøren vises fortsatt. Flygeruten leses live fra filen og lagres aldri.</value></data>
+  <data name="Settings_FlightPath_Check" xml:space="preserve"><value>Vis droneflygeruter på kartet</value></data>
+  <data name="Settings_Grid_Header" xml:space="preserve"><value>KATALOGRUTENETT</value></data>
+  <data name="Settings_HoverScrub_Desc" xml:space="preserve"><value>Når dette er på, vil det å holde pekeren over et katalogkort og dra den fra venstre til høyre skrubbe gjennom forhåndsvisningsbilder samplet på tvers av klippet — rask visuell triage uten å åpne spilleren. Bilder genereres ved behov første gang du holder over et klipp (en kort pause mens ffmpeg trekker dem ut), deretter mellomlagres de; klipp du aldri holder over koster ingenting. Kildefilene blir kun lest.</value></data>
+  <data name="Settings_HoverScrub_Check" xml:space="preserve"><value>Aktiver hover-skrubb-forhåndsvisninger på katalogkort</value></data>
+
+  <!-- ===== Innstillinger: Gjennomgang-side ===== -->
+  <data name="Settings_Review_Header" xml:space="preserve"><value>HURTIGTASTER FOR GJENNOMGANG</value></data>
+  <data name="Settings_Review_Desc" xml:space="preserve"><value>Fest opptil ti tagger til talltastene. Mens den innebygde spilleren er åpen (gjennomgangsmodus), veksler et tastetrykk den taggen av eller på for gjeldende klipp — uten mus. Tall skrives fortsatt normalt mens du redigerer tagnavn-, notat- eller koordinatfeltene.</value></data>
+  <data name="Settings_Review_Fill" xml:space="preserve"><value>Fyll fra mest brukte</value></data>
+  <data name="Settings_Review_Fill_Tip" xml:space="preserve"><value>Legg de mest brukte taggene dine i de tomme plassene.</value></data>
+  <data name="Settings_Review_ClearAll" xml:space="preserve"><value>Tøm alle</value></data>
+  <data name="Settings_Review_NotBound" xml:space="preserve"><value>— ikke tilknyttet —</value></data>
+  <data name="Settings_Review_Unbind_Tip" xml:space="preserve"><value>Fjern tilknytning til denne tasten</value></data>
+
+  <!-- ===== Innstillinger: AI-side ===== -->
+  <data name="Settings_Ai_Header" xml:space="preserve"><value>AI-AUTOTAGGING OG SØK</value></data>
+  <data name="Settings_Ai_Desc" xml:space="preserve"><value>Valgfritt. Kjører en lokal CLIP-modell over bilder samplet på tvers av hvert klipp for å foreslå tagger (sjø, tåke, skip, snø…) du godtar eller avviser, og for å muliggjøre naturlig språk-søk (f.eks. «droneopptak over snødekte fjell i solnedgang»). All behandling er lokal og frakoblet; modellen leser kun bilder — kildefiler endres aldri. Av som standard; å slå det på muliggjør en engangs modellnedlasting (~150 MB).</value></data>
+  <data name="Settings_Ai_Check" xml:space="preserve"><value>Aktiver AI-autotagging og naturlig språk-søk</value></data>
+  <data name="Settings_Ai_Model_Header" xml:space="preserve"><value>MODELL</value></data>
+  <data name="Settings_Ai_Download" xml:space="preserve"><value>Last ned modell</value></data>
+  <data name="Settings_Ai_ClearData" xml:space="preserve"><value>Tøm AI-data</value></data>
+  <data name="Settings_Ai_ClearData_Tip" xml:space="preserve"><value>Fjern alle embeddinger og ventende forslag. Godtatte tagger og kildefiler beholdes.</value></data>
+  <data name="Settings_Ai_ModelFolder" xml:space="preserve"><value>Modellmappe (valgfritt — la stå tom for å bruke den administrerte nedlastingsplasseringen)</value></data>
+  <data name="Settings_Ai_Tuning_Header" xml:space="preserve"><value>JUSTERING</value></data>
+  <data name="Settings_Ai_SecondsPerFrame" xml:space="preserve"><value>Sample ett bilde hvert N. sekund (bildeantallet skalerer med klipplengden, klemmes så til min/maks under)</value></data>
+  <data name="Settings_Ai_MinFrames" xml:space="preserve"><value>Min. bilder per klipp</value></data>
+  <data name="Settings_Ai_MaxFrames" xml:space="preserve"><value>Maks. bilder per klipp</value></data>
+  <data name="Settings_Ai_Threshold" xml:space="preserve"><value>Terskel for forslagskonfidens (0,20–0,40; høyere = færre, renere forslag)</value></data>
+  <data name="Settings_Ai_Adaptive" xml:space="preserve"><value>Tilpass terskler til min godta/avvis-historikk (per etikett)</value></data>
+  <data name="Settings_Ai_Adaptive_Desc" xml:space="preserve"><value>Når en etikett har noen få godtatte/avviste forslag, læres konfidensgrensen fra avgjørelsene dine i stedet for den globale verdien over — etiketter du stadig avviser undertrykkes, etiketter du godtar dukker opp tidligere. Selve CLIP-modellen endres aldri.</value></data>
+  <data name="Settings_Ai_Footer" xml:space="preserve"><value>Etter å ha aktivert og lastet ned, kjør Katalog → Generer AI-tagger…, og gjennomgå deretter forslagene i Katalog → Gjennomgå AI-forslag….</value></data>
+
+  <!-- ===== Innstillinger: runtime-dialoger og status (code-behind) ===== -->
+  <data name="Settings_Dlg_PickFfmpeg" xml:space="preserve"><value>Velg ffmpeg.exe</value></data>
+  <data name="Settings_Dlg_PickFfprobe" xml:space="preserve"><value>Velg ffprobe.exe</value></data>
+  <data name="Settings_Dlg_PickBackupFolder" xml:space="preserve"><value>Velg mappe for katalogsikkerhetskopi</value></data>
+  <data name="Settings_Dlg_PickModelFolder" xml:space="preserve"><value>Velg CLIP-modellmappen</value></data>
+  <data name="Settings_Dlg_ExeFilter" xml:space="preserve"><value>Programfiler (*.exe)|*.exe|Alle filer (*.*)|*.*</value></data>
+  <data name="Settings_Backup_InProgress" xml:space="preserve"><value>Sikkerhetskopierer katalog...</value></data>
+  <data name="Settings_Backup_SavedPruned" xml:space="preserve"><value>Sikkerhetskopi lagret til {0} ({1}). Fjernet {2} gamle sikkerhetskopi(er).</value></data>
+  <data name="Settings_Backup_Saved" xml:space="preserve"><value>Sikkerhetskopi lagret til {0} ({1}).</value></data>
+  <data name="Settings_Backup_Failed" xml:space="preserve"><value>Sikkerhetskopiering mislyktes: {0}</value></data>
+  <data name="Settings_Restore_Title" xml:space="preserve"><value>Gjenopprett katalog</value></data>
+  <data name="Settings_Restore_Confirm" xml:space="preserve"><value>Gjenopprette katalogen fra denne sikkerhetskopien?
+
+{0}
+Opprettet: {1}
+Størrelse: {2}
+
+Den gjeldende katalogen din kopieres først til Backups-mappen som et sikkerhetsbilde ('catalog-pre-restore-...'). Appen må deretter STARTE PÅ NYTT for å bytte databasefilen trygt. Kildevideofilene påvirkes ikke.</value></data>
+  <data name="Settings_Restore_Staging" xml:space="preserve"><value>Klargjør gjenoppretting...</value></data>
+  <data name="Settings_Restore_FailedStatus" xml:space="preserve"><value>Gjenoppretting mislyktes: {0}</value></data>
+  <data name="Settings_Restore_FailedBody" xml:space="preserve"><value>Gjenoppretting mislyktes:
+
+{0}
+
+Katalogen din er ikke endret.</value></data>
+  <data name="Settings_Restore_StagedStatus" xml:space="preserve"><value>Gjenoppretting klargjort. Sikkerhetskopi: {0}</value></data>
+  <data name="Settings_Restore_StagedSuccess" xml:space="preserve"><value>Gjenoppretting klargjort.</value></data>
+  <data name="Settings_Restore_SafetyCopyLine" xml:space="preserve"><value>Sikkerhetskopi av forrige katalog: {0}</value></data>
+  <data name="Settings_Restore_RestartQuestion" xml:space="preserve"><value>Appen må starte på nytt for å fullføre gjenopprettingen. Starte på nytt nå?</value></data>
+  <data name="Settings_Restore_DeferredBody" xml:space="preserve"><value>Gjenopprettingen brukes automatisk neste gang du starter appen.</value></data>
+  <data name="Settings_AiStatus_Disabled" xml:space="preserve"><value>Deaktivert. Slå på for å aktivere AI-tagging og naturlig språk-søk.</value></data>
+  <data name="Settings_AiStatus_Ready" xml:space="preserve"><value>Modell klar ({0}).</value></data>
+  <data name="Settings_AiStatus_NotInstalled" xml:space="preserve"><value>Modell ikke installert. Last den ned, eller pek på en mappe som inneholder CLIP ONNX-pakken.</value></data>
+  <data name="Settings_AiStatus_Downloading" xml:space="preserve"><value>Laster ned modell…</value></data>
+  <data name="Settings_AiStatus_Downloaded" xml:space="preserve"><value>Modell lastet ned og klar.</value></data>
+  <data name="Settings_AiStatus_DownloadFailed" xml:space="preserve"><value>Nedlasting mislyktes. Sjekk modell-URL / tilkoblingen din, eller oppgi pakken manuelt.</value></data>
+  <data name="Settings_AiStatus_DownloadError" xml:space="preserve"><value>Nedlasting mislyktes: {0}</value></data>
+  <data name="Settings_AiStatus_Cleared" xml:space="preserve"><value>Tømte {0} AI-rad(er).</value></data>
+  <data name="Settings_ClearAi_Title" xml:space="preserve"><value>Tøm AI-data</value></data>
+  <data name="Settings_ClearAi_Confirm" xml:space="preserve"><value>Fjerne alle AI-genererte data (embeddinger og ventende taggforslag) fra katalogen?
+
+Tagger du allerede har godtatt beholdes. Kildefiler røres aldri. Du kan generere på nytt senere.</value></data>
+
+
+  <data name="About_Title" xml:space="preserve">
+    <value>Om Find That Shot</value>
+  </data>
+  <data name="About_Tagline" xml:space="preserve">
+    <value>En lokal-først-katalog for å bla i, merke og søke i videoarkivet ditt.</value>
+  </data>
+  <data name="About_License_Header" xml:space="preserve">
+    <value>LISENS</value>
+  </data>
+  <data name="About_License_Intro" xml:space="preserve">
+    <value>Denne applikasjonen distribueres under</value>
+  </data>
+  <data name="About_License_LinkText" xml:space="preserve">
+    <value>GNU General Public License v3</value>
+  </data>
+  <data name="About_Source_Label" xml:space="preserve">
+    <value>Kildekode:</value>
+  </data>
+  <data name="About_ThirdParty_Header" xml:space="preserve">
+    <value>TREDJEPARTSKOMPONENTER</value>
+  </data>
+  <data name="About_Button_ViewNotices" xml:space="preserve">
+    <value>Vis tredjepartslisenser</value>
+  </data>
+  <data name="About_VersionFormat" xml:space="preserve">
+    <value>Versjon {0}.{1}.{2}</value>
+    <comment>{0}=major {1}=minor {2}=build</comment>
+  </data>
+  <data name="About_VersionUnknown" xml:space="preserve">
+    <value>Versjon ukjent</value>
+  </data>
+  <data name="About_NoticesPathFormat" xml:space="preserve">
+    <value>Fullstendige tredjepartslisenser: {0}</value>
+    <comment>{0}=file path</comment>
+  </data>
+  <data name="About_NoticesPathFallback" xml:space="preserve">
+    <value>Fullstendige tredjepartslisenser ligger i THIRD-PARTY-NOTICES.md ved siden av applikasjonen.</value>
+  </data>
+
+  <!-- ===== Hovedvindu: Fil-meny ===== -->
+  <data name="Main_Menu_File" xml:space="preserve"><value>_Fil</value></data>
+  <data name="Main_Menu_AddFolder" xml:space="preserve"><value>_Legg til mappe…</value></data>
+  <data name="Main_Menu_RemoveSelectedFolder" xml:space="preserve"><value>_Fjern valgt mappe…</value></data>
+  <data name="Main_Menu_RemoveSelectedFolder_Tip" xml:space="preserve"><value>Fjern den valgte rotmappen og alle katalogoppføringer importert fra den. Kildevideofilene blir IKKE rørt.</value></data>
+  <data name="Main_Menu_Settings" xml:space="preserve"><value>_Innstillinger…</value></data>
+  <data name="Main_Menu_Exit" xml:space="preserve"><value>A_vslutt</value></data>
+
+  <!-- ===== Hovedvindu: Katalog-meny ===== -->
+  <data name="Main_Menu_Catalog" xml:space="preserve"><value>_Katalog</value></data>
+  <data name="Main_Menu_Scan" xml:space="preserve"><value>_Skann</value></data>
+  <data name="Main_Menu_CancelScan" xml:space="preserve"><value>_Avbryt skanning</value></data>
+  <data name="Main_Menu_Refresh" xml:space="preserve"><value>_Oppdater</value></data>
+  <data name="Main_Menu_Stats" xml:space="preserve"><value>Katalogstati_stikk…</value></data>
+  <data name="Main_Menu_Stats_Tip" xml:space="preserve"><value>Se samlede beregninger for hele katalogen — antall, total størrelse og spilletid, samt fordeling på status / vurdering / kamera / kodek / oppløsning / tagg / år. Skrivebeskyttet.</value></data>
+  <data name="Main_Menu_Duplicates" xml:space="preserve"><value>Finn _duplikater…</value></data>
+  <data name="Main_Menu_Duplicates_Tip" xml:space="preserve"><value>Finn klipp som deler samme filstørrelse, varighet og oppløsning — nesten helt sikkert samme opptak flere steder — og fjern de overflødige katalogoppføringene. Kildevideofiler flyttes eller slettes aldri.</value></data>
+  <data name="Main_Menu_Moments" xml:space="preserve"><value>Finn _øyeblikk…</value></data>
+  <data name="Main_Menu_Moments_Tip" xml:space="preserve"><value>Søk gjennom alle tidsstemplede øyeblikk (delklipp) du har markert — etter etikett, notat, tagg eller vurdering — og hopp rett til opptaket i spilleren.</value></data>
+  <data name="Main_Menu_Map" xml:space="preserve"><value>Bla på _kart…</value></data>
+  <data name="Main_Menu_Map_Tip" xml:space="preserve"><value>Se alle geomerkede klipp samlet på et kart. Klikk en klynge for å avgrense rutenettet til den, klikk en markør for å forhåndsvise et klipp, eller filtrer rutenettet til det som er i visning. Skrivebeskyttet.</value></data>
+  <data name="Main_Menu_Calendar" xml:space="preserve"><value>Bla etter da_to…</value></data>
+  <data name="Main_Menu_Calendar_Tip" xml:space="preserve"><value>Se et varmekart år-for-måned over når du filmet. Klikk en måned for å liste klippene, forhåndsvise ett og hoppe til det i rutenettet eller spilleren, eller avgrens rutenettet til den måneden. Skrivebeskyttet.</value></data>
+  <data name="Main_Menu_GenerateAi" xml:space="preserve"><value>_Generer AI-tagger…</value></data>
+  <data name="Main_Menu_GenerateAi_Tip" xml:space="preserve"><value>Gi klipp uten AI-embeddinger en poengsum med en lokal CLIP-modell (ved å hente bilder gjennom hvert klipp) for å foreslå tagger. Ingenting brukes automatisk; gjennomgå forslagene etterpå. Kildefiler bare leses.</value></data>
+  <data name="Main_Menu_RescoreAi" xml:space="preserve"><value>Re-skår _alle klipp med AI…</value></data>
+  <data name="Main_Menu_RescoreAi_Tip" xml:space="preserve"><value>Kjør AI-skåring på ALLE klipp (ikke bare nye) — bruk etter endring av samplinginnstillinger, etikettordliste eller modell. Aksepterte/avviste tagger beholdes; ventende forslag oppdateres.</value></data>
+  <data name="Main_Menu_ReviewAi" xml:space="preserve"><value>Gjennomgå _AI-forslag…</value></data>
+  <data name="Main_Menu_ReviewAi_Tip" xml:space="preserve"><value>Aksepter eller avvis AI-ens foreslåtte tagger. Å akseptere legger en ekte tagg til klippet.</value></data>
+  <data name="Main_Menu_BulkEdit" xml:space="preserve"><value>_Masserediger utvalg…</value></data>
+  <data name="Main_Menu_FillLocations" xml:space="preserve"><value>Fyll inn manglende _steder fra GPS…</value></data>
+  <data name="Main_Menu_FillLocations_Tip" xml:space="preserve"><value>For videoer som har GPS-koordinater men ingen stedsnavn, slå opp et stedsnavn fra OpenStreetMap og fyll det inn. Eksisterende steder endres ikke.</value></data>
+  <data name="Main_Menu_CancelLocation" xml:space="preserve"><value>Av_bryt stedsoppslag</value></data>
+  <data name="Main_Menu_RemoveOffline" xml:space="preserve"><value>Fjern _frakoblede videoer…</value></data>
+  <data name="Main_Menu_RemoveOffline_Tip" xml:space="preserve"><value>Fjern katalogoppføringer der kildefilen ikke lenger finnes på disk. Kildevideofilene blir IKKE rørt.</value></data>
+  <data name="Main_Menu_RemoveSelected" xml:space="preserve"><value>Fjern _valgte fra katalog…</value></data>
+
+  <!-- ===== Hovedvindu: Vis-meny ===== -->
+  <data name="Main_Menu_View" xml:space="preserve"><value>_Vis</value></data>
+  <data name="Main_Menu_ShowAvailable" xml:space="preserve"><value>Vis bare _tilgjengelige filer</value></data>
+  <data name="Main_Menu_ShowUnreviewed" xml:space="preserve"><value>Vis bare _ikke-gjennomgåtte</value></data>
+  <data name="Main_Menu_ShowUnreviewed_Tip" xml:space="preserve"><value>Begrens katalogen til klipp som fortsatt har status Ikke gjennomgått ELLER som ikke har tagger ennå.</value></data>
+  <data name="Main_Menu_MainSubject" xml:space="preserve"><value>Taggfilter: bare _hovedmotiv</value></data>
+  <data name="Main_Menu_MainSubject_Tip" xml:space="preserve"><value>Når du filtrerer på tagger, treff bare klipp der taggen er et hovedmotiv — skjul klipp der den bare er et tilfeldig/bakgrunnselement.</value></data>
+  <data name="Main_Menu_SemanticSearch" xml:space="preserve"><value>Søk etter _beskrivelse (AI)</value></data>
+  <data name="Main_Menu_SemanticSearch_Tip" xml:space="preserve"><value>Behandle søkefeltet som en naturlig språkbeskrivelse (f.eks. «droneopptak over snødekte fjell ved solnedgang») og ranger klipp etter visuell AI-likhet i stedet for bokstavelig tekstsøk.</value></data>
+  <data name="Main_Menu_StartReview" xml:space="preserve"><value>_Start gjennomgangsøkt</value></data>
+  <data name="Main_Menu_StartReview_Tip" xml:space="preserve"><value>Fjern alle filtre, vis bare ikke-gjennomgåtte klipp, og velg det første.</value></data>
+  <data name="Main_Menu_FocusSearch" xml:space="preserve"><value>Fokuser _søk</value></data>
+  <data name="Main_Menu_ClearFilters" xml:space="preserve"><value>_Tøm alle filtre</value></data>
+
+  <!-- ===== Hovedvindu: Hjelp-meny ===== -->
+  <data name="Main_Menu_Help" xml:space="preserve"><value>_Hjelp</value></data>
+  <data name="Main_Menu_CheckUpdates" xml:space="preserve"><value>Se etter _oppdateringer…</value></data>
+  <data name="Main_Menu_CheckUpdates_Tip" xml:space="preserve"><value>Se etter en nyere versjon på GitHub Releases og installer den. Fungerer bare når appen kjører fra en installert build (Setup.exe).</value></data>
+  <data name="Main_Menu_Diagnostics" xml:space="preserve"><value>_Diagnostikk…</value></data>
+  <data name="Main_Menu_Diagnostics_Tip" xml:space="preserve"><value>Vis miljøinformasjon og den nylige applikasjonsloggen for feilsøking.</value></data>
+  <data name="Main_Menu_ReportBug" xml:space="preserve"><value>_Rapporter en feil (GitHub)…</value></data>
+  <data name="Main_Menu_ReportBug_Tip" xml:space="preserve"><value>Åpne GitHub-feilsporeren i nettleseren. Tips: bruk Diagnostikk → Kopier full rapport og lim den inn i saken.</value></data>
+  <data name="Main_Menu_Feedback" xml:space="preserve"><value>Send _tilbakemelding (e-post)…</value></data>
+  <data name="Main_Menu_Feedback_Tip" xml:space="preserve"><value>Åpne en ny e-post til utvikleren. Tips: bruk Diagnostikk → Kopier full rapport og lim den inn i meldingen.</value></data>
+  <data name="Main_Menu_About" xml:space="preserve"><value>_Om Find That Shot…</value></data>
+
+  <!-- ===== Hovedvindu: søkefelt ===== -->
+  <data name="Main_Search_Placeholder" xml:space="preserve"><value>Søk filnavn, mappe, tagger, notater, kamera...</value></data>
+  <data name="Main_Search_Placeholder_Ai" xml:space="preserve"><value>Beskriv et opptak, f.eks. «cruiseskip ved solnedgang»</value></data>
+  <data name="Main_Search_AiToggle_Tip" xml:space="preserve"><value>Søk etter beskrivelse (AI): skriv en naturlig språkbeskrivelse (f.eks. «cruiseskip ved solnedgang») og ranger klipp etter visuell AI-likhet i stedet for bokstavelig nøkkelordsøk.</value></data>
+  <data name="Main_Search_AiToggle_Label" xml:space="preserve"><value>AI-søk</value></data>
+
+  <!-- ===== Hovedvindu: sidefilterpaneler ===== -->
+  <data name="Main_Filter_Clear" xml:space="preserve"><value>Tøm</value></data>
+  <data name="Main_Saved_Header" xml:space="preserve"><value>LAGREDE SØK</value></data>
+  <data name="Main_Saved_Save" xml:space="preserve"><value>Lagre</value></data>
+  <data name="Main_Saved_Save_Tip" xml:space="preserve"><value>Lagre gjeldende filtre som et gjenbrukbart søk</value></data>
+  <data name="Main_Saved_Empty" xml:space="preserve"><value>Ingen lagrede søk ennå. Sett opp filtre ovenfor, og klikk Lagre.</value></data>
+  <data name="Main_Saved_Rename_Tip" xml:space="preserve"><value>Gi nytt navn til dette lagrede søket</value></data>
+  <data name="Main_Saved_Delete_Tip" xml:space="preserve"><value>Slett dette lagrede søket</value></data>
+
+  <data name="Main_Folders_Header" xml:space="preserve"><value>MAPPER</value></data>
+  <data name="Main_Folders_Add_Tip" xml:space="preserve"><value>Legg til en rotmappe for katalogisering (Ctrl+O)</value></data>
+  <data name="Main_Folders_Drop" xml:space="preserve"><value>Slipp mapper for å legge til</value></data>
+  <data name="Main_Folders_Empty_Headline" xml:space="preserve"><value>Ingen mapper ennå</value></data>
+  <data name="Main_Folders_Empty_Subtext" xml:space="preserve"><value>Legg til en mappe for å begynne å katalogisere videoarkivet ditt.</value></data>
+  <data name="Main_Folders_Empty_Cta" xml:space="preserve"><value>Legg til mappe</value></data>
+  <data name="Main_Folders_Ctx_Remove" xml:space="preserve"><value>_Fjern mappe…</value></data>
+  <data name="Main_Folders_Ctx_Remove_Tip" xml:space="preserve"><value>Fjern denne rotmappen og alle katalogoppføringer importert fra den. Kildevideofilene blir IKKE rørt.</value></data>
+  <data name="Main_Folders_Ctx_Add" xml:space="preserve"><value>_Legg til mappe…</value></data>
+
+  <data name="Main_Tags_Header" xml:space="preserve"><value>TAGGER</value></data>
+  <data name="Main_Tags_Clear_Tip" xml:space="preserve"><value>Fjern alle valgte taggfiltre.</value></data>
+  <data name="Main_Tags_RemoveChip_Tip" xml:space="preserve"><value>Fjern dette taggfilteret.</value></data>
+  <data name="Main_Tags_FilterPlaceholder" xml:space="preserve"><value>Skriv for å filtrere tagger…</value></data>
+  <data name="Main_Tags_List_Tip" xml:space="preserve"><value>Klikk en tagg for å legge den til som filter. Flere tagger kombineres med OG (videoer må ha hver valgte tagg).</value></data>
+
+  <data name="Main_Cameras_Header" xml:space="preserve"><value>KAMERAER</value></data>
+  <data name="Main_Cameras_Clear_Tip" xml:space="preserve"><value>Fjern kamerafilteret.</value></data>
+
+  <data name="Main_Date_Header" xml:space="preserve"><value>DATO</value></data>
+  <data name="Main_Date_Clear_Tip" xml:space="preserve"><value>Tøm datointervallfilteret.</value></data>
+  <data name="Main_Date_From" xml:space="preserve"><value>Fra</value></data>
+  <data name="Main_Date_To" xml:space="preserve"><value>Til</value></data>
+
+  <data name="Main_ClearFilters" xml:space="preserve"><value>Tøm filtre</value></data>
+  <data name="Main_ClearFilters_Tip" xml:space="preserve"><value>Tilbakestill søkefelt, alle filtre og datointervall (Ctrl+Shift+L)</value></data>
+
+  <!-- ===== Hovedvindu: tom katalog ===== -->
+  <data name="Main_NoClips_Headline" xml:space="preserve"><value>Ingen klipp samsvarer</value></data>
+  <data name="Main_NoClips_Subtext" xml:space="preserve"><value>Prøv å justere filtre, tømme søket, eller skanne en mappe for å hente videoer inn i katalogen.</value></data>
+
+  <!-- ===== Hovedvindu: høyreklikkmeny ===== -->
+  <data name="Main_Ctx_ShowInfo" xml:space="preserve"><value>Vis klipp_info...</value></data>
+  <data name="Main_Ctx_ShowInfo_Tip" xml:space="preserve"><value>Åpne det fullstendige klippinfo-vinduet (filsystem, video, kamera, sted, katalog, internt).</value></data>
+  <data name="Main_Ctx_PlayExternal" xml:space="preserve"><value>Spill av _eksternt</value></data>
+  <data name="Main_Ctx_PlayExternal_Tip" xml:space="preserve"><value>Åpne kildevideoen i operativsystemets standard mediespiller (skall-tilknyttet for filtypen).</value></data>
+  <data name="Main_Ctx_OpenLocation" xml:space="preserve"><value>_Åpne filplassering</value></data>
+  <data name="Main_Ctx_OpenLocation_Tip" xml:space="preserve"><value>Vis kildevideofilen i Windows Utforsker.</value></data>
+  <data name="Main_Ctx_RemoveDb" xml:space="preserve"><value>_Fjern fra database…</value></data>
+
+  <!-- ===== Hovedvindu: katalogkort ===== -->
+  <data name="Main_Offline" xml:space="preserve"><value>Frakoblet</value></data>
+
+  <!-- ===== Hovedvindu: telemetrietiketter ===== -->
+  <data name="Main_Tel_Iso" xml:space="preserve"><value>ISO</value></data>
+  <data name="Main_Tel_Shutter" xml:space="preserve"><value>LUKKER</value></data>
+  <data name="Main_Tel_Aperture" xml:space="preserve"><value>BLENDER</value></data>
+  <data name="Main_Tel_Focal" xml:space="preserve"><value>BRENNVIDDE</value></data>
+  <data name="Main_Tel_Alt" xml:space="preserve"><value>HØYDE</value></data>
+  <data name="Main_Tel_Gps" xml:space="preserve"><value>GPS</value></data>
+
+  <!-- ===== Hovedvindu: spillerkontroller ===== -->
+  <data name="Main_Player_Close_Tip" xml:space="preserve"><value>Lukk spilleren og gå tilbake til katalogen (Esc)</value></data>
+  <data name="Main_Player_ProxyBadge" xml:space="preserve"><value>PROXY</value></data>
+  <data name="Main_Player_OriginalBadge" xml:space="preserve"><value>ORIGINAL</value></data>
+  <data name="Main_Player_Original_Tip" xml:space="preserve"><value>Spiller av den originale kildefilen i full oppløsning</value></data>
+  <data name="Main_Player_PrevClip_Tip" xml:space="preserve"><value>Spill forrige klipp</value></data>
+  <data name="Main_Player_SkipBack_Tip" xml:space="preserve"><value>Hopp 5 sekunder tilbake</value></data>
+  <data name="Main_Player_Play" xml:space="preserve"><value>Spill av</value></data>
+  <data name="Main_Player_Pause" xml:space="preserve"><value>Pause</value></data>
+  <data name="Main_Player_PlayPause_Tip" xml:space="preserve"><value>Veksle avspilling / pause (mellomrom)</value></data>
+  <data name="Main_Player_SkipForward_Tip" xml:space="preserve"><value>Hopp 5 sekunder fremover</value></data>
+  <data name="Main_Player_NextClip_Tip" xml:space="preserve"><value>Spill neste klipp</value></data>
+  <data name="Main_Player_Stop" xml:space="preserve"><value>Stopp</value></data>
+  <data name="Main_Player_Stop_Tip" xml:space="preserve"><value>Stopp avspilling (tilbakestiller posisjon)</value></data>
+  <data name="Main_Player_MarkIn" xml:space="preserve"><value>Marker inn</value></data>
+  <data name="Main_Player_MarkIn_Tip" xml:space="preserve"><value>Sett inn-punktet for et øyeblikk her (I)</value></data>
+  <data name="Main_Player_MarkOut" xml:space="preserve"><value>Marker ut</value></data>
+  <data name="Main_Player_MarkOut_Tip" xml:space="preserve"><value>Sett ut-punktet og lagre øyeblikket (O)</value></data>
+
+  <!-- ===== Hovedvindu: tom editor ===== -->
+  <data name="Main_NoClipSelected_Headline" xml:space="preserve"><value>Ingen klipp valgt</value></data>
+  <data name="Main_NoClipSelected_Subtext" xml:space="preserve"><value>Velg et klipp fra katalogen for å se metadata, tagge det, sette status eller vurdering, og legge til notater.</value></data>
+
+  <!-- ===== Hovedvindu: editor KART-panel ===== -->
+  <data name="Main_Editor_Map_Header" xml:space="preserve"><value>KART</value></data>
+  <data name="Main_Editor_Loc_Set" xml:space="preserve"><value>Angi sted</value></data>
+  <data name="Main_Editor_Loc_Set_Tip" xml:space="preserve"><value>Tildel GPS-koordinater til dette klippet ved å klikke på kartet eller skrive dem inn.</value></data>
+  <data name="Main_Editor_Loc_Edit" xml:space="preserve"><value>Rediger sted</value></data>
+  <data name="Main_Editor_Loc_Edit_Tip" xml:space="preserve"><value>Klikk på kartet eller skriv inn et nytt koordinatpar for å erstatte lagret GPS.</value></data>
+  <data name="Main_Editor_Loc_Clear_Tip" xml:space="preserve"><value>Fjern GPS-koordinatene på dette klippet (stedsteksten beholdes).</value></data>
+  <data name="Main_Editor_Loc_Copy" xml:space="preserve"><value>Kopier</value></data>
+  <data name="Main_Editor_Loc_Copy_Tip" xml:space="preserve"><value>Kopier «bredde, lengde» til utklippstavlen i invariant-kulturformat.</value></data>
+  <data name="Main_Editor_Loc_Pick_Tip" xml:space="preserve"><value>Klikk på kartet, eller skriv/lim inn «bredde, lengde» (f.eks. 60.482, 6.902).</value></data>
+  <data name="Main_Editor_Loc_Pick_Placeholder" xml:space="preserve"><value>Klikk på kartet, eller skriv: 60.482, 6.902</value></data>
+  <data name="Main_Editor_Loc_Save_Tip" xml:space="preserve"><value>Lagre GPS-koordinatene til katalogen, slå opp stedsnavn (revers-geokoding) og skriv sidecar-filen.</value></data>
+
+  <!-- ===== Hovedvindu: editor TAGGER-panel ===== -->
+  <data name="Main_Editor_Tag_Prominence_Tip" xml:space="preserve"><value>Høyreklikk for å merke denne taggen som et bakgrunnsmotiv (tilfeldig).</value></data>
+  <data name="Main_Editor_Tag_Background" xml:space="preserve"><value>Bakgrunnsmotiv</value></data>
+  <data name="Main_Editor_Tag_Remove_Tip" xml:space="preserve"><value>Fjern denne taggen fra klippet.</value></data>
+  <data name="Main_Editor_Tag_New" xml:space="preserve"><value>Ny tagg</value></data>
+  <data name="Main_Editor_Tag_Add" xml:space="preserve"><value>Legg til</value></data>
+
+  <!-- ===== Hovedvindu: editor NOTATER &amp; VURDERING-panel ===== -->
+  <data name="Main_Editor_Notes_Header" xml:space="preserve"><value>NOTATER &amp; VURDERING</value></data>
+  <data name="Main_Editor_Notes" xml:space="preserve"><value>NOTATER</value></data>
+  <data name="Main_Editor_Status" xml:space="preserve"><value>STATUS</value></data>
+  <data name="Main_Editor_Rating" xml:space="preserve"><value>VURDERING</value></data>
+  <data name="Main_Editor_SaveChanges" xml:space="preserve"><value>Lagre endringer</value></data>
+
+  <!-- ===== Hovedvindu: editor ØYEBLIKK-panel ===== -->
+  <data name="Main_Editor_Moments_Header" xml:space="preserve"><value>ØYEBLIKK</value></data>
+  <data name="Main_Editor_Moments_Hint" xml:space="preserve"><value>Spill av klippet, trykk så I for å sette et inn-punkt og O for å sette ut-punktet — hvert øyeblikk blir et søkbart opptak med egen miniatyr, etikett, vurdering, notat og tagger.</value></data>
+  <data name="Main_Editor_Moment_Jump_Tip" xml:space="preserve"><value>Hopp til dette øyeblikket</value></data>
+  <data name="Main_Editor_Moment_Delete_Tip" xml:space="preserve"><value>Slett dette øyeblikket</value></data>
+  <data name="Main_Editor_Moment_Label" xml:space="preserve"><value>ETIKETT</value></data>
+  <data name="Main_Editor_Moment_Label_Placeholder" xml:space="preserve"><value>f.eks. heroisk droneavsløring</value></data>
+  <data name="Main_Editor_Moment_Note" xml:space="preserve"><value>NOTAT</value></data>
+  <data name="Main_Editor_Moment_EditingHeader" xml:space="preserve"><value>Redigerer øyeblikk · {0}</value></data>
+
+  <!-- ===== Hovedvindu: gjennomgangsmodus markøroverlegg (settes ved kjøretid) ===== -->
+  <data name="Main_Overlay_InPointSet" xml:space="preserve"><value>INN-PUNKT SATT</value></data>
+  <data name="Main_Overlay_InPointSet_Sub" xml:space="preserve"><value>{0}  ·  trykk O for å sette UT</value></data>
+  <data name="Main_Overlay_MomentSaved" xml:space="preserve"><value>ØYEBLIKK LAGRET</value></data>
+  <data name="Main_Overlay_MarkerSet" xml:space="preserve"><value>MARKØR SATT</value></data>
+
+  <!-- ===== Hovedvindu: statuslinjepiller ===== -->
+  <data name="Main_Status_Scanning" xml:space="preserve"><value>Skanner</value></data>
+  <data name="Main_Status_AiTagging" xml:space="preserve"><value>AI-tagging</value></data>
+  <data name="Main_Status_AiTagging_Tip" xml:space="preserve"><value>En lokal AI-skåringsrunde kjører. Du kan fortsette å jobbe; klikk for å åpne gjennomgangsvinduet og triagere klipp som allerede er skåret.</value></data>
+  <data name="Main_Status_AiDone_Tip" xml:space="preserve"><value>AI-skåringsrunden er fullført. Klikk for å åpne gjennomgangsvinduet og akseptere/avvise de foreslåtte taggene.</value></data>
+  <data name="Main_Status_UpdateAvailable" xml:space="preserve"><value>Oppdatering tilgjengelig</value></data>
+  <data name="Main_Status_Update_Tip" xml:space="preserve"><value>En ny versjon er tilgjengelig på GitHub. Klikk for å se detaljer og installere (appen lukkes og starter på nytt på den nye versjonen når den er klar).</value></data>
+  <data name="Main_Status_Sidecar_Tip" xml:space="preserve"><value>Viser om sidecar-JSON-filer skrives ved siden av videoene. Slå av/på i Innstillinger → Sidecar-filer.</value></data>
+  <data name="Main_Status_MapScope_Tip" xml:space="preserve"><value>Katalogrutenettet er avgrenset til klipp valgt på kartet. Klikk for å fjerne og vise alle treff igjen.</value></data>
+
+  <!-- ===== Hoved-view-model: runtime-status, dialoger og hjelpere ===== -->
+  <data name="Common_AppName" xml:space="preserve"><value>Find That Shot</value></data>
+  <data name="Main_Status_Ready" xml:space="preserve"><value>Klar</value></data>
+  <data name="Main_Status_MapSelection" xml:space="preserve"><value>Kartutvalg: {0} klipp</value></data>
+  <data name="Main_Status_FfmpegMissing" xml:space="preserve"><value>FFmpeg/FFprobe ikke funnet. Konfigurer baner i Innstillinger.</value></data>
+  <data name="Main_Status_AiOff" xml:space="preserve"><value>AI-tagging er av eller modellen er ikke installert — aktiver den i Innstillinger → AI-tagging.</value></data>
+  <data name="Main_Status_AiNoClips" xml:space="preserve"><value>Ingen klipp i katalogen å skåre.</value></data>
+  <data name="Main_Status_AiNoNew" xml:space="preserve"><value>Alle klipp har allerede AI-embeddinger. Ingenting å skåre.</value></data>
+  <data name="Main_Status_AiRescoring" xml:space="preserve"><value>Skårer alle {0} klipp på nytt med AI-modellen</value></data>
+  <data name="Main_Status_AiScoring" xml:space="preserve"><value>Skårer {0} nye klipp med AI-modellen ({1} totalt)</value></data>
+  <data name="Main_Status_AiCancelled" xml:space="preserve"><value>AI-tagging avbrutt.</value></data>
+  <data name="Main_Status_AiFailed" xml:space="preserve"><value>AI-tagging mislyktes: {0}</value></data>
+  <data name="Main_Ai_ResultReview" xml:space="preserve"><value>Gjennomgå {0} AI-forslag</value></data>
+  <data name="Main_Ai_ResultDone" xml:space="preserve"><value>AI-tagging fullført</value></data>
+  <data name="Main_Status_NoSemantic" xml:space="preserve"><value>Ingen semantiske treff for «{0}».</value></data>
+  <data name="Main_Status_SemanticResults" xml:space="preserve"><value>Viser {0} semantiske treff for «{1}»</value></data>
+  <data name="Main_Status_SemanticFailed" xml:space="preserve"><value>Semantisk søk mislyktes: {0}</value></data>
+  <data name="Main_Status_ShowingVideos" xml:space="preserve"><value>Viser {0} av {1} videoer</value></data>
+  <data name="Main_Status_NoFolders" xml:space="preserve"><value>Ingen mapper å legge til — slipp én eller flere mapper.</value></data>
+  <data name="Main_Status_NoRootsToScan" xml:space="preserve"><value>Legg til minst én rotmappe før skanning</value></data>
+  <data name="Main_Status_ScanCancelled" xml:space="preserve"><value>Skanning avbrutt</value></data>
+  <data name="Main_Status_ScanFailed" xml:space="preserve"><value>Skanning mislyktes: {0}</value></data>
+  <data name="Main_Status_GeocodeRunning" xml:space="preserve"><value>Slår opp manglende steder…</value></data>
+  <data name="Main_Status_GeocodeFilled" xml:space="preserve"><value>Fylte inn {0} sted(er) fra GPS.</value></data>
+  <data name="Main_Status_GeocodeNone" xml:space="preserve"><value>Ingen steder trengte oppdatering.</value></data>
+  <data name="Main_Status_GeocodeCancelled" xml:space="preserve"><value>Stedsoppslag avbrutt.</value></data>
+  <data name="Main_Status_GeocodeFailed" xml:space="preserve"><value>Stedsoppslag mislyktes: {0}</value></data>
+  <data name="Main_Status_ReviewWaiting" xml:space="preserve"><value>Gjennomgangsøkt: {0} klipp venter</value></data>
+  <data name="Main_Status_ReviewCaughtUp" xml:space="preserve"><value>Gjennomgangsøkt: ingenting å gjennomgå — du er à jour.</value></data>
+  <data name="Main_Dlg_PickRoot" xml:space="preserve"><value>Velg en rotmappe å skanne</value></data>
+  <data name="Main_AddRoots_OneExists" xml:space="preserve"><value>Rotmappen finnes allerede</value></data>
+  <data name="Main_AddRoots_ManyExist" xml:space="preserve"><value>{0} mapper finnes allerede i katalogen</value></data>
+  <data name="Main_AddRoots_None" xml:space="preserve"><value>Ingen mapper lagt til</value></data>
+  <data name="Main_AddRoots_AddedOne" xml:space="preserve"><value>La til rotmappe: {0}</value></data>
+  <data name="Main_AddRoots_AddedMany" xml:space="preserve"><value>La til {0} rotmapper</value></data>
+  <data name="Main_AddRoots_AddedSkipped" xml:space="preserve"><value>{0} ({1} fantes allerede)</value></data>
+  <data name="Main_RemoveRoot_ConfirmWithVideos" xml:space="preserve"><value>Fjerne rotmappen "{0}" og {1} videooppføring(er) importert fra den?
+
+Dette påvirker kun katalogdatabasen og appens miniatyrbuffer. Kildevideofilene på disk blir IKKE rørt.</value></data>
+  <data name="Main_RemoveRoot_ConfirmEmpty" xml:space="preserve"><value>Fjerne rotmappen "{0}"?
+
+Ingen videooppføringer ble importert fra denne mappen. Mappen på disk blir IKKE rørt.</value></data>
+  <data name="Main_RemoveRoot_Title" xml:space="preserve"><value>Fjern rotmappe</value></data>
+  <data name="Main_RemoveRoot_DoneWithVideos" xml:space="preserve"><value>Fjernet rotmappe og {0} videooppføring(er) fra katalogen. Kildevideofiler urørt.</value></data>
+  <data name="Main_RemoveRoot_Done" xml:space="preserve"><value>Fjernet rotmappe. Kildevideofiler urørt.</value></data>
+  <data name="Main_RemoveVideos_None" xml:space="preserve"><value>Velg én eller flere videoer å fjerne</value></data>
+  <data name="Main_RemoveVideos_AndMore" xml:space="preserve"><value>  …og {0} til</value></data>
+  <data name="Main_RemoveVideos_ConfirmHeader" xml:space="preserve"><value>Fjerne {0} videooppføring(er) fra databasen?</value></data>
+  <data name="Main_RemoveVideos_ConfirmFooter" xml:space="preserve"><value>Dette fjerner katalogoppføringene (tagger, vurderinger, notater osv.) og de bufrede miniatyrene deres. Kildevideofilene på disk blir IKKE rørt.</value></data>
+  <data name="Main_RemoveVideos_Title" xml:space="preserve"><value>Fjern videoer fra databasen</value></data>
+  <data name="Main_RemoveVideos_Done" xml:space="preserve"><value>Fjernet {0} videooppføring(er) fra katalogen. Kildevideofiler urørt.</value></data>
+  <data name="Main_RemoveOffline_None" xml:space="preserve"><value>Det finnes ingen frakoblede videooppføringer å fjerne.</value></data>
+  <data name="Main_RemoveOffline_Title" xml:space="preserve"><value>Fjern frakoblede videoer</value></data>
+  <data name="Main_RemoveOffline_Confirm" xml:space="preserve"><value>Fjerne alle {0} frakoblede videooppføring(er) fra databasen?
+
+Dette er oppføringer der kildefilen ikke lenger finnes på disk (basert på siste Oppdater / skann).
+
+Dette rydder opp i katalogen og appens miniatyrbuffer. Ingen kildevideofiler blir rørt.</value></data>
+  <data name="Main_RemoveOffline_Done" xml:space="preserve"><value>Fjernet {0} frakoblede videooppføring(er) fra katalogen. Kildevideofiler urørt.</value></data>
+  <data name="Main_Scan_FfprobeMissing" xml:space="preserve"><value>ffprobe.exe ble ikke funnet. Åpne Innstillinger for å konfigurere FFmpeg-banene.</value></data>
+  <data name="Main_Scan_ElapsedInit" xml:space="preserve"><value>Forløpt 00:00</value></data>
+  <data name="Main_Scan_Elapsed" xml:space="preserve"><value>Forløpt {0}</value></data>
+  <data name="Main_Scan_ElapsedWithFile" xml:space="preserve"><value>Forløpt {0} · gjeldende fil {1}</value></data>
+  <data name="Main_Update_Checking" xml:space="preserve"><value>Ser etter oppdateringer…</value></data>
+  <data name="Main_Update_CheckFailedStatus" xml:space="preserve"><value>Oppdateringssjekk mislyktes: {0}</value></data>
+  <data name="Main_Update_CheckFailedBody" xml:space="preserve"><value>Kunne ikke se etter oppdateringer.
+
+{0}</value></data>
+  <data name="Main_Update_Title" xml:space="preserve"><value>Se etter oppdateringer</value></data>
+  <data name="Main_Update_NotInstalledBody" xml:space="preserve"><value>Denne bygningen kjøres ikke fra et installasjonsprogram, så oppdateringer kan ikke brukes.
+
+For å teste oppdateringsflyten:
+  1. Kjør scripts/publish.ps1
+  2. Installer den produserte VideoArchiveManager-win-Setup.exe
+  3. Åpne den installerte appen og prøv Se etter oppdateringer igjen.
+
+{0}</value></data>
+  <data name="Main_Update_CurrentBuildLine" xml:space="preserve"><value>Gjeldende byggeversjon: {0}</value></data>
+  <data name="Main_Update_SkippedStatus" xml:space="preserve"><value>Oppdateringssjekk hoppet over (ikke en installert bygning)</value></data>
+  <data name="Main_Update_UpToDateStatus" xml:space="preserve"><value>Oppdatert{0}</value></data>
+  <data name="Main_Update_UpToDateBody" xml:space="preserve"><value>Du er på nyeste versjon{0}.</value></data>
+  <data name="Main_Update_AvailableStatus" xml:space="preserve"><value>Oppdatering tilgjengelig: v{0}</value></data>
+  <data name="Main_Update_ConfirmBody" xml:space="preserve"><value>En oppdatering er tilgjengelig.
+
+Gjeldende: v{0}
+Ny:        v{1}
+
+Laste ned og installere den nå? Appen lukkes og starter på nytt på den nye versjonen når den er klar.
+
+Katalogdatabasen, innstillingene og sidecar-filene dine blir IKKE påvirket.</value></data>
+  <data name="Main_Update_AvailableTitle" xml:space="preserve"><value>Oppdatering tilgjengelig</value></data>
+  <data name="Main_Update_DeferredStatus" xml:space="preserve"><value>Oppdatering utsatt (v{0} tilgjengelig)</value></data>
+  <data name="Main_Update_DownloadingStatus" xml:space="preserve"><value>Laster ned v{0}…</value></data>
+  <data name="Main_Update_PreparingStatus" xml:space="preserve"><value>Forbereder oppdatering v{0}… dette kan ta et øyeblikk.</value></data>
+  <data name="Main_Update_DownloadingPercent" xml:space="preserve"><value>Laster ned v{0}… {1} %</value></data>
+  <data name="Main_Update_FailedStatus" xml:space="preserve"><value>Oppdatering mislyktes: {0}</value></data>
+  <data name="Main_Update_FailedBody" xml:space="preserve"><value>Oppdateringen kunne ikke installeres.
+
+{0}
+
+Gjeldende versjon er upåvirket.</value></data>
+  <data name="Main_Update_FailedTitle" xml:space="preserve"><value>Oppdatering mislyktes</value></data>
+  <data name="Main_Status_SavedSearch" xml:space="preserve"><value>Lagret søk "{0}"</value></data>
+  <data name="Main_Status_SaveSearchFailed" xml:space="preserve"><value>Kunne ikke lagre søk: {0}</value></data>
+  <data name="Main_Status_AppliedSearch" xml:space="preserve"><value>Brukte lagret søk "{0}" · {1} av {2} videoer</value></data>
+  <data name="Main_RenameSearch_Title" xml:space="preserve"><value>Gi nytt navn til lagret søk</value></data>
+  <data name="Main_Status_RenamedSearch" xml:space="preserve"><value>Ga lagret søk nytt navn til "{0}"</value></data>
+  <data name="Main_Status_RenameSearchFailed" xml:space="preserve"><value>Kunne ikke gi nytt navn til søk: {0}</value></data>
+  <data name="Main_DeleteSearch_Confirm" xml:space="preserve"><value>Slette det lagrede søket "{0}"?
+
+Dette fjerner kun det lagrede filteret. Ingen videoer, tagger eller katalogoppføringer påvirkes.</value></data>
+  <data name="Main_DeleteSearch_Title" xml:space="preserve"><value>Slett lagret søk</value></data>
+  <data name="Main_Status_DeletedSearch" xml:space="preserve"><value>Slettet lagret søk "{0}"</value></data>
+  <data name="Main_Suggest_Unreviewed" xml:space="preserve"><value>Ikke gjennomgått</value></data>
+  <data name="Main_Suggest_MainSubject" xml:space="preserve"><value>hovedmotiv</value></data>
+  <data name="Main_Suggest_DateRange" xml:space="preserve"><value>datointervall</value></data>
+  <data name="Main_Suggest_AllClips" xml:space="preserve"><value>Alle klipp</value></data>
+
+  <!-- ===== Videodetalj-view-model: lagringsstatus og tilbakemelding ===== -->
+  <data name="Detail_Sidecar_NoVideo" xml:space="preserve"><value>sidecar hoppet over (ingen video valgt)</value></data>
+  <data name="Detail_Sidecar_Disabled" xml:space="preserve"><value>sidecar deaktivert</value></data>
+  <data name="Detail_Sidecar_NotFound" xml:space="preserve"><value>sidecar hoppet over (video ikke funnet i katalogen)</value></data>
+  <data name="Detail_Sidecar_Written" xml:space="preserve"><value>sidecar skrevet: {0}</value></data>
+  <data name="Detail_Sidecar_Failed" xml:space="preserve"><value>sidecar MISLYKTES: {0}</value></data>
+  <data name="Detail_Sidecar_UnknownError" xml:space="preserve"><value>ukjent feil</value></data>
+  <data name="Detail_Save_Saved" xml:space="preserve"><value>Lagret · {0}</value></data>
+  <data name="Detail_Save_TagAddedKeep" xml:space="preserve"><value>Tagg lagt til · status → Behold · {0}</value></data>
+  <data name="Detail_Save_TagAdded" xml:space="preserve"><value>Tagg lagt til · {0}</value></data>
+  <data name="Detail_Save_TagAddFailed" xml:space="preserve"><value>Tagg-tillegg mislyktes: {0}</value></data>
+  <data name="Detail_Save_TagRemoved" xml:space="preserve"><value>Tagg fjernet · {0}</value></data>
+  <data name="Detail_Save_TagRemoveFailed" xml:space="preserve"><value>Tagg-fjerning mislyktes: {0}</value></data>
+  <data name="Detail_Save_LocationSaved" xml:space="preserve"><value>Sted lagret · {0} · {1}</value></data>
+  <data name="Detail_Save_LocationCleared" xml:space="preserve"><value>Sted fjernet · {0}</value></data>
+  <data name="Detail_Geo_Skipped" xml:space="preserve"><value>geokoding hoppet over</value></data>
+  <data name="Detail_Geo_Location" xml:space="preserve"><value>sted → {0}</value></data>
+  <data name="Detail_Geo_NoMatch" xml:space="preserve"><value>geokoding: ingen treff</value></data>
+  <data name="Detail_Geo_Failed" xml:space="preserve"><value>geokoding mislyktes</value></data>
+  <data name="Detail_Fb_TagAddedSidecarFailed" xml:space="preserve"><value>Tagg lagt til: {0} — sidecar-skriving mislyktes</value></data>
+  <data name="Detail_Fb_TagAddedKeep" xml:space="preserve"><value>Tagg lagt til: {0} · status → Behold</value></data>
+  <data name="Detail_Fb_TagAdded" xml:space="preserve"><value>Tagg lagt til: {0}</value></data>
+  <data name="Detail_Fb_TagAddError" xml:space="preserve"><value>Kunne ikke legge til tagg: {0}</value></data>
+  <data name="Detail_Fb_TagRemovedSidecarFailed" xml:space="preserve"><value>Tagg fjernet: {0} — sidecar-skriving mislyktes</value></data>
+  <data name="Detail_Fb_TagRemoved" xml:space="preserve"><value>Tagg fjernet: {0}</value></data>
+  <data name="Detail_Fb_TagRemoveError" xml:space="preserve"><value>Kunne ikke fjerne tagg: {0}</value></data>
+  <data name="Detail_Fb_MarkedBackground" xml:space="preserve"><value>Merket som bakgrunn: {0}</value></data>
+  <data name="Detail_Fb_MarkedMain" xml:space="preserve"><value>Merket som hovedmotiv: {0}</value></data>
+  <data name="Detail_Fb_TagUpdateError" xml:space="preserve"><value>Kunne ikke oppdatere tagg: {0}</value></data>
+  <data name="Detail_Moment_InPoint" xml:space="preserve"><value>Inn-punkt {0} — trykk O for å sette ut-punktet</value></data>
+  <data name="Detail_Moment_MarkerAdded" xml:space="preserve"><value>Markør lagt til ved {0}</value></data>
+  <data name="Detail_Moment_MomentAdded" xml:space="preserve"><value>Øyeblikk lagt til {0}</value></data>
+  <data name="Detail_Moment_ChangesSaved" xml:space="preserve"><value>Endringer lagret · {0}</value></data>
+  <data name="Detail_Moment_Deleted" xml:space="preserve"><value>Øyeblikk slettet</value></data>
+  <data name="Detail_Moment_TagAdded" xml:space="preserve"><value>Tagg lagt til øyeblikk · {0}</value></data>
+  <data name="Detail_Moment_TagRemoved" xml:space="preserve"><value>Tagg fjernet fra øyeblikk · {0}</value></data>
+  <data name="Detail_Moment_TagBackground" xml:space="preserve"><value>Øyeblikkstagg merket som bakgrunn · {0}</value></data>
+  <data name="Detail_Moment_TagMain" xml:space="preserve"><value>Øyeblikkstagg merket som hovedmotiv · {0}</value></data>
+  <data name="Detail_MomentFb_SavedSidecarFailed" xml:space="preserve"><value>Endringer lagret — sidecar-skriving mislyktes</value></data>
+  <data name="Detail_MomentFb_Saved" xml:space="preserve"><value>Endringer lagret</value></data>
+  <data name="Detail_MomentFb_SaveError" xml:space="preserve"><value>Kunne ikke lagre endringer: {0}</value></data>
+
+  <!-- ===== Finn duplikater-vindu ===== -->
+  <data name="Dup_Title" xml:space="preserve"><value>Finn duplikater</value></data>
+  <data name="Dup_Desc" xml:space="preserve"><value>Klipp som deler samme filstørrelse, varighet og oppløsning — nesten helt sikkert det samme opptaket på mer enn ett sted. Skrivebeskyttet: kildevideofilene dine flyttes eller slettes aldri.</value></data>
+  <data name="Dup_MarkTip" xml:space="preserve"><value>Merk denne kopien for fjerning fra katalogen (filen på disk røres aldri).</value></data>
+  <data name="Dup_SuggestedKeep" xml:space="preserve"><value>Foreslått å beholde</value></data>
+  <data name="Dup_Online" xml:space="preserve"><value>Tilkoblet</value></data>
+  <data name="Dup_Offline" xml:space="preserve"><value>Frakoblet</value></data>
+  <data name="Dup_Rescan" xml:space="preserve"><value>Skann på nytt</value></data>
+  <data name="Dup_SelectRedundant" xml:space="preserve"><value>Velg alle overflødige</value></data>
+  <data name="Dup_SelectRedundant_Tip" xml:space="preserve"><value>Merk alle kopier unntatt den foreslåtte å beholde i hvert sett.</value></data>
+  <data name="Dup_Clear" xml:space="preserve"><value>Tøm</value></data>
+  <data name="Dup_Scanning" xml:space="preserve"><value>Skanner etter duplikater…</value></data>
+  <data name="Dup_EmptyTitle" xml:space="preserve"><value>Ingen duplikater funnet</value></data>
+  <data name="Dup_EmptyDesc" xml:space="preserve"><value>Ingen to klipp i katalogen deler samme filstørrelse, varighet og oppløsning. Skann på nytt etter import av mer opptak for å sjekke igjen.</value></data>
+  <data name="Dup_RemoveSelected" xml:space="preserve"><value>Fjern valgte fra databasen…</value></data>
+  <data name="Dup_ScanFailed" xml:space="preserve"><value>Kunne ikke skanne etter duplikater: {0}</value></data>
+  <data name="Dup_NoneSelected" xml:space="preserve"><value>Ingen kopier valgt</value></data>
+  <data name="Dup_SelectionText" xml:space="preserve"><value>{0} valgt · {1} av disken ikke lenger katalogisert</value></data>
+  <data name="Dup_Summary" xml:space="preserve"><value>{0} duplikatsett · {1} overflødige kopier · {2} kan frigjøres på disk</value></data>
+  <data name="Dup_Warning" xml:space="preserve"><value>ADVARSEL: {0} duplikatsett har ALLE kopier valgt — å fjerne dem etterlater ingen katalogoppføring for det klippet i det hele tatt.</value></data>
+  <data name="Dup_Confirm_Header" xml:space="preserve"><value>Fjerne {0} duplikat-katalogoppføring(er) fra databasen?</value></data>
+  <data name="Dup_Confirm_Footer" xml:space="preserve"><value>Dette fjerner kun katalogradene (tagger, vurderinger, notater) og de bufrede miniatyrene deres. Kildevideofilene på disk blir IKKE rørt, flyttet eller slettet.</value></data>
+  <data name="Dup_Confirm_Title" xml:space="preserve"><value>Fjern duplikater fra databasen</value></data>
+  <data name="Dup_GroupHeader" xml:space="preserve"><value>{0} kopier · {1} hver · {2} · {3}</value></data>
+  <data name="Dup_ResolutionUnknown" xml:space="preserve"><value>ukjent oppløsning</value></data>
+  <data name="Dup_Reclaim" xml:space="preserve"><value>{0} overflødig</value></data>
+
+  <!-- ===== Finn øyeblikk-vindu ===== -->
+  <data name="MomentSearch_Title" xml:space="preserve"><value>Finn øyeblikk</value></data>
+  <data name="MomentSearch_Subtitle" xml:space="preserve"><value>Søk i hvert klipp du har markert — etter etikett, notat, tagg, filnavn eller vurdering — og hopp rett til det.</value></data>
+  <data name="MomentSearch_SearchPlaceholder" xml:space="preserve"><value>Søk i øyeblikk…</value></data>
+  <data name="MomentSearch_MinRating" xml:space="preserve"><value>Min. vurdering</value></data>
+  <data name="MomentSearch_OnlineOnly" xml:space="preserve"><value>Bare tilkoblet</value></data>
+  <data name="MomentSearch_OnlineOnlyToolTip" xml:space="preserve"><value>Skjul øyeblikk der kildefilen er frakoblet akkurat nå.</value></data>
+  <data name="MomentSearch_SearchButton" xml:space="preserve"><value>Søk</value></data>
+  <data name="MomentSearch_JumpTo" xml:space="preserve"><value>Hopp til</value></data>
+  <data name="MomentSearch_NoMatches" xml:space="preserve"><value>Ingen øyeblikk samsvarer.</value></data>
+  <data name="MomentSearch_ShowingCount" xml:space="preserve"><value>Viser {0} av {1} øyeblikk</value></data>
+  <data name="MomentSearch_MomentCountSingular" xml:space="preserve"><value>{0} øyeblikk</value></data>
+  <data name="MomentSearch_MomentCountPlural" xml:space="preserve"><value>{0} øyeblikk</value></data>
+
+  <!-- ===== Lagre søk-dialog ===== -->
+  <data name="SaveSearch_Title" xml:space="preserve"><value>Lagre søk</value></data>
+  <data name="SaveSearch_Header" xml:space="preserve"><value>Lagre dette søket</value></data>
+  <data name="SaveSearch_Desc" xml:space="preserve"><value>Gi de gjeldende filtrene et navn. Det kjøres live mot katalogen hver gang du klikker på det.</value></data>
+  <data name="SaveSearch_Placeholder" xml:space="preserve"><value>Navn på lagret søk</value></data>
+
+  <!-- ===== Oppstartsvindu ===== -->
+  <data name="Splash_Loading" xml:space="preserve"><value>Laster</value></data>
+  <data name="Splash_VersionUnknown" xml:space="preserve"><value>versjon ukjent</value></data>
+  <data name="Splash_VersionFormat" xml:space="preserve"><value>versjon {0}.{1}.{2}</value></data>
+
+  <!-- ===== Masseredigering-dialog ===== -->
+  <data name="BulkEdit_Title" xml:space="preserve"><value>Masserediger valgte videoer</value></data>
+  <data name="BulkEdit_Header" xml:space="preserve"><value>Masserediger</value></data>
+  <data name="BulkEdit_Desc" xml:space="preserve"><value>Bruk endringer på hvert klipp i det gjeldende utvalget.</value></data>
+  <data name="BulkEdit_SetStatus" xml:space="preserve"><value>Angi status</value></data>
+  <data name="BulkEdit_SetRating" xml:space="preserve"><value>Angi vurdering</value></data>
+  <data name="BulkEdit_AppendNotes" xml:space="preserve"><value>Legg til i notater</value></data>
+  <data name="BulkEdit_AddTag" xml:space="preserve"><value>Legg til en tagg</value></data>
+  <data name="BulkEdit_TagNamePlaceholder" xml:space="preserve"><value>Taggnavn</value></data>
+  <data name="Common_Apply" xml:space="preserve"><value>Bruk</value></data>
+
+  <!-- ===== Stragglers / delte ===== -->
+  <data name="Main_Status_Sidecar_On" xml:space="preserve"><value>Sidecar: PÅ</value></data>
+  <data name="Main_Status_Sidecar_Off" xml:space="preserve"><value>Sidecar: AV</value></data>
+  <data name="Detail_Moment_CountOne" xml:space="preserve"><value>1 øyeblikk</value></data>
+  <data name="Detail_Moment_CountMany" xml:space="preserve"><value>{0} øyeblikk</value></data>
+  <data name="Common_Close" xml:space="preserve"><value>Lukk</value></data>
+  <data name="Common_Refresh" xml:space="preserve"><value>Oppdater</value></data>
+  <data name="Common_Online" xml:space="preserve"><value>Tilkoblet</value></data>
+  <data name="Common_Offline" xml:space="preserve"><value>Frakoblet</value></data>
+  <data name="Common_CopyValue" xml:space="preserve"><value>Kopier verdi</value></data>
+  <data name="Common_WholeArchive" xml:space="preserve"><value>Hele arkivet</value></data>
+  <data name="Common_ShowInGrid" xml:space="preserve"><value>Vis i rutenett</value></data>
+  <data name="Common_PlayInApp" xml:space="preserve"><value>Spill av i appen</value></data>
+  <data name="Common_FilterGridToView" xml:space="preserve"><value>Filtrer rutenett til denne visningen</value></data>
+  <data name="Common_FilterGridToMonth" xml:space="preserve"><value>Filtrer rutenett til denne måneden</value></data>
+  <data name="Common_AcceptAll" xml:space="preserve"><value>Godta alle</value></data>
+  <data name="Common_RejectAll" xml:space="preserve"><value>Avvis alle</value></data>
+  <data name="Common_Yes" xml:space="preserve"><value>Ja</value></data>
+  <data name="Common_No" xml:space="preserve"><value>Nei</value></data>
+  <data name="Common_Found" xml:space="preserve"><value>Funnet</value></data>
+  <data name="Common_NotFound" xml:space="preserve"><value>Ikke funnet</value></data>
+  <data name="Common_Unavailable" xml:space="preserve"><value>Utilgjengelig</value></data>
+  <data name="Common_Disabled" xml:space="preserve"><value>Deaktivert</value></data>
+  <data name="Common_Unknown" xml:space="preserve"><value>Ukjent</value></data>
+  <data name="Common_NotRated" xml:space="preserve"><value>Ikke vurdert</value></data>
+  <data name="Common_Available" xml:space="preserve"><value>Tilgjengelig</value></data>
+  <data name="Common_OfflineMissing" xml:space="preserve"><value>Frakoblet (fil mangler)</value></data>
+  <data name="Common_NoTags" xml:space="preserve"><value>Ingen tagger</value></data>
+  <data name="Common_OpenInMap" xml:space="preserve"><value>Åpne i kart</value></data>
+  <data name="Common_CurrentFilters" xml:space="preserve"><value>(gjeldende filtre)</value></data>
+  <data name="Common_ClipSingular" xml:space="preserve"><value>klipp</value></data>
+  <data name="Common_ClipPlural" xml:space="preserve"><value>klipp</value></data>
+  <data name="Common_YearSingular" xml:space="preserve"><value>år</value></data>
+  <data name="Common_YearPlural" xml:space="preserve"><value>år</value></data>
+  <data name="Common_SuggestionSingular" xml:space="preserve"><value>forslag</value></data>
+  <data name="Common_SuggestionPlural" xml:space="preserve"><value>forslag</value></data>
+
+  <!-- ===== AI-gjennomgangsvindu ===== -->
+  <data name="AiReview_Title" xml:space="preserve"><value>Gjennomgå AI-forslag</value></data>
+  <data name="AiReview_OfflinePreview" xml:space="preserve"><value>Kildefilen er frakoblet — forhåndsvisning utilgjengelig</value></data>
+  <data name="AiReview_BestFramePrefix" xml:space="preserve"><value>Beste bilde for </value></data>
+  <data name="AiReview_Accept_Tip" xml:space="preserve"><value>Godta — legg til denne taggen på klippet</value></data>
+  <data name="AiReview_Reject_Tip" xml:space="preserve"><value>Avvis — forkast dette forslaget</value></data>
+  <data name="AiReview_Play_Tip" xml:space="preserve"><value>Spill av dette øyeblikket i spilleren</value></data>
+  <data name="AiReview_Loading" xml:space="preserve"><value>Laster forslag…</value></data>
+  <data name="AiReview_Empty_Headline" xml:space="preserve"><value>Ingen forslag å gjennomgå</value></data>
+  <data name="AiReview_Empty_Subtext" xml:space="preserve"><value>Kjør Katalog → Generer AI-tagger… for å skåre klippene dine, og kom tilbake hit for å godta eller avvise forslagene.</value></data>
+  <data name="AiReview_SummaryEmpty" xml:space="preserve"><value>Ingen ventende forslag.</value></data>
+  <data name="AiReview_Summary" xml:space="preserve"><value>{0} forslag på tvers av {1} klipp</value></data>
+  <data name="AiReview_PreviewTooltip" xml:space="preserve"><value>Klikk for å hoppe til dette øyeblikket i spilleren; hold over for å forhåndsvise beste bilde</value></data>
+  <data name="AiReview_OfflineTooltip" xml:space="preserve"><value>Kildefilen er frakoblet — forhåndsvisning utilgjengelig</value></data>
+
+  <!-- ===== Kartvisningsvindu ===== -->
+  <data name="MapBrowse_Title" xml:space="preserve"><value>Bla i kart</value></data>
+  <data name="MapBrowse_Description" xml:space="preserve"><value>Alle geotaggede klipp i arkivet ditt, gruppert etter sted. Klikk en klynge for å avgrense katalogrutenettet, klikk en markør for å forhåndsvise et klipp, eller filtrer rutenettet til det som er i visningen.</value></data>
+  <data name="MapBrowse_WholeArchive_Tip" xml:space="preserve"><value>På: vis alle geotaggede klipp i katalogen. Av: vis bare klipp som samsvarer med gjeldende rutenettfiltre.</value></data>
+  <data name="MapBrowse_FilterGrid_Tip" xml:space="preserve"><value>Avgrens katalogrutenettet til alle klipp som for øyeblikket er innenfor kartvisningen.</value></data>
+  <data name="MapBrowse_ClickMarker" xml:space="preserve"><value>Klikk en markør for å forhåndsvise klippet her.</value></data>
+  <data name="MapBrowse_NoGeoWhole" xml:space="preserve"><value>Ingen geotaggede klipp i katalogen.</value></data>
+  <data name="MapBrowse_NoGeoFiltered" xml:space="preserve"><value>Ingen geotaggede klipp samsvarer med gjeldende filtre.</value></data>
+  <data name="MapBrowse_ResultCount" xml:space="preserve"><value>{0} geotaggede {1}</value></data>
+
+  <!-- ===== Kalendervisningsvindu ===== -->
+  <data name="CalendarBrowse_Title" xml:space="preserve"><value>Bla etter dato</value></data>
+  <data name="CalendarBrowse_Description" xml:space="preserve"><value>Et år-for-måned-varmekart over når du filmet. Lysere celler har flere klipp; klikk en måned for å liste klippene, forhåndsvise ett, og hoppe til det i rutenettet eller spilleren.</value></data>
+  <data name="CalendarBrowse_WholeArchive_Tip" xml:space="preserve"><value>På: tell alle klipp i katalogen. Av: tell bare klipp som samsvarer med gjeldende rutenettfiltre.</value></data>
+  <data name="CalendarBrowse_FilterMonth_Tip" xml:space="preserve"><value>Avgrens katalogrutenettet til den valgte månedens datointervall.</value></data>
+  <data name="CalendarBrowse_EmptyHeatmap" xml:space="preserve"><value>Ingen daterte klipp å vise ennå. Skann noe materiale først.</value></data>
+  <data name="CalendarBrowse_ClickMonth" xml:space="preserve"><value>Klikk en måned i varmekartet for å liste klippene her.</value></data>
+  <data name="CalendarBrowse_NoDatedWhole" xml:space="preserve"><value>Ingen daterte klipp i katalogen.</value></data>
+  <data name="CalendarBrowse_NoDatedFiltered" xml:space="preserve"><value>Ingen daterte klipp samsvarer med gjeldende filtre.</value></data>
+  <data name="CalendarBrowse_ResultSummary" xml:space="preserve"><value>{0} {1} på tvers av {2} {3}</value></data>
+  <data name="CalendarBrowse_MonthHeader" xml:space="preserve"><value>{0} {1} — {2} {3}</value></data>
+  <data name="CalendarBrowse_MonthTooltip" xml:space="preserve"><value>{0} {1} — {2} {3}</value></data>
+  <data name="CalendarBrowse_MonthTooltipEmpty" xml:space="preserve"><value>{0} {1} — ingen klipp</value></data>
+
+  <!-- ===== Katalogstatistikk-vindu ===== -->
+  <data name="CatalogStats_Title" xml:space="preserve"><value>Katalogstatistikk</value></data>
+  <data name="CatalogStats_Description" xml:space="preserve"><value>Et live øyeblikksbilde av katalogen din. Skrivebeskyttet — kildevideofilene dine blir aldri rørt.</value></data>
+  <data name="CatalogStats_Loading" xml:space="preserve"><value>Beregner statistikk…</value></data>
+  <data name="CatalogStats_Empty_Headline" xml:space="preserve"><value>Ingenting å oppsummere ennå</value></data>
+  <data name="CatalogStats_Empty_Subtext" xml:space="preserve"><value>Legg til en rotmappe og kjør en skanning, og åpne så dette vinduet igjen for å se katalogen din med ett blikk.</value></data>
+  <data name="CatalogStats_Overview" xml:space="preserve"><value>OVERSIKT</value></data>
+  <data name="CatalogStats_Breakdowns" xml:space="preserve"><value>FORDELINGER</value></data>
+  <data name="CatalogStats_Error" xml:space="preserve"><value>Kunne ikke beregne statistikk: {0}</value></data>
+  <data name="CatalogStats_Metric_Clips" xml:space="preserve"><value>Klipp</value></data>
+  <data name="CatalogStats_Metric_ClipsDetail" xml:space="preserve"><value>{0} tilkoblet · {1} frakoblet</value></data>
+  <data name="CatalogStats_Metric_TotalSize" xml:space="preserve"><value>Total størrelse</value></data>
+  <data name="CatalogStats_Metric_TotalSizeDetail" xml:space="preserve"><value>på tvers av katalogen</value></data>
+  <data name="CatalogStats_Metric_TotalFootage" xml:space="preserve"><value>Total materiale</value></data>
+  <data name="CatalogStats_Metric_TotalFootageDetail" xml:space="preserve"><value>kombinert spilletid</value></data>
+  <data name="CatalogStats_Metric_Folders" xml:space="preserve"><value>Mapper</value></data>
+  <data name="CatalogStats_Metric_FoldersDetail" xml:space="preserve"><value>{0} rotmappe(r)</value></data>
+  <data name="CatalogStats_Metric_Cameras" xml:space="preserve"><value>Kameraer</value></data>
+  <data name="CatalogStats_Metric_CamerasDetail" xml:space="preserve"><value>distinkte modeller</value></data>
+  <data name="CatalogStats_Metric_Tags" xml:space="preserve"><value>Tagger</value></data>
+  <data name="CatalogStats_Metric_TagsDetail" xml:space="preserve"><value>i katalogen</value></data>
+  <data name="CatalogStats_Metric_Reviewed" xml:space="preserve"><value>Gjennomgått</value></data>
+  <data name="CatalogStats_Metric_ReviewedDetail" xml:space="preserve"><value>{0} av {1} klipp</value></data>
+  <data name="CatalogStats_Metric_Geotagged" xml:space="preserve"><value>Geotagged</value></data>
+  <data name="CatalogStats_Metric_GeotaggedDetail" xml:space="preserve"><value>{0} med GPS</value></data>
+  <data name="CatalogStats_Section_Status" xml:space="preserve"><value>Etter status</value></data>
+  <data name="CatalogStats_Section_Rating" xml:space="preserve"><value>Etter vurdering</value></data>
+  <data name="CatalogStats_Section_Resolution" xml:space="preserve"><value>Etter oppløsning</value></data>
+  <data name="CatalogStats_Section_Year" xml:space="preserve"><value>Etter år</value></data>
+  <data name="CatalogStats_Section_Cameras" xml:space="preserve"><value>Toppkameraer</value></data>
+  <data name="CatalogStats_Section_Codecs" xml:space="preserve"><value>Toppkodeker</value></data>
+  <data name="CatalogStats_Section_Tags" xml:space="preserve"><value>Topp-tagger</value></data>
+  <data name="CatalogStats_PercentUnder1" xml:space="preserve"><value>&lt;1%</value></data>
+
+  <!-- ===== Klippinfo-vindu ===== -->
+  <data name="VideoInfo_Title" xml:space="preserve"><value>Klippinfo</value></data>
+  <data name="VideoInfo_Section_File" xml:space="preserve"><value>FIL</value></data>
+  <data name="VideoInfo_Section_Video" xml:space="preserve"><value>VIDEO</value></data>
+  <data name="VideoInfo_Section_Camera" xml:space="preserve"><value>KAMERA</value></data>
+  <data name="VideoInfo_Section_Location" xml:space="preserve"><value>STED</value></data>
+  <data name="VideoInfo_Section_Catalog" xml:space="preserve"><value>KATALOG</value></data>
+  <data name="VideoInfo_Section_Internal" xml:space="preserve"><value>INTERNT</value></data>
+  <data name="VideoInfo_Label_Filename" xml:space="preserve"><value>Filnavn</value></data>
+  <data name="VideoInfo_Label_FullPath" xml:space="preserve"><value>Full bane</value></data>
+  <data name="VideoInfo_Label_Folder" xml:space="preserve"><value>Mappe</value></data>
+  <data name="VideoInfo_Label_Extension" xml:space="preserve"><value>Filendelse</value></data>
+  <data name="VideoInfo_Label_Size" xml:space="preserve"><value>Størrelse</value></data>
+  <data name="VideoInfo_Label_Modified" xml:space="preserve"><value>Endret</value></data>
+  <data name="VideoInfo_Label_Created" xml:space="preserve"><value>Opprettet</value></data>
+  <data name="VideoInfo_Label_OnDisk" xml:space="preserve"><value>På disk</value></data>
+  <data name="VideoInfo_Label_Duration" xml:space="preserve"><value>Varighet</value></data>
+  <data name="VideoInfo_Label_Resolution" xml:space="preserve"><value>Oppløsning</value></data>
+  <data name="VideoInfo_Label_AspectRatio" xml:space="preserve"><value>Sideforhold</value></data>
+  <data name="VideoInfo_Label_FrameRate" xml:space="preserve"><value>Bildefrekvens</value></data>
+  <data name="VideoInfo_Label_Codec" xml:space="preserve"><value>Kodek</value></data>
+  <data name="VideoInfo_Label_Camera" xml:space="preserve"><value>Merke / modell</value></data>
+  <data name="VideoInfo_Label_FolderLocation" xml:space="preserve"><value>Mappested</value></data>
+  <data name="VideoInfo_Label_Gps" xml:space="preserve"><value>GPS</value></data>
+  <data name="VideoInfo_Label_FolderDate" xml:space="preserve"><value>Mappedato</value></data>
+  <data name="VideoInfo_Label_Status" xml:space="preserve"><value>Status</value></data>
+  <data name="VideoInfo_Label_Rating" xml:space="preserve"><value>Vurdering</value></data>
+  <data name="VideoInfo_Label_Tags" xml:space="preserve"><value>Tagger</value></data>
+  <data name="VideoInfo_Label_Notes" xml:space="preserve"><value>Notater</value></data>
+  <data name="VideoInfo_Label_Sidecar" xml:space="preserve"><value>Sidecar</value></data>
+  <data name="VideoInfo_Label_AddedToCatalog" xml:space="preserve"><value>Lagt til i katalog</value></data>
+  <data name="VideoInfo_Label_LastUpdated" xml:space="preserve"><value>Sist oppdatert</value></data>
+  <data name="VideoInfo_Label_CatalogId" xml:space="preserve"><value>Katalog-ID</value></data>
+  <data name="VideoInfo_Label_Thumbnail" xml:space="preserve"><value>Miniatyr</value></data>
+  <data name="VideoInfo_Bytes" xml:space="preserve"><value>{0:N0} byte</value></data>
+  <data name="VideoInfo_Sidecar_Written" xml:space="preserve"><value>Skrevet</value></data>
+  <data name="VideoInfo_Sidecar_NotWritten" xml:space="preserve"><value>Ikke skrevet ennå</value></data>
+
+  <!-- ===== Diagnostikk-vindu ===== -->
+  <data name="Diagnostics_Title" xml:space="preserve"><value>Diagnostikk</value></data>
+  <data name="Diagnostics_Environment" xml:space="preserve"><value>MILJØ</value></data>
+  <data name="Diagnostics_RecentLog" xml:space="preserve"><value>SISTE LOGG</value></data>
+  <data name="Diagnostics_LevelFilter_Tip" xml:space="preserve"><value>Vis bare oppføringer på dette nivået eller mer alvorlige.</value></data>
+  <data name="Diagnostics_Level_All" xml:space="preserve"><value>Alle nivåer</value></data>
+  <data name="Diagnostics_Level_InfoUp" xml:space="preserve"><value>Info og opp</value></data>
+  <data name="Diagnostics_Level_WarnUp" xml:space="preserve"><value>Advarsler og opp</value></data>
+  <data name="Diagnostics_Level_Errors" xml:space="preserve"><value>Bare feil</value></data>
+  <data name="Diagnostics_FilterPlaceholder" xml:space="preserve"><value>Filtertekst…</value></data>
+  <data name="Diagnostics_AutoScroll" xml:space="preserve"><value>Auto-rulling</value></data>
+  <data name="Diagnostics_CopyLog" xml:space="preserve"><value>Kopier logg</value></data>
+  <data name="Diagnostics_CopyLog_Tip" xml:space="preserve"><value>Kopier de viste logglinjene til utklippstavlen.</value></data>
+  <data name="Diagnostics_OpenLogFile" xml:space="preserve"><value>Åpne loggfil</value></data>
+  <data name="Diagnostics_OpenFolder" xml:space="preserve"><value>Åpne mappe</value></data>
+  <data name="Diagnostics_Clear" xml:space="preserve"><value>Tøm</value></data>
+  <data name="Diagnostics_Clear_Tip" xml:space="preserve"><value>Tøm skjermbufferen (loggfilen på disk beholdes).</value></data>
+  <data name="Diagnostics_CopyReport" xml:space="preserve"><value>Kopier full rapport</value></data>
+  <data name="Diagnostics_CopyReport_Tip" xml:space="preserve"><value>Kopier miljøoppsummeringen og den synlige loggen til utklippstavlen.</value></data>
+  <data name="Diagnostics_EntryCount" xml:space="preserve"><value>{0} oppføringer</value></data>
+  <data name="Diagnostics_EntryCountFiltered" xml:space="preserve"><value>{0} av {1} oppføringer</value></data>
+  <data name="Diagnostics_NoLogFile" xml:space="preserve"><value>Ingen loggfil er tilgjengelig for denne økten.</value></data>
+  <data name="Diagnostics_Env_AppVersion" xml:space="preserve"><value>Appversjon</value></data>
+  <data name="Diagnostics_Env_Runtime" xml:space="preserve"><value>Runtime</value></data>
+  <data name="Diagnostics_Env_OS" xml:space="preserve"><value>OS</value></data>
+  <data name="Diagnostics_Env_Architecture" xml:space="preserve"><value>Arkitektur</value></data>
+  <data name="Diagnostics_Env_PlayerEngine" xml:space="preserve"><value>Spillermotor</value></data>
+  <data name="Diagnostics_Env_PlayerAvailable" xml:space="preserve"><value>Spiller tilgjengelig</value></data>
+  <data name="Diagnostics_Env_Ffprobe" xml:space="preserve"><value>ffprobe</value></data>
+  <data name="Diagnostics_Env_Database" xml:space="preserve"><value>Database</value></data>
+  <data name="Diagnostics_Env_Thumbnails" xml:space="preserve"><value>Miniatyrer</value></data>
+  <data name="Diagnostics_Env_Backups" xml:space="preserve"><value>Sikkerhetskopier</value></data>
+  <data name="Diagnostics_Env_Settings" xml:space="preserve"><value>Innstillinger</value></data>
+  <data name="Diagnostics_Env_Logs" xml:space="preserve"><value>Logger</value></data>
+  <data name="Diagnostics_Env_PlayerMpv" xml:space="preserve"><value>mpv (GPU)</value></data>
+  <data name="Diagnostics_Env_PlayerFfme" xml:space="preserve"><value>FFME (CPU)</value></data>
+  <data name="Diagnostics_Env_PlayerNo" xml:space="preserve"><value>Nei — {0}</value></data>
+  <data name="Diagnostics_ReportHeader" xml:space="preserve"><value>=== Find That Shot — diagnostikk ===</value></data>
+  <data name="Diagnostics_ReportLogHeader" xml:space="preserve"><value>=== Siste logg ===</value></data>
+  <data name="Diagnostics_LogInMemory" xml:space="preserve"><value>(bare i minnet)</value></data>
+
+  <!-- ===== Diverse dialoger ===== -->
+  <data name="App_DbInitFailed" xml:space="preserve"><value>Kunne ikke initialisere databasen:
+
+{0}</value></data>
+  <data name="Main_ReprocessAi_Title" xml:space="preserve"><value>Skår alle klipp på nytt</value></data>
+  <data name="Main_ReprocessAi_Body" xml:space="preserve"><value>Skåre alle klipp på nytt med AI-modellen?
+
+Dette kjører bildeutvalg og CLIP-inferens på alle klipp (ikke bare nye), så det kan ta en stund på en stor katalog. Eksisterende godtatte/avviste tagger beholdes; ventende forslag oppdateres.</value></data>
+  <data name="About_NoticesNotFound_Body" xml:space="preserve"><value>THIRD-PARTY-NOTICES.md ble ikke funnet ved siden av applikasjonen. Du kan lese den på nett på https://github.com/liknes/FindThatShot/blob/main/THIRD-PARTY-NOTICES.md.</value></data>
+  <data name="About_NoticesNotFound_Title" xml:space="preserve"><value>Merknader ikke funnet</value></data>
+  <data name="About_OpenNoticesFailed" xml:space="preserve"><value>Kunne ikke åpne merknadsfilen: {0}</value></data>
+</root>

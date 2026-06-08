@@ -1,0 +1,907 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!--
+    Neutral (English) UI strings for Find That Shot.
+
+    This is the source-of-truth resource file. Each <data> entry is one
+    translatable string, keyed by a stable name (e.g. About_Title). Per-language
+    files live alongside as Strings.<culture>.resx (e.g. Strings.nb-NO.resx) and
+    only need to override the keys they translate; anything missing falls back to
+    the value here.
+
+    Translators normally never edit this XML by hand — use ResX Resource Manager
+    (Excel round-trip) or a platform like Weblate / Crowdin. See README "Localization".
+  -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- ===== Common / shared ===== -->
+  <data name="Common_OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="Common_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Common_Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="Common_Browse" xml:space="preserve">
+    <value>Browse</value>
+  </data>
+
+  <!-- ===== Settings: Language section ===== -->
+  <data name="Settings_Language_Header" xml:space="preserve">
+    <value>LANGUAGE</value>
+  </data>
+  <data name="Settings_Language_Label" xml:space="preserve">
+    <value>Application language</value>
+  </data>
+  <data name="Settings_Language_Hint" xml:space="preserve">
+    <value>Changes apply immediately. Some text updates only after reopening a window.</value>
+  </data>
+
+  <!-- ===== Settings: window chrome + navigation ===== -->
+  <data name="Settings_Title" xml:space="preserve"><value>Settings</value></data>
+  <data name="Settings_Nav_General" xml:space="preserve"><value>General</value></data>
+  <data name="Settings_Nav_Storage" xml:space="preserve"><value>Library &amp; Storage</value></data>
+  <data name="Settings_Nav_Playback" xml:space="preserve"><value>Playback &amp; Map</value></data>
+  <data name="Settings_Nav_Review" xml:space="preserve"><value>Review</value></data>
+  <data name="Settings_Nav_Ai" xml:space="preserve"><value>AI tagging</value></data>
+
+  <!-- ===== Settings: General page ===== -->
+  <data name="Settings_Scanning_Header" xml:space="preserve"><value>SCANNING</value></data>
+  <data name="Settings_MaxParallelism" xml:space="preserve"><value>Max scan parallelism</value></data>
+  <data name="Settings_ExcludedFolders" xml:space="preserve"><value>Excluded folder names (comma-separated, matched on any path segment, case-insensitive)</value></data>
+  <data name="Settings_ExcludedPatterns" xml:space="preserve"><value>Excluded file name patterns (comma-separated globs, e.g. *_proxy.mp4, *.LRV)</value></data>
+  <data name="Settings_SavedTo" xml:space="preserve"><value>Settings are saved to %APPDATA%\VideoArchiveManager\settings.json.</value></data>
+
+  <!-- ===== Settings: Library &amp; Storage page ===== -->
+  <data name="Settings_Storage_Header" xml:space="preserve"><value>STORAGE</value></data>
+  <data name="Settings_ThumbnailDir" xml:space="preserve"><value>Thumbnail directory</value></data>
+  <data name="Settings_DatabaseFile" xml:space="preserve"><value>Database file</value></data>
+  <data name="Settings_DbRestart" xml:space="preserve"><value>Changing the database path requires an app restart.</value></data>
+  <data name="Settings_Sidecar_Header" xml:space="preserve"><value>SIDECAR FILES</value></data>
+  <data name="Settings_Sidecar_Desc" xml:space="preserve"><value>When enabled, a small "&lt;filename&gt;.findthatshot.json" file is written next to each video on save, containing its tags, rating, status and notes. Other tools (DaVinci Resolve, Premiere, Lightroom, FCP, etc.) ignore these files. Source video files are never modified. Failures on read-only / offline drives are skipped silently.</value></data>
+  <data name="Settings_Sidecar_Check" xml:space="preserve"><value>Write sidecar JSON files next to videos</value></data>
+  <data name="Settings_Backup_Header" xml:space="preserve"><value>CATALOG BACKUP</value></data>
+  <data name="Settings_Backup_Desc" xml:space="preserve"><value>The app can back up the catalog database (your tags, ratings, notes, status) to a folder you choose. Source video files are never touched.</value></data>
+  <data name="Settings_Backup_Dir" xml:space="preserve"><value>Backup directory</value></data>
+  <data name="Settings_Backup_Auto" xml:space="preserve"><value>Back up automatically on app startup</value></data>
+  <data name="Settings_Backup_KeepLast" xml:space="preserve"><value>Keep last</value></data>
+  <data name="Settings_Backup_KeepSuffix" xml:space="preserve"><value>backup(s); older backups are deleted.</value></data>
+  <data name="Settings_Backup_Now" xml:space="preserve"><value>Back up now</value></data>
+  <data name="Settings_Backup_RefreshList" xml:space="preserve"><value>Refresh list</value></data>
+  <data name="Settings_Backup_Available" xml:space="preserve"><value>Available backups (select one to restore)</value></data>
+  <data name="Settings_Backup_Restore" xml:space="preserve"><value>Restore selected</value></data>
+  <data name="Settings_Backup_Restore_Tip" xml:space="preserve"><value>Stage a restore from the selected backup. The app will restart to safely swap the database file.</value></data>
+
+  <!-- ===== Settings: Playback &amp; Map page ===== -->
+  <data name="Settings_Ffmpeg_Header" xml:space="preserve"><value>FFMPEG</value></data>
+  <data name="Settings_FfmpegPath" xml:space="preserve"><value>ffmpeg.exe path (leave blank to use PATH)</value></data>
+  <data name="Settings_FfprobePath" xml:space="preserve"><value>ffprobe.exe path (leave blank to use PATH)</value></data>
+  <data name="Settings_Playback_Header" xml:space="preserve"><value>PLAYBACK</value></data>
+  <data name="Settings_Proxy_Desc" xml:space="preserve"><value>When enabled, the in-app player prefers a DaVinci Resolve-style proxy when one exists. For each clip we look for a sibling "Proxy" folder containing a file with the same base name (any extension) and play that instead — much faster on high-bitrate 4K 60p sources. Falls back to the original clip silently when no proxy is found. The catalog, thumbnails, metadata and the "Play externally" command always continue to point at the original file.</value></data>
+  <data name="Settings_Proxy_Check" xml:space="preserve"><value>Prefer DaVinci Resolve proxies for in-app playback</value></data>
+  <data name="Settings_Telemetry_Desc" xml:space="preserve"><value>When enabled, the in-app player shows a telemetry strip under the video for DJI clips that have a sibling ".SRT" file — ISO, shutter, aperture, focal length, altitude and GPS, synced to the current frame. Display-only and read live from the file; the player also has its own inline toggle.</value></data>
+  <data name="Settings_Telemetry_Check" xml:space="preserve"><value>Show drone telemetry overlay in the player</value></data>
+  <data name="Settings_Map_Header" xml:space="preserve"><value>MAP</value></data>
+  <data name="Settings_FlightPath_Desc" xml:space="preserve"><value>When enabled, the sidebar map draws the full drone flight path for clips that have a sibling DJI ".SRT" file, as a line with start / end markers. This is display-only: turning it off just hides the route — clips are still geotagged with their location and the single pin still shows. The flight path is read live from the file and never stored.</value></data>
+  <data name="Settings_FlightPath_Check" xml:space="preserve"><value>Show drone flight paths on the map</value></data>
+  <data name="Settings_Grid_Header" xml:space="preserve"><value>CATALOG GRID</value></data>
+  <data name="Settings_HoverScrub_Desc" xml:space="preserve"><value>When enabled, hovering a catalog card and sweeping the pointer left-to-right scrubs through preview frames sampled across the clip — fast visual triage without opening the player. Frames are generated on demand the first time you hover a clip (a brief pause while ffmpeg extracts them), then cached; clips you never hover cost nothing. The source files are only ever read.</value></data>
+  <data name="Settings_HoverScrub_Check" xml:space="preserve"><value>Enable hover-scrub previews on catalog cards</value></data>
+
+  <!-- ===== Settings: Review page ===== -->
+  <data name="Settings_Review_Header" xml:space="preserve"><value>REVIEW HOTKEYS</value></data>
+  <data name="Settings_Review_Desc" xml:space="preserve"><value>Pin up to ten tags to the number keys. While the in-app player is open (review mode), pressing a digit toggles that tag on or off for the current clip — no mouse needed. Digits still type normally while you're editing the tag name, notes or coordinates fields.</value></data>
+  <data name="Settings_Review_Fill" xml:space="preserve"><value>Fill from most-used</value></data>
+  <data name="Settings_Review_Fill_Tip" xml:space="preserve"><value>Drop your most-used tags into the empty slots.</value></data>
+  <data name="Settings_Review_ClearAll" xml:space="preserve"><value>Clear all</value></data>
+  <data name="Settings_Review_NotBound" xml:space="preserve"><value>— not bound —</value></data>
+  <data name="Settings_Review_Unbind_Tip" xml:space="preserve"><value>Unbind this key</value></data>
+
+  <!-- ===== Settings: AI page ===== -->
+  <data name="Settings_Ai_Header" xml:space="preserve"><value>AI AUTO-TAGGING &amp; SEARCH</value></data>
+  <data name="Settings_Ai_Desc" xml:space="preserve"><value>Optional. Runs a local CLIP model over frames sampled across each clip to propose tags (sea, fog, ships, snow…) you accept or reject, and to enable natural-language search (e.g. "drone shot over snowy mountains at sunset"). All processing is local and offline; the model only ever reads frames — source files are never modified. Off by default; turning it on enables a one-time model download (~150 MB).</value></data>
+  <data name="Settings_Ai_Check" xml:space="preserve"><value>Enable AI auto-tagging and natural-language search</value></data>
+  <data name="Settings_Ai_Model_Header" xml:space="preserve"><value>MODEL</value></data>
+  <data name="Settings_Ai_Download" xml:space="preserve"><value>Download model</value></data>
+  <data name="Settings_Ai_ClearData" xml:space="preserve"><value>Clear AI data</value></data>
+  <data name="Settings_Ai_ClearData_Tip" xml:space="preserve"><value>Remove all embeddings and pending suggestions. Accepted tags and source files are kept.</value></data>
+  <data name="Settings_Ai_ModelFolder" xml:space="preserve"><value>Model folder (optional — leave blank to use the managed download location)</value></data>
+  <data name="Settings_Ai_Tuning_Header" xml:space="preserve"><value>TUNING</value></data>
+  <data name="Settings_Ai_SecondsPerFrame" xml:space="preserve"><value>Sample one frame every N seconds (frame count scales with clip length, then clamps to the min/max below)</value></data>
+  <data name="Settings_Ai_MinFrames" xml:space="preserve"><value>Min frames per clip</value></data>
+  <data name="Settings_Ai_MaxFrames" xml:space="preserve"><value>Max frames per clip</value></data>
+  <data name="Settings_Ai_Threshold" xml:space="preserve"><value>Suggestion confidence threshold (0.20–0.40; higher = fewer, cleaner suggestions)</value></data>
+  <data name="Settings_Ai_Adaptive" xml:space="preserve"><value>Adapt thresholds to my accept/reject history (per-label)</value></data>
+  <data name="Settings_Ai_Adaptive_Desc" xml:space="preserve"><value>Once a label has a few accepted/rejected suggestions, its confidence cutoff is learned from your decisions instead of the global value above — labels you keep rejecting are suppressed, labels you accept appear sooner. The CLIP model itself is never modified.</value></data>
+  <data name="Settings_Ai_Footer" xml:space="preserve"><value>After enabling and downloading, run Catalog → Generate AI tags…, then review proposals in Catalog → Review AI suggestions….</value></data>
+
+  <!-- ===== Settings: runtime dialogs &amp; status (code-behind) ===== -->
+  <data name="Settings_Dlg_PickFfmpeg" xml:space="preserve"><value>Select ffmpeg.exe</value></data>
+  <data name="Settings_Dlg_PickFfprobe" xml:space="preserve"><value>Select ffprobe.exe</value></data>
+  <data name="Settings_Dlg_PickBackupFolder" xml:space="preserve"><value>Select catalog backup folder</value></data>
+  <data name="Settings_Dlg_PickModelFolder" xml:space="preserve"><value>Select the CLIP model folder</value></data>
+  <data name="Settings_Dlg_ExeFilter" xml:space="preserve"><value>Executables (*.exe)|*.exe|All files (*.*)|*.*</value></data>
+  <data name="Settings_Backup_InProgress" xml:space="preserve"><value>Backing up catalog...</value></data>
+  <data name="Settings_Backup_SavedPruned" xml:space="preserve"><value>Backup saved to {0} ({1}). Pruned {2} old backup(s).</value></data>
+  <data name="Settings_Backup_Saved" xml:space="preserve"><value>Backup saved to {0} ({1}).</value></data>
+  <data name="Settings_Backup_Failed" xml:space="preserve"><value>Backup failed: {0}</value></data>
+  <data name="Settings_Restore_Title" xml:space="preserve"><value>Restore catalog</value></data>
+  <data name="Settings_Restore_Confirm" xml:space="preserve"><value>Restore catalog from this backup?
+
+{0}
+Created: {1}
+Size: {2}
+
+Your current catalog will first be copied into the Backups folder as a safety snapshot ('catalog-pre-restore-...'). The app will then need to RESTART to swap the database file in safely. Source video files are not affected.</value></data>
+  <data name="Settings_Restore_Staging" xml:space="preserve"><value>Staging restore...</value></data>
+  <data name="Settings_Restore_FailedStatus" xml:space="preserve"><value>Restore failed: {0}</value></data>
+  <data name="Settings_Restore_FailedBody" xml:space="preserve"><value>Restore failed:
+
+{0}
+
+Your catalog has not been changed.</value></data>
+  <data name="Settings_Restore_StagedStatus" xml:space="preserve"><value>Restore staged. Safety copy: {0}</value></data>
+  <data name="Settings_Restore_StagedSuccess" xml:space="preserve"><value>Restore staged successfully.</value></data>
+  <data name="Settings_Restore_SafetyCopyLine" xml:space="preserve"><value>Safety copy of the previous catalog: {0}</value></data>
+  <data name="Settings_Restore_RestartQuestion" xml:space="preserve"><value>The app needs to restart to complete the restore. Restart now?</value></data>
+  <data name="Settings_Restore_DeferredBody" xml:space="preserve"><value>The restore will be applied automatically the next time you start the app.</value></data>
+  <data name="Settings_AiStatus_Disabled" xml:space="preserve"><value>Disabled. Turn on to enable AI tagging and natural-language search.</value></data>
+  <data name="Settings_AiStatus_Ready" xml:space="preserve"><value>Model ready ({0}).</value></data>
+  <data name="Settings_AiStatus_NotInstalled" xml:space="preserve"><value>Model not installed. Download it, or point at a folder containing the CLIP ONNX bundle.</value></data>
+  <data name="Settings_AiStatus_Downloading" xml:space="preserve"><value>Downloading model…</value></data>
+  <data name="Settings_AiStatus_Downloaded" xml:space="preserve"><value>Model downloaded and ready.</value></data>
+  <data name="Settings_AiStatus_DownloadFailed" xml:space="preserve"><value>Download failed. Check the model URL / your connection, or supply the bundle manually.</value></data>
+  <data name="Settings_AiStatus_DownloadError" xml:space="preserve"><value>Download failed: {0}</value></data>
+  <data name="Settings_AiStatus_Cleared" xml:space="preserve"><value>Cleared {0} AI row(s).</value></data>
+  <data name="Settings_ClearAi_Title" xml:space="preserve"><value>Clear AI data</value></data>
+  <data name="Settings_ClearAi_Confirm" xml:space="preserve"><value>Remove all AI-generated data (embeddings and pending tag suggestions) from the catalog?
+
+Tags you've already accepted stay. Source files are never touched. You can regenerate later.</value></data>
+
+  <!-- ===== About window ===== -->
+  <data name="About_Title" xml:space="preserve">
+    <value>About Find That Shot</value>
+  </data>
+  <data name="About_Tagline" xml:space="preserve">
+    <value>A local-first catalog for browsing, tagging, and searching your video archive.</value>
+  </data>
+  <data name="About_License_Header" xml:space="preserve">
+    <value>LICENSE</value>
+  </data>
+  <data name="About_License_Intro" xml:space="preserve">
+    <value>This application is distributed under the</value>
+  </data>
+  <data name="About_License_LinkText" xml:space="preserve">
+    <value>GNU General Public License v3</value>
+  </data>
+  <data name="About_Source_Label" xml:space="preserve">
+    <value>Source code:</value>
+  </data>
+  <data name="About_ThirdParty_Header" xml:space="preserve">
+    <value>THIRD-PARTY COMPONENTS</value>
+  </data>
+  <data name="About_Button_ViewNotices" xml:space="preserve">
+    <value>View third-party notices</value>
+  </data>
+  <data name="About_VersionFormat" xml:space="preserve">
+    <value>Version {0}.{1}.{2}</value>
+    <comment>{0}=major {1}=minor {2}=build</comment>
+  </data>
+  <data name="About_VersionUnknown" xml:space="preserve">
+    <value>Version unknown</value>
+  </data>
+  <data name="About_NoticesPathFormat" xml:space="preserve">
+    <value>Full third-party license texts: {0}</value>
+    <comment>{0}=file path</comment>
+  </data>
+  <data name="About_NoticesPathFallback" xml:space="preserve">
+    <value>Full third-party license texts ship in THIRD-PARTY-NOTICES.md next to the application.</value>
+  </data>
+
+  <!-- ===== Main window: File menu ===== -->
+  <data name="Main_Menu_File" xml:space="preserve"><value>_File</value></data>
+  <data name="Main_Menu_AddFolder" xml:space="preserve"><value>_Add folder…</value></data>
+  <data name="Main_Menu_RemoveSelectedFolder" xml:space="preserve"><value>_Remove selected folder…</value></data>
+  <data name="Main_Menu_RemoveSelectedFolder_Tip" xml:space="preserve"><value>Remove the selected root folder and any catalog entries imported from it. Source video files will NOT be touched.</value></data>
+  <data name="Main_Menu_Settings" xml:space="preserve"><value>_Settings…</value></data>
+  <data name="Main_Menu_Exit" xml:space="preserve"><value>E_xit</value></data>
+
+  <!-- ===== Main window: Catalog menu ===== -->
+  <data name="Main_Menu_Catalog" xml:space="preserve"><value>_Catalog</value></data>
+  <data name="Main_Menu_Scan" xml:space="preserve"><value>_Scan</value></data>
+  <data name="Main_Menu_CancelScan" xml:space="preserve"><value>_Cancel scan</value></data>
+  <data name="Main_Menu_Refresh" xml:space="preserve"><value>_Refresh</value></data>
+  <data name="Main_Menu_Stats" xml:space="preserve"><value>Catalog stat_istics…</value></data>
+  <data name="Main_Menu_Stats_Tip" xml:space="preserve"><value>See aggregate metrics for the whole catalog — counts, total size and runtime, and status / rating / camera / codec / resolution / tag / year breakdowns. Read-only.</value></data>
+  <data name="Main_Menu_Duplicates" xml:space="preserve"><value>Find _duplicates…</value></data>
+  <data name="Main_Menu_Duplicates_Tip" xml:space="preserve"><value>Find clips that share the same file size, duration, and resolution — almost certainly the same footage in more than one place — and prune the redundant catalog entries. Source video files are never moved or deleted.</value></data>
+  <data name="Main_Menu_Moments" xml:space="preserve"><value>Find _moments…</value></data>
+  <data name="Main_Menu_Moments_Tip" xml:space="preserve"><value>Search across every timestamped moment (sub-clip) you've marked — by label, note, tag, or rating — and jump straight to the shot in the player.</value></data>
+  <data name="Main_Menu_Map" xml:space="preserve"><value>Browse on _map…</value></data>
+  <data name="Main_Menu_Map_Tip" xml:space="preserve"><value>See every geotagged clip clustered on a map. Click a cluster to scope the grid to it, click a marker to preview a clip, or filter the grid to whatever's in view. Read-only.</value></data>
+  <data name="Main_Menu_Calendar" xml:space="preserve"><value>Browse by da_te…</value></data>
+  <data name="Main_Menu_Calendar_Tip" xml:space="preserve"><value>See a year-by-month heatmap of when you shot. Click a month to list its clips, preview one, and jump to it in the grid or player, or scope the grid to that month. Read-only.</value></data>
+  <data name="Main_Menu_GenerateAi" xml:space="preserve"><value>_Generate AI tags…</value></data>
+  <data name="Main_Menu_GenerateAi_Tip" xml:space="preserve"><value>Score clips that don't have AI embeddings yet with a local CLIP model (sampling frames across each clip) to propose tags. Nothing is auto-applied; review proposals afterwards. Source files are only read.</value></data>
+  <data name="Main_Menu_RescoreAi" xml:space="preserve"><value>Re-score _all clips with AI…</value></data>
+  <data name="Main_Menu_RescoreAi_Tip" xml:space="preserve"><value>Re-run AI scoring on EVERY clip (not just new ones) — use after changing the sampling settings, label vocabulary, or model. Accepted/rejected tags are kept; pending suggestions are refreshed.</value></data>
+  <data name="Main_Menu_ReviewAi" xml:space="preserve"><value>Review _AI suggestions…</value></data>
+  <data name="Main_Menu_ReviewAi_Tip" xml:space="preserve"><value>Accept or reject the AI's proposed tags. Accepting adds a real tag to the clip.</value></data>
+  <data name="Main_Menu_BulkEdit" xml:space="preserve"><value>_Bulk edit selection…</value></data>
+  <data name="Main_Menu_FillLocations" xml:space="preserve"><value>Fill missing _locations from GPS…</value></data>
+  <data name="Main_Menu_FillLocations_Tip" xml:space="preserve"><value>For any video that has GPS coordinates but no location, look up a place name from OpenStreetMap and fill it in. Existing locations are not changed.</value></data>
+  <data name="Main_Menu_CancelLocation" xml:space="preserve"><value>Ca_ncel location lookup</value></data>
+  <data name="Main_Menu_RemoveOffline" xml:space="preserve"><value>Remove _offline videos…</value></data>
+  <data name="Main_Menu_RemoveOffline_Tip" xml:space="preserve"><value>Remove catalog entries whose source file is no longer on disk. Source video files will NOT be touched.</value></data>
+  <data name="Main_Menu_RemoveSelected" xml:space="preserve"><value>Remove _selected from catalog…</value></data>
+
+  <!-- ===== Main window: View menu ===== -->
+  <data name="Main_Menu_View" xml:space="preserve"><value>_View</value></data>
+  <data name="Main_Menu_ShowAvailable" xml:space="preserve"><value>Show only _available files</value></data>
+  <data name="Main_Menu_ShowUnreviewed" xml:space="preserve"><value>Show only _unreviewed</value></data>
+  <data name="Main_Menu_ShowUnreviewed_Tip" xml:space="preserve"><value>Limit the catalog to clips whose status is still Unreviewed OR that have no tags yet.</value></data>
+  <data name="Main_Menu_MainSubject" xml:space="preserve"><value>Tag filter: _main subject only</value></data>
+  <data name="Main_Menu_MainSubject_Tip" xml:space="preserve"><value>When filtering by tags, only match clips where the tag is a primary subject — hide clips where it's just an incidental/background element.</value></data>
+  <data name="Main_Menu_SemanticSearch" xml:space="preserve"><value>Search by _description (AI)</value></data>
+  <data name="Main_Menu_SemanticSearch_Tip" xml:space="preserve"><value>Treat the search box as a natural-language description (e.g. "drone shot over snowy mountains at sunset") and rank clips by AI visual similarity instead of literal text matching.</value></data>
+  <data name="Main_Menu_StartReview" xml:space="preserve"><value>_Start review session</value></data>
+  <data name="Main_Menu_StartReview_Tip" xml:space="preserve"><value>Clear all filters, show only unreviewed clips, and select the first one.</value></data>
+  <data name="Main_Menu_FocusSearch" xml:space="preserve"><value>Focus _search</value></data>
+  <data name="Main_Menu_ClearFilters" xml:space="preserve"><value>_Clear all filters</value></data>
+
+  <!-- ===== Main window: Help menu ===== -->
+  <data name="Main_Menu_Help" xml:space="preserve"><value>_Help</value></data>
+  <data name="Main_Menu_CheckUpdates" xml:space="preserve"><value>Check for _updates…</value></data>
+  <data name="Main_Menu_CheckUpdates_Tip" xml:space="preserve"><value>Look for a newer version on GitHub Releases and install it. Only works when running from an installed build (Setup.exe).</value></data>
+  <data name="Main_Menu_Diagnostics" xml:space="preserve"><value>_Diagnostics…</value></data>
+  <data name="Main_Menu_Diagnostics_Tip" xml:space="preserve"><value>View environment info and the recent application log for troubleshooting.</value></data>
+  <data name="Main_Menu_ReportBug" xml:space="preserve"><value>_Report a bug (GitHub)…</value></data>
+  <data name="Main_Menu_ReportBug_Tip" xml:space="preserve"><value>Open the GitHub issue tracker in your browser. Tip: use Diagnostics → Copy full report and paste it into the issue.</value></data>
+  <data name="Main_Menu_Feedback" xml:space="preserve"><value>Send _feedback (email)…</value></data>
+  <data name="Main_Menu_Feedback_Tip" xml:space="preserve"><value>Open a new email to the developer. Tip: use Diagnostics → Copy full report and paste it into the message.</value></data>
+  <data name="Main_Menu_About" xml:space="preserve"><value>_About Find That Shot…</value></data>
+
+  <!-- ===== Main window: search box ===== -->
+  <data name="Main_Search_Placeholder" xml:space="preserve"><value>Search filename, folder, tags, notes, camera...</value></data>
+  <data name="Main_Search_Placeholder_Ai" xml:space="preserve"><value>Describe a shot, e.g. "cruise ship at sunset"</value></data>
+  <data name="Main_Search_AiToggle_Tip" xml:space="preserve"><value>Search by description (AI): type a natural-language description (e.g. "cruise ship at sunset") and rank clips by AI visual similarity instead of literal keyword matching.</value></data>
+  <data name="Main_Search_AiToggle_Label" xml:space="preserve"><value>AI search</value></data>
+
+  <!-- ===== Main window: sidebar filters ===== -->
+  <data name="Main_Filter_Clear" xml:space="preserve"><value>Clear</value></data>
+  <data name="Main_Saved_Header" xml:space="preserve"><value>SAVED SEARCHES</value></data>
+  <data name="Main_Saved_Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Main_Saved_Save_Tip" xml:space="preserve"><value>Save the current filters as a reusable search</value></data>
+  <data name="Main_Saved_Empty" xml:space="preserve"><value>No saved searches yet. Set up filters above, then click Save.</value></data>
+  <data name="Main_Saved_Rename_Tip" xml:space="preserve"><value>Rename this saved search</value></data>
+  <data name="Main_Saved_Delete_Tip" xml:space="preserve"><value>Delete this saved search</value></data>
+
+  <data name="Main_Folders_Header" xml:space="preserve"><value>FOLDERS</value></data>
+  <data name="Main_Folders_Add_Tip" xml:space="preserve"><value>Add a root folder to catalogue (Ctrl+O)</value></data>
+  <data name="Main_Folders_Drop" xml:space="preserve"><value>Drop folders to add</value></data>
+  <data name="Main_Folders_Empty_Headline" xml:space="preserve"><value>No folders yet</value></data>
+  <data name="Main_Folders_Empty_Subtext" xml:space="preserve"><value>Add a folder to start cataloguing your video archive.</value></data>
+  <data name="Main_Folders_Empty_Cta" xml:space="preserve"><value>Add folder</value></data>
+  <data name="Main_Folders_Ctx_Remove" xml:space="preserve"><value>_Remove folder…</value></data>
+  <data name="Main_Folders_Ctx_Remove_Tip" xml:space="preserve"><value>Remove this root folder and any catalog entries imported from it. Source video files will NOT be touched.</value></data>
+  <data name="Main_Folders_Ctx_Add" xml:space="preserve"><value>_Add folder…</value></data>
+
+  <data name="Main_Tags_Header" xml:space="preserve"><value>TAGS</value></data>
+  <data name="Main_Tags_Clear_Tip" xml:space="preserve"><value>Remove all selected tag filters.</value></data>
+  <data name="Main_Tags_RemoveChip_Tip" xml:space="preserve"><value>Remove this tag filter.</value></data>
+  <data name="Main_Tags_FilterPlaceholder" xml:space="preserve"><value>Type to filter tags…</value></data>
+  <data name="Main_Tags_List_Tip" xml:space="preserve"><value>Click a tag to add it as a filter. Multiple tags are combined with AND (videos must have every selected tag).</value></data>
+
+  <data name="Main_Cameras_Header" xml:space="preserve"><value>CAMERAS</value></data>
+  <data name="Main_Cameras_Clear_Tip" xml:space="preserve"><value>Remove the camera filter.</value></data>
+
+  <data name="Main_Date_Header" xml:space="preserve"><value>DATE</value></data>
+  <data name="Main_Date_Clear_Tip" xml:space="preserve"><value>Clear the date range filter.</value></data>
+  <data name="Main_Date_From" xml:space="preserve"><value>From</value></data>
+  <data name="Main_Date_To" xml:space="preserve"><value>To</value></data>
+
+  <data name="Main_ClearFilters" xml:space="preserve"><value>Clear filters</value></data>
+  <data name="Main_ClearFilters_Tip" xml:space="preserve"><value>Reset search box, all filters, and date range (Ctrl+Shift+L)</value></data>
+
+  <!-- ===== Main window: catalog empty state ===== -->
+  <data name="Main_NoClips_Headline" xml:space="preserve"><value>No clips match</value></data>
+  <data name="Main_NoClips_Subtext" xml:space="preserve"><value>Try adjusting filters, clearing your search, or scanning a folder to bring videos into the catalog.</value></data>
+
+  <!-- ===== Main window: catalog card context menu ===== -->
+  <data name="Main_Ctx_ShowInfo" xml:space="preserve"><value>Show clip _info...</value></data>
+  <data name="Main_Ctx_ShowInfo_Tip" xml:space="preserve"><value>Open the full clip-info popup (file system, video, camera, location, catalog, internal).</value></data>
+  <data name="Main_Ctx_PlayExternal" xml:space="preserve"><value>Play _externally</value></data>
+  <data name="Main_Ctx_PlayExternal_Tip" xml:space="preserve"><value>Open the source video in the OS default media player (shell-associated for the file extension).</value></data>
+  <data name="Main_Ctx_OpenLocation" xml:space="preserve"><value>_Open file location</value></data>
+  <data name="Main_Ctx_OpenLocation_Tip" xml:space="preserve"><value>Reveal the source video file in Windows Explorer.</value></data>
+  <data name="Main_Ctx_RemoveDb" xml:space="preserve"><value>_Remove from database…</value></data>
+
+  <!-- ===== Main window: catalog card ===== -->
+  <data name="Main_Offline" xml:space="preserve"><value>Offline</value></data>
+
+  <!-- ===== Main window: player telemetry labels ===== -->
+  <data name="Main_Tel_Iso" xml:space="preserve"><value>ISO</value></data>
+  <data name="Main_Tel_Shutter" xml:space="preserve"><value>SHUTTER</value></data>
+  <data name="Main_Tel_Aperture" xml:space="preserve"><value>APERTURE</value></data>
+  <data name="Main_Tel_Focal" xml:space="preserve"><value>FOCAL</value></data>
+  <data name="Main_Tel_Alt" xml:space="preserve"><value>ALT</value></data>
+  <data name="Main_Tel_Gps" xml:space="preserve"><value>GPS</value></data>
+
+  <!-- ===== Main window: player controls ===== -->
+  <data name="Main_Player_Close_Tip" xml:space="preserve"><value>Close player and return to the catalog (Esc)</value></data>
+  <data name="Main_Player_ProxyBadge" xml:space="preserve"><value>PROXY</value></data>
+  <data name="Main_Player_OriginalBadge" xml:space="preserve"><value>ORIGINAL</value></data>
+  <data name="Main_Player_Original_Tip" xml:space="preserve"><value>Playing the original, full-resolution source file</value></data>
+  <data name="Main_Player_PrevClip_Tip" xml:space="preserve"><value>Play previous clip</value></data>
+  <data name="Main_Player_SkipBack_Tip" xml:space="preserve"><value>Skip back 5 seconds</value></data>
+  <data name="Main_Player_Play" xml:space="preserve"><value>Play</value></data>
+  <data name="Main_Player_Pause" xml:space="preserve"><value>Pause</value></data>
+  <data name="Main_Player_PlayPause_Tip" xml:space="preserve"><value>Toggle play / pause (Space)</value></data>
+  <data name="Main_Player_SkipForward_Tip" xml:space="preserve"><value>Skip forward 5 seconds</value></data>
+  <data name="Main_Player_NextClip_Tip" xml:space="preserve"><value>Play next clip</value></data>
+  <data name="Main_Player_Stop" xml:space="preserve"><value>Stop</value></data>
+  <data name="Main_Player_Stop_Tip" xml:space="preserve"><value>Stop playback (resets position)</value></data>
+  <data name="Main_Player_MarkIn" xml:space="preserve"><value>Mark in</value></data>
+  <data name="Main_Player_MarkIn_Tip" xml:space="preserve"><value>Set the in-point of a moment here (I)</value></data>
+  <data name="Main_Player_MarkOut" xml:space="preserve"><value>Mark out</value></data>
+  <data name="Main_Player_MarkOut_Tip" xml:space="preserve"><value>Set the out-point and save the moment (O)</value></data>
+
+  <!-- ===== Main window: editor empty state ===== -->
+  <data name="Main_NoClipSelected_Headline" xml:space="preserve"><value>No clip selected</value></data>
+  <data name="Main_NoClipSelected_Subtext" xml:space="preserve"><value>Pick a clip from the catalog to view its metadata, tag it, set a status or rating, and add notes.</value></data>
+
+  <!-- ===== Main window: editor MAP panel ===== -->
+  <data name="Main_Editor_Map_Header" xml:space="preserve"><value>MAP</value></data>
+  <data name="Main_Editor_Loc_Set" xml:space="preserve"><value>Set location</value></data>
+  <data name="Main_Editor_Loc_Set_Tip" xml:space="preserve"><value>Assign GPS coordinates to this clip by clicking the map or typing them in.</value></data>
+  <data name="Main_Editor_Loc_Edit" xml:space="preserve"><value>Edit location</value></data>
+  <data name="Main_Editor_Loc_Edit_Tip" xml:space="preserve"><value>Click the map or type a new coordinate pair to replace the saved GPS.</value></data>
+  <data name="Main_Editor_Loc_Clear_Tip" xml:space="preserve"><value>Remove the GPS coordinates on this clip (the LocationText label is left alone).</value></data>
+  <data name="Main_Editor_Loc_Copy" xml:space="preserve"><value>Copy</value></data>
+  <data name="Main_Editor_Loc_Copy_Tip" xml:space="preserve"><value>Copy 'lat, lon' to the clipboard in invariant-culture format.</value></data>
+  <data name="Main_Editor_Loc_Pick_Tip" xml:space="preserve"><value>Click on the map, or type/paste 'lat, lon' (e.g. 60.482, 6.902).</value></data>
+  <data name="Main_Editor_Loc_Pick_Placeholder" xml:space="preserve"><value>Click the map, or type: 60.482, 6.902</value></data>
+  <data name="Main_Editor_Loc_Save_Tip" xml:space="preserve"><value>Save the GPS coordinates to the catalog, reverse-geocode for Location Text, and write the sidecar.</value></data>
+
+  <!-- ===== Main window: editor TAGS panel ===== -->
+  <data name="Main_Editor_Tag_Prominence_Tip" xml:space="preserve"><value>Right-click to mark this tag as a background (incidental) subject.</value></data>
+  <data name="Main_Editor_Tag_Background" xml:space="preserve"><value>Background subject</value></data>
+  <data name="Main_Editor_Tag_Remove_Tip" xml:space="preserve"><value>Remove this tag from the clip.</value></data>
+  <data name="Main_Editor_Tag_New" xml:space="preserve"><value>New tag</value></data>
+  <data name="Main_Editor_Tag_Add" xml:space="preserve"><value>Add</value></data>
+
+  <!-- ===== Main window: editor NOTES &amp; RATING panel ===== -->
+  <data name="Main_Editor_Notes_Header" xml:space="preserve"><value>NOTES &amp; RATING</value></data>
+  <data name="Main_Editor_Notes" xml:space="preserve"><value>NOTES</value></data>
+  <data name="Main_Editor_Status" xml:space="preserve"><value>STATUS</value></data>
+  <data name="Main_Editor_Rating" xml:space="preserve"><value>RATING</value></data>
+  <data name="Main_Editor_SaveChanges" xml:space="preserve"><value>Save changes</value></data>
+
+  <!-- ===== Main window: editor MOMENTS panel ===== -->
+  <data name="Main_Editor_Moments_Header" xml:space="preserve"><value>MOMENTS</value></data>
+  <data name="Main_Editor_Moments_Hint" xml:space="preserve"><value>Play the clip, then press I to set an in-point and O to set the out-point — each moment becomes a searchable shot with its own thumbnail, label, rating, note and tags.</value></data>
+  <data name="Main_Editor_Moment_Jump_Tip" xml:space="preserve"><value>Jump to this moment</value></data>
+  <data name="Main_Editor_Moment_Delete_Tip" xml:space="preserve"><value>Delete this moment</value></data>
+  <data name="Main_Editor_Moment_Label" xml:space="preserve"><value>LABEL</value></data>
+  <data name="Main_Editor_Moment_Label_Placeholder" xml:space="preserve"><value>e.g. hero drone reveal</value></data>
+  <data name="Main_Editor_Moment_Note" xml:space="preserve"><value>NOTE</value></data>
+  <data name="Main_Editor_Moment_EditingHeader" xml:space="preserve"><value>Editing moment · {0}</value></data>
+
+  <!-- ===== Main window: review-mode marker overlay (set at runtime) ===== -->
+  <data name="Main_Overlay_InPointSet" xml:space="preserve"><value>IN POINT SET</value></data>
+  <data name="Main_Overlay_InPointSet_Sub" xml:space="preserve"><value>{0}  ·  press O to set OUT</value></data>
+  <data name="Main_Overlay_MomentSaved" xml:space="preserve"><value>MOMENT SAVED</value></data>
+  <data name="Main_Overlay_MarkerSet" xml:space="preserve"><value>MARKER SET</value></data>
+
+  <!-- ===== Main window: status bar pills ===== -->
+  <data name="Main_Status_Scanning" xml:space="preserve"><value>Scanning</value></data>
+  <data name="Main_Status_AiTagging" xml:space="preserve"><value>AI tagging</value></data>
+  <data name="Main_Status_AiTagging_Tip" xml:space="preserve"><value>A local AI scoring pass is running. You can keep working; click to open the review window and triage clips already scored.</value></data>
+  <data name="Main_Status_AiDone_Tip" xml:space="preserve"><value>The AI scoring pass finished. Click to open the review window and accept/reject the proposed tags.</value></data>
+  <data name="Main_Status_UpdateAvailable" xml:space="preserve"><value>Update available</value></data>
+  <data name="Main_Status_Update_Tip" xml:space="preserve"><value>A new version is available on GitHub. Click to view details and install (the app will close and restart on the new version when ready).</value></data>
+  <data name="Main_Status_Sidecar_Tip" xml:space="preserve"><value>Shows whether sidecar JSON files are being written next to videos. Toggle in Settings → Sidecar files.</value></data>
+  <data name="Main_Status_MapScope_Tip" xml:space="preserve"><value>The catalog grid is scoped to clips picked on the map. Click to clear and show all matches again.</value></data>
+
+  <!-- ===== Main view-model: runtime status, dialogs &amp; helpers ===== -->
+  <data name="Common_AppName" xml:space="preserve"><value>Find That Shot</value></data>
+  <data name="Main_Status_Ready" xml:space="preserve"><value>Ready</value></data>
+  <data name="Main_Status_MapSelection" xml:space="preserve"><value>Map selection: {0} clip(s)</value></data>
+  <data name="Main_Status_FfmpegMissing" xml:space="preserve"><value>FFmpeg/FFprobe not found. Configure paths in Settings.</value></data>
+  <data name="Main_Status_AiOff" xml:space="preserve"><value>AI tagging is off or the model isn't installed — enable it in Settings → AI tagging.</value></data>
+  <data name="Main_Status_AiNoClips" xml:space="preserve"><value>No clips in the catalog to score.</value></data>
+  <data name="Main_Status_AiNoNew" xml:space="preserve"><value>All clips already have AI embeddings. Nothing to score.</value></data>
+  <data name="Main_Status_AiRescoring" xml:space="preserve"><value>Re-scoring all {0} clip(s) with the AI model</value></data>
+  <data name="Main_Status_AiScoring" xml:space="preserve"><value>Scoring {0} new clip(s) with the AI model ({1} total)</value></data>
+  <data name="Main_Status_AiCancelled" xml:space="preserve"><value>AI tagging cancelled.</value></data>
+  <data name="Main_Status_AiFailed" xml:space="preserve"><value>AI tagging failed: {0}</value></data>
+  <data name="Main_Ai_ResultReview" xml:space="preserve"><value>Review {0} AI suggestion(s)</value></data>
+  <data name="Main_Ai_ResultDone" xml:space="preserve"><value>AI tagging done</value></data>
+  <data name="Main_Status_NoSemantic" xml:space="preserve"><value>No semantic matches for “{0}”.</value></data>
+  <data name="Main_Status_SemanticResults" xml:space="preserve"><value>Showing {0} semantic match(es) for “{1}”</value></data>
+  <data name="Main_Status_SemanticFailed" xml:space="preserve"><value>Semantic search failed: {0}</value></data>
+  <data name="Main_Status_ShowingVideos" xml:space="preserve"><value>Showing {0} of {1} videos</value></data>
+  <data name="Main_Status_NoFolders" xml:space="preserve"><value>No folders to add — drop one or more folders.</value></data>
+  <data name="Main_Status_NoRootsToScan" xml:space="preserve"><value>Add at least one root folder before scanning</value></data>
+  <data name="Main_Status_ScanCancelled" xml:space="preserve"><value>Scan cancelled</value></data>
+  <data name="Main_Status_ScanFailed" xml:space="preserve"><value>Scan failed: {0}</value></data>
+  <data name="Main_Status_GeocodeRunning" xml:space="preserve"><value>Looking up missing locations…</value></data>
+  <data name="Main_Status_GeocodeFilled" xml:space="preserve"><value>Filled {0} location(s) from GPS.</value></data>
+  <data name="Main_Status_GeocodeNone" xml:space="preserve"><value>No locations needed updating.</value></data>
+  <data name="Main_Status_GeocodeCancelled" xml:space="preserve"><value>Location lookup cancelled.</value></data>
+  <data name="Main_Status_GeocodeFailed" xml:space="preserve"><value>Location lookup failed: {0}</value></data>
+  <data name="Main_Status_ReviewWaiting" xml:space="preserve"><value>Review session: {0} clip(s) waiting</value></data>
+  <data name="Main_Status_ReviewCaughtUp" xml:space="preserve"><value>Review session: nothing to review — you're caught up.</value></data>
+  <data name="Main_Dlg_PickRoot" xml:space="preserve"><value>Select a root folder to scan</value></data>
+  <data name="Main_AddRoots_OneExists" xml:space="preserve"><value>Root folder already exists</value></data>
+  <data name="Main_AddRoots_ManyExist" xml:space="preserve"><value>{0} folders already in the catalog</value></data>
+  <data name="Main_AddRoots_None" xml:space="preserve"><value>No folders added</value></data>
+  <data name="Main_AddRoots_AddedOne" xml:space="preserve"><value>Added root folder: {0}</value></data>
+  <data name="Main_AddRoots_AddedMany" xml:space="preserve"><value>Added {0} root folders</value></data>
+  <data name="Main_AddRoots_AddedSkipped" xml:space="preserve"><value>{0} ({1} already existed)</value></data>
+  <data name="Main_RemoveRoot_ConfirmWithVideos" xml:space="preserve"><value>Remove the root folder "{0}" and {1} video record(s) imported from it?
+
+This affects the catalog database and the app's thumbnail cache only. The source video files on disk will NOT be touched.</value></data>
+  <data name="Main_RemoveRoot_ConfirmEmpty" xml:space="preserve"><value>Remove the root folder "{0}"?
+
+No video records were imported from this folder. The folder on disk will NOT be touched.</value></data>
+  <data name="Main_RemoveRoot_Title" xml:space="preserve"><value>Remove root folder</value></data>
+  <data name="Main_RemoveRoot_DoneWithVideos" xml:space="preserve"><value>Removed root folder and {0} video record(s) from the catalog. Source video files untouched.</value></data>
+  <data name="Main_RemoveRoot_Done" xml:space="preserve"><value>Removed root folder. Source video files untouched.</value></data>
+  <data name="Main_RemoveVideos_None" xml:space="preserve"><value>Select one or more videos to remove</value></data>
+  <data name="Main_RemoveVideos_AndMore" xml:space="preserve"><value>  …and {0} more</value></data>
+  <data name="Main_RemoveVideos_ConfirmHeader" xml:space="preserve"><value>Remove {0} video record(s) from the database?</value></data>
+  <data name="Main_RemoveVideos_ConfirmFooter" xml:space="preserve"><value>This removes the catalog entries (tags, ratings, notes, etc.) and their cached thumbnails. The source video files on disk will NOT be touched.</value></data>
+  <data name="Main_RemoveVideos_Title" xml:space="preserve"><value>Remove videos from database</value></data>
+  <data name="Main_RemoveVideos_Done" xml:space="preserve"><value>Removed {0} video record(s) from the catalog. Source video files untouched.</value></data>
+  <data name="Main_RemoveOffline_None" xml:space="preserve"><value>There are no offline video records to remove.</value></data>
+  <data name="Main_RemoveOffline_Title" xml:space="preserve"><value>Remove offline videos</value></data>
+  <data name="Main_RemoveOffline_Confirm" xml:space="preserve"><value>Remove all {0} offline video record(s) from the database?
+
+These are records whose source file is no longer found on disk (based on the latest Refresh / scan).
+
+This cleans up the catalog and the app's thumbnail cache. No source video files will be touched.</value></data>
+  <data name="Main_RemoveOffline_Done" xml:space="preserve"><value>Removed {0} offline video record(s) from the catalog. Source video files untouched.</value></data>
+  <data name="Main_Scan_FfprobeMissing" xml:space="preserve"><value>ffprobe.exe was not found. Open Settings to configure the FFmpeg paths.</value></data>
+  <data name="Main_Scan_ElapsedInit" xml:space="preserve"><value>Elapsed 00:00</value></data>
+  <data name="Main_Scan_Elapsed" xml:space="preserve"><value>Elapsed {0}</value></data>
+  <data name="Main_Scan_ElapsedWithFile" xml:space="preserve"><value>Elapsed {0} · current file {1}</value></data>
+  <data name="Main_Update_Checking" xml:space="preserve"><value>Checking for updates…</value></data>
+  <data name="Main_Update_CheckFailedStatus" xml:space="preserve"><value>Update check failed: {0}</value></data>
+  <data name="Main_Update_CheckFailedBody" xml:space="preserve"><value>Could not check for updates.
+
+{0}</value></data>
+  <data name="Main_Update_Title" xml:space="preserve"><value>Check for updates</value></data>
+  <data name="Main_Update_NotInstalledBody" xml:space="preserve"><value>This build is not running from an installer, so updates can't be applied.
+
+To test the update flow:
+  1. Run scripts/publish.ps1
+  2. Install the produced VideoArchiveManager-win-Setup.exe
+  3. Open the installed app and try Check for updates again.
+
+{0}</value></data>
+  <data name="Main_Update_CurrentBuildLine" xml:space="preserve"><value>Current build version: {0}</value></data>
+  <data name="Main_Update_SkippedStatus" xml:space="preserve"><value>Update check skipped (not an installed build)</value></data>
+  <data name="Main_Update_UpToDateStatus" xml:space="preserve"><value>Up to date{0}</value></data>
+  <data name="Main_Update_UpToDateBody" xml:space="preserve"><value>You're on the latest version{0}.</value></data>
+  <data name="Main_Update_AvailableStatus" xml:space="preserve"><value>Update available: v{0}</value></data>
+  <data name="Main_Update_ConfirmBody" xml:space="preserve"><value>An update is available.
+
+Current: v{0}
+New:     v{1}
+
+Download and install it now? The app will close and restart on the new version when ready.
+
+Your catalog database, settings, and sidecar files will NOT be affected.</value></data>
+  <data name="Main_Update_AvailableTitle" xml:space="preserve"><value>Update available</value></data>
+  <data name="Main_Update_DeferredStatus" xml:space="preserve"><value>Update deferred (v{0} available)</value></data>
+  <data name="Main_Update_DownloadingStatus" xml:space="preserve"><value>Downloading v{0}…</value></data>
+  <data name="Main_Update_PreparingStatus" xml:space="preserve"><value>Preparing update v{0}… this can take a moment.</value></data>
+  <data name="Main_Update_DownloadingPercent" xml:space="preserve"><value>Downloading v{0}… {1}%</value></data>
+  <data name="Main_Update_FailedStatus" xml:space="preserve"><value>Update failed: {0}</value></data>
+  <data name="Main_Update_FailedBody" xml:space="preserve"><value>The update could not be installed.
+
+{0}
+
+Your current version is unaffected.</value></data>
+  <data name="Main_Update_FailedTitle" xml:space="preserve"><value>Update failed</value></data>
+  <data name="Main_Status_SavedSearch" xml:space="preserve"><value>Saved search "{0}"</value></data>
+  <data name="Main_Status_SaveSearchFailed" xml:space="preserve"><value>Couldn't save search: {0}</value></data>
+  <data name="Main_Status_AppliedSearch" xml:space="preserve"><value>Applied saved search "{0}" · {1} of {2} videos</value></data>
+  <data name="Main_RenameSearch_Title" xml:space="preserve"><value>Rename saved search</value></data>
+  <data name="Main_Status_RenamedSearch" xml:space="preserve"><value>Renamed saved search to "{0}"</value></data>
+  <data name="Main_Status_RenameSearchFailed" xml:space="preserve"><value>Couldn't rename search: {0}</value></data>
+  <data name="Main_DeleteSearch_Confirm" xml:space="preserve"><value>Delete the saved search "{0}"?
+
+This only removes the saved filter. No videos, tags, or catalog records are affected.</value></data>
+  <data name="Main_DeleteSearch_Title" xml:space="preserve"><value>Delete saved search</value></data>
+  <data name="Main_Status_DeletedSearch" xml:space="preserve"><value>Deleted saved search "{0}"</value></data>
+  <data name="Main_Suggest_Unreviewed" xml:space="preserve"><value>Unreviewed</value></data>
+  <data name="Main_Suggest_MainSubject" xml:space="preserve"><value>main subject</value></data>
+  <data name="Main_Suggest_DateRange" xml:space="preserve"><value>date range</value></data>
+  <data name="Main_Suggest_AllClips" xml:space="preserve"><value>All clips</value></data>
+
+  <!-- ===== Video detail view-model: save status &amp; feedback ===== -->
+  <data name="Detail_Sidecar_NoVideo" xml:space="preserve"><value>sidecar skipped (no video selected)</value></data>
+  <data name="Detail_Sidecar_Disabled" xml:space="preserve"><value>sidecar disabled</value></data>
+  <data name="Detail_Sidecar_NotFound" xml:space="preserve"><value>sidecar skipped (video not found in catalog)</value></data>
+  <data name="Detail_Sidecar_Written" xml:space="preserve"><value>sidecar written: {0}</value></data>
+  <data name="Detail_Sidecar_Failed" xml:space="preserve"><value>sidecar FAILED: {0}</value></data>
+  <data name="Detail_Sidecar_UnknownError" xml:space="preserve"><value>unknown error</value></data>
+  <data name="Detail_Save_Saved" xml:space="preserve"><value>Saved · {0}</value></data>
+  <data name="Detail_Save_TagAddedKeep" xml:space="preserve"><value>Tag added · status → Keep · {0}</value></data>
+  <data name="Detail_Save_TagAdded" xml:space="preserve"><value>Tag added · {0}</value></data>
+  <data name="Detail_Save_TagAddFailed" xml:space="preserve"><value>Tag add failed: {0}</value></data>
+  <data name="Detail_Save_TagRemoved" xml:space="preserve"><value>Tag removed · {0}</value></data>
+  <data name="Detail_Save_TagRemoveFailed" xml:space="preserve"><value>Tag remove failed: {0}</value></data>
+  <data name="Detail_Save_LocationSaved" xml:space="preserve"><value>Location saved · {0} · {1}</value></data>
+  <data name="Detail_Save_LocationCleared" xml:space="preserve"><value>Location cleared · {0}</value></data>
+  <data name="Detail_Geo_Skipped" xml:space="preserve"><value>geocode skipped</value></data>
+  <data name="Detail_Geo_Location" xml:space="preserve"><value>location → {0}</value></data>
+  <data name="Detail_Geo_NoMatch" xml:space="preserve"><value>geocode: no match</value></data>
+  <data name="Detail_Geo_Failed" xml:space="preserve"><value>geocode failed</value></data>
+  <data name="Detail_Fb_TagAddedSidecarFailed" xml:space="preserve"><value>Tag added: {0} — sidecar write failed</value></data>
+  <data name="Detail_Fb_TagAddedKeep" xml:space="preserve"><value>Tag added: {0} · status → Keep</value></data>
+  <data name="Detail_Fb_TagAdded" xml:space="preserve"><value>Tag added: {0}</value></data>
+  <data name="Detail_Fb_TagAddError" xml:space="preserve"><value>Couldn't add tag: {0}</value></data>
+  <data name="Detail_Fb_TagRemovedSidecarFailed" xml:space="preserve"><value>Tag removed: {0} — sidecar write failed</value></data>
+  <data name="Detail_Fb_TagRemoved" xml:space="preserve"><value>Tag removed: {0}</value></data>
+  <data name="Detail_Fb_TagRemoveError" xml:space="preserve"><value>Couldn't remove tag: {0}</value></data>
+  <data name="Detail_Fb_MarkedBackground" xml:space="preserve"><value>Marked as background: {0}</value></data>
+  <data name="Detail_Fb_MarkedMain" xml:space="preserve"><value>Marked as main subject: {0}</value></data>
+  <data name="Detail_Fb_TagUpdateError" xml:space="preserve"><value>Couldn't update tag: {0}</value></data>
+  <data name="Detail_Moment_InPoint" xml:space="preserve"><value>In point {0} — press O to set the out point</value></data>
+  <data name="Detail_Moment_MarkerAdded" xml:space="preserve"><value>Marker added at {0}</value></data>
+  <data name="Detail_Moment_MomentAdded" xml:space="preserve"><value>Moment added {0}</value></data>
+  <data name="Detail_Moment_ChangesSaved" xml:space="preserve"><value>Changes saved · {0}</value></data>
+  <data name="Detail_Moment_Deleted" xml:space="preserve"><value>Moment deleted</value></data>
+  <data name="Detail_Moment_TagAdded" xml:space="preserve"><value>Tag added to moment · {0}</value></data>
+  <data name="Detail_Moment_TagRemoved" xml:space="preserve"><value>Tag removed from moment · {0}</value></data>
+  <data name="Detail_Moment_TagBackground" xml:space="preserve"><value>Moment tag marked as background · {0}</value></data>
+  <data name="Detail_Moment_TagMain" xml:space="preserve"><value>Moment tag marked as main subject · {0}</value></data>
+  <data name="Detail_MomentFb_SavedSidecarFailed" xml:space="preserve"><value>Changes saved — sidecar write failed</value></data>
+  <data name="Detail_MomentFb_Saved" xml:space="preserve"><value>Changes saved</value></data>
+  <data name="Detail_MomentFb_SaveError" xml:space="preserve"><value>Couldn't save changes: {0}</value></data>
+
+  <!-- ===== Find duplicates window ===== -->
+  <data name="Dup_Title" xml:space="preserve"><value>Find duplicates</value></data>
+  <data name="Dup_Desc" xml:space="preserve"><value>Clips that share the same file size, duration, and resolution — almost certainly the same footage in more than one place. Read-only: your source video files are never moved or deleted.</value></data>
+  <data name="Dup_MarkTip" xml:space="preserve"><value>Mark this copy to be removed from the catalog (the file on disk is never touched).</value></data>
+  <data name="Dup_SuggestedKeep" xml:space="preserve"><value>Suggested keep</value></data>
+  <data name="Dup_Online" xml:space="preserve"><value>Online</value></data>
+  <data name="Dup_Offline" xml:space="preserve"><value>Offline</value></data>
+  <data name="Dup_Rescan" xml:space="preserve"><value>Rescan</value></data>
+  <data name="Dup_SelectRedundant" xml:space="preserve"><value>Select all redundant</value></data>
+  <data name="Dup_SelectRedundant_Tip" xml:space="preserve"><value>Mark every copy except the suggested keep in each set.</value></data>
+  <data name="Dup_Clear" xml:space="preserve"><value>Clear</value></data>
+  <data name="Dup_Scanning" xml:space="preserve"><value>Scanning for duplicates…</value></data>
+  <data name="Dup_EmptyTitle" xml:space="preserve"><value>No duplicates found</value></data>
+  <data name="Dup_EmptyDesc" xml:space="preserve"><value>No two clips in the catalog share the same file size, duration, and resolution. Rescan after importing more footage to check again.</value></data>
+  <data name="Dup_RemoveSelected" xml:space="preserve"><value>Remove selected from database…</value></data>
+  <data name="Dup_ScanFailed" xml:space="preserve"><value>Couldn't scan for duplicates: {0}</value></data>
+  <data name="Dup_NoneSelected" xml:space="preserve"><value>No copies selected</value></data>
+  <data name="Dup_SelectionText" xml:space="preserve"><value>{0} selected · {1} of disk no longer cataloged</value></data>
+  <data name="Dup_Summary" xml:space="preserve"><value>{0} duplicate set(s) · {1} redundant copy(ies) · {2} reclaimable on disk</value></data>
+  <data name="Dup_Warning" xml:space="preserve"><value>WARNING: {0} duplicate set(s) have EVERY copy selected — removing them leaves no catalog entry for that clip at all.</value></data>
+  <data name="Dup_Confirm_Header" xml:space="preserve"><value>Remove {0} duplicate catalog entr(y/ies) from the database?</value></data>
+  <data name="Dup_Confirm_Footer" xml:space="preserve"><value>This removes the catalog rows (tags, ratings, notes) and their cached thumbnails only. The source video files on disk will NOT be touched, moved, or deleted.</value></data>
+  <data name="Dup_Confirm_Title" xml:space="preserve"><value>Remove duplicates from database</value></data>
+  <data name="Dup_GroupHeader" xml:space="preserve"><value>{0} copies · {1} each · {2} · {3}</value></data>
+  <data name="Dup_ResolutionUnknown" xml:space="preserve"><value>resolution unknown</value></data>
+  <data name="Dup_Reclaim" xml:space="preserve"><value>{0} redundant</value></data>
+
+  <!-- ===== Find moments window ===== -->
+  <data name="MomentSearch_Title" xml:space="preserve"><value>Find moments</value></data>
+  <data name="MomentSearch_Subtitle" xml:space="preserve"><value>Search every shot you've marked — by label, note, tag, file name, or rating — and jump straight to it.</value></data>
+  <data name="MomentSearch_SearchPlaceholder" xml:space="preserve"><value>Search moments…</value></data>
+  <data name="MomentSearch_MinRating" xml:space="preserve"><value>Min rating</value></data>
+  <data name="MomentSearch_OnlineOnly" xml:space="preserve"><value>Online only</value></data>
+  <data name="MomentSearch_OnlineOnlyToolTip" xml:space="preserve"><value>Hide moments whose source file is currently offline.</value></data>
+  <data name="MomentSearch_SearchButton" xml:space="preserve"><value>Search</value></data>
+  <data name="MomentSearch_JumpTo" xml:space="preserve"><value>Jump to</value></data>
+  <data name="MomentSearch_NoMatches" xml:space="preserve"><value>No moments match.</value></data>
+  <data name="MomentSearch_ShowingCount" xml:space="preserve"><value>Showing {0} of {1} moments</value></data>
+  <data name="MomentSearch_MomentCountSingular" xml:space="preserve"><value>{0} moment</value></data>
+  <data name="MomentSearch_MomentCountPlural" xml:space="preserve"><value>{0} moments</value></data>
+
+  <!-- ===== Save search dialog ===== -->
+  <data name="SaveSearch_Title" xml:space="preserve"><value>Save search</value></data>
+  <data name="SaveSearch_Header" xml:space="preserve"><value>Save this search</value></data>
+  <data name="SaveSearch_Desc" xml:space="preserve"><value>Give the current filters a name. It re-runs live against the catalog whenever you click it.</value></data>
+  <data name="SaveSearch_Placeholder" xml:space="preserve"><value>Saved search name</value></data>
+
+  <!-- ===== Splash window ===== -->
+  <data name="Splash_Loading" xml:space="preserve"><value>Loading</value></data>
+  <data name="Splash_VersionUnknown" xml:space="preserve"><value>version unknown</value></data>
+  <data name="Splash_VersionFormat" xml:space="preserve"><value>version {0}.{1}.{2}</value></data>
+
+  <!-- ===== Bulk edit dialog ===== -->
+  <data name="BulkEdit_Title" xml:space="preserve"><value>Bulk edit selected videos</value></data>
+  <data name="BulkEdit_Header" xml:space="preserve"><value>Bulk edit</value></data>
+  <data name="BulkEdit_Desc" xml:space="preserve"><value>Apply changes to every clip in the current selection.</value></data>
+  <data name="BulkEdit_SetStatus" xml:space="preserve"><value>Set status</value></data>
+  <data name="BulkEdit_SetRating" xml:space="preserve"><value>Set rating</value></data>
+  <data name="BulkEdit_AppendNotes" xml:space="preserve"><value>Append to notes</value></data>
+  <data name="BulkEdit_AddTag" xml:space="preserve"><value>Add a tag</value></data>
+  <data name="BulkEdit_TagNamePlaceholder" xml:space="preserve"><value>Tag name</value></data>
+  <data name="Common_Apply" xml:space="preserve"><value>Apply</value></data>
+
+  <!-- ===== Enum display names ===== -->
+  <data name="Enum_VideoStatus_Unreviewed" xml:space="preserve"><value>Unreviewed</value></data>
+  <data name="Enum_VideoStatus_Keep" xml:space="preserve"><value>Keep</value></data>
+  <data name="Enum_VideoStatus_Favorite" xml:space="preserve"><value>Favorite</value></data>
+  <data name="Enum_VideoStatus_ForStock" xml:space="preserve"><value>For stock</value></data>
+  <data name="Enum_VideoStatus_UploadedPond5" xml:space="preserve"><value>Uploaded — Pond5</value></data>
+  <data name="Enum_VideoStatus_UploadedShutterstock" xml:space="preserve"><value>Uploaded — Shutterstock</value></data>
+  <data name="Enum_VideoStatus_UploadedAdobe" xml:space="preserve"><value>Uploaded — Adobe Stock</value></data>
+  <data name="Enum_VideoStatus_Rejected" xml:space="preserve"><value>Rejected</value></data>
+  <data name="Enum_VideoStatus_Archive" xml:space="preserve"><value>Archive</value></data>
+  <data name="Enum_TagType_Subject" xml:space="preserve"><value>Subject</value></data>
+  <data name="Enum_TagType_Location" xml:space="preserve"><value>Location</value></data>
+  <data name="Enum_TagType_Weather" xml:space="preserve"><value>Weather</value></data>
+  <data name="Enum_TagType_Mood" xml:space="preserve"><value>Mood</value></data>
+  <data name="Enum_TagType_Technical" xml:space="preserve"><value>Technical</value></data>
+  <data name="Enum_TagType_Camera" xml:space="preserve"><value>Camera</value></data>
+  <data name="Enum_TagType_Stock" xml:space="preserve"><value>Stock</value></data>
+  <data name="Enum_TagType_Project" xml:space="preserve"><value>Project</value></data>
+
+  <!-- ===== Stragglers / shared ===== -->
+  <data name="Main_Status_Sidecar_On" xml:space="preserve"><value>Sidecars: ON</value></data>
+  <data name="Main_Status_Sidecar_Off" xml:space="preserve"><value>Sidecars: OFF</value></data>
+  <data name="Detail_Moment_CountOne" xml:space="preserve"><value>1 moment</value></data>
+  <data name="Detail_Moment_CountMany" xml:space="preserve"><value>{0} moments</value></data>
+  <data name="Common_Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Common_Refresh" xml:space="preserve"><value>Refresh</value></data>
+  <data name="Common_Online" xml:space="preserve"><value>Online</value></data>
+  <data name="Common_Offline" xml:space="preserve"><value>Offline</value></data>
+  <data name="Common_CopyValue" xml:space="preserve"><value>Copy value</value></data>
+  <data name="Common_WholeArchive" xml:space="preserve"><value>Whole archive</value></data>
+  <data name="Common_ShowInGrid" xml:space="preserve"><value>Show in grid</value></data>
+  <data name="Common_PlayInApp" xml:space="preserve"><value>Play in app</value></data>
+  <data name="Common_FilterGridToView" xml:space="preserve"><value>Filter grid to this view</value></data>
+  <data name="Common_FilterGridToMonth" xml:space="preserve"><value>Filter grid to this month</value></data>
+  <data name="Common_AcceptAll" xml:space="preserve"><value>Accept all</value></data>
+  <data name="Common_RejectAll" xml:space="preserve"><value>Reject all</value></data>
+  <data name="Common_Yes" xml:space="preserve"><value>Yes</value></data>
+  <data name="Common_No" xml:space="preserve"><value>No</value></data>
+  <data name="Common_Found" xml:space="preserve"><value>Found</value></data>
+  <data name="Common_NotFound" xml:space="preserve"><value>Not found</value></data>
+  <data name="Common_Unavailable" xml:space="preserve"><value>Unavailable</value></data>
+  <data name="Common_Disabled" xml:space="preserve"><value>Disabled</value></data>
+  <data name="Common_Unknown" xml:space="preserve"><value>Unknown</value></data>
+  <data name="Common_NotRated" xml:space="preserve"><value>Not rated</value></data>
+  <data name="Common_Available" xml:space="preserve"><value>Available</value></data>
+  <data name="Common_OfflineMissing" xml:space="preserve"><value>Offline (file missing)</value></data>
+  <data name="Common_NoTags" xml:space="preserve"><value>No tags</value></data>
+  <data name="Common_OpenInMap" xml:space="preserve"><value>Open in map</value></data>
+  <data name="Common_CurrentFilters" xml:space="preserve"><value>(current filters)</value></data>
+  <data name="Common_ClipSingular" xml:space="preserve"><value>clip</value></data>
+  <data name="Common_ClipPlural" xml:space="preserve"><value>clips</value></data>
+  <data name="Common_YearSingular" xml:space="preserve"><value>year</value></data>
+  <data name="Common_YearPlural" xml:space="preserve"><value>years</value></data>
+  <data name="Common_SuggestionSingular" xml:space="preserve"><value>suggestion</value></data>
+  <data name="Common_SuggestionPlural" xml:space="preserve"><value>suggestions</value></data>
+
+  <!-- ===== AI Review window ===== -->
+  <data name="AiReview_Title" xml:space="preserve"><value>Review AI suggestions</value></data>
+  <data name="AiReview_OfflinePreview" xml:space="preserve"><value>Source file is offline — preview unavailable</value></data>
+  <data name="AiReview_BestFramePrefix" xml:space="preserve"><value>Best frame for </value></data>
+  <data name="AiReview_Accept_Tip" xml:space="preserve"><value>Accept — add this tag to the clip</value></data>
+  <data name="AiReview_Reject_Tip" xml:space="preserve"><value>Reject — dismiss this suggestion</value></data>
+  <data name="AiReview_Play_Tip" xml:space="preserve"><value>Play this moment in the player</value></data>
+  <data name="AiReview_Loading" xml:space="preserve"><value>Loading suggestions…</value></data>
+  <data name="AiReview_Empty_Headline" xml:space="preserve"><value>No suggestions to review</value></data>
+  <data name="AiReview_Empty_Subtext" xml:space="preserve"><value>Run Catalog → Generate AI tags… to score your clips, then come back here to accept or reject the proposals.</value></data>
+  <data name="AiReview_SummaryEmpty" xml:space="preserve"><value>No pending suggestions.</value></data>
+  <data name="AiReview_Summary" xml:space="preserve"><value>{0} suggestion(s) across {1} clip(s)</value></data>
+  <data name="AiReview_PreviewTooltip" xml:space="preserve"><value>Click to jump to this moment in the player; hover to preview the best frame</value></data>
+  <data name="AiReview_OfflineTooltip" xml:space="preserve"><value>Source file is offline — preview unavailable</value></data>
+
+  <!-- ===== Map browse window ===== -->
+  <data name="MapBrowse_Title" xml:space="preserve"><value>Browse on map</value></data>
+  <data name="MapBrowse_Description" xml:space="preserve"><value>Every geotagged clip in your archive, clustered by location. Click a cluster to scope the catalog grid to it, click a marker to preview a clip, or filter the grid to whatever's in view.</value></data>
+  <data name="MapBrowse_WholeArchive_Tip" xml:space="preserve"><value>On: plot every geotagged clip in the catalog. Off: plot only the clips matching the current grid filters.</value></data>
+  <data name="MapBrowse_FilterGrid_Tip" xml:space="preserve"><value>Scope the catalog grid to every clip currently inside the map viewport.</value></data>
+  <data name="MapBrowse_ClickMarker" xml:space="preserve"><value>Click a marker to preview the clip here.</value></data>
+  <data name="MapBrowse_NoGeoWhole" xml:space="preserve"><value>No geotagged clips in the catalog.</value></data>
+  <data name="MapBrowse_NoGeoFiltered" xml:space="preserve"><value>No geotagged clips match the current filters.</value></data>
+  <data name="MapBrowse_ResultCount" xml:space="preserve"><value>{0} geotagged {1}</value></data>
+
+  <!-- ===== Calendar browse window ===== -->
+  <data name="CalendarBrowse_Title" xml:space="preserve"><value>Browse by date</value></data>
+  <data name="CalendarBrowse_Description" xml:space="preserve"><value>A year-by-month heatmap of when you shot. Brighter cells hold more clips; click a month to list its clips, preview one, and jump to it in the grid or player.</value></data>
+  <data name="CalendarBrowse_WholeArchive_Tip" xml:space="preserve"><value>On: count every clip in the catalog. Off: count only the clips matching the current grid filters.</value></data>
+  <data name="CalendarBrowse_FilterMonth_Tip" xml:space="preserve"><value>Scope the catalog grid to the selected month's date range.</value></data>
+  <data name="CalendarBrowse_EmptyHeatmap" xml:space="preserve"><value>No dated clips to chart yet. Scan some footage first.</value></data>
+  <data name="CalendarBrowse_ClickMonth" xml:space="preserve"><value>Click a month in the heatmap to list its clips here.</value></data>
+  <data name="CalendarBrowse_NoDatedWhole" xml:space="preserve"><value>No dated clips in the catalog.</value></data>
+  <data name="CalendarBrowse_NoDatedFiltered" xml:space="preserve"><value>No dated clips match the current filters.</value></data>
+  <data name="CalendarBrowse_ResultSummary" xml:space="preserve"><value>{0} {1} across {2} {3}</value></data>
+  <data name="CalendarBrowse_MonthHeader" xml:space="preserve"><value>{0} {1} — {2} {3}</value></data>
+  <data name="CalendarBrowse_MonthTooltip" xml:space="preserve"><value>{0} {1} — {2} {3}</value></data>
+  <data name="CalendarBrowse_MonthTooltipEmpty" xml:space="preserve"><value>{0} {1} — no clips</value></data>
+
+  <!-- ===== Catalog stats window ===== -->
+  <data name="CatalogStats_Title" xml:space="preserve"><value>Catalog statistics</value></data>
+  <data name="CatalogStats_Description" xml:space="preserve"><value>A live snapshot of your catalog. Read-only — your source video files are never touched.</value></data>
+  <data name="CatalogStats_Loading" xml:space="preserve"><value>Computing statistics…</value></data>
+  <data name="CatalogStats_Empty_Headline" xml:space="preserve"><value>Nothing to summarise yet</value></data>
+  <data name="CatalogStats_Empty_Subtext" xml:space="preserve"><value>Add a root folder and run a scan, then reopen this window to see your catalog at a glance.</value></data>
+  <data name="CatalogStats_Overview" xml:space="preserve"><value>OVERVIEW</value></data>
+  <data name="CatalogStats_Breakdowns" xml:space="preserve"><value>BREAKDOWNS</value></data>
+  <data name="CatalogStats_Error" xml:space="preserve"><value>Couldn't compute statistics: {0}</value></data>
+  <data name="CatalogStats_Metric_Clips" xml:space="preserve"><value>Clips</value></data>
+  <data name="CatalogStats_Metric_ClipsDetail" xml:space="preserve"><value>{0} online · {1} offline</value></data>
+  <data name="CatalogStats_Metric_TotalSize" xml:space="preserve"><value>Total size</value></data>
+  <data name="CatalogStats_Metric_TotalSizeDetail" xml:space="preserve"><value>across the catalog</value></data>
+  <data name="CatalogStats_Metric_TotalFootage" xml:space="preserve"><value>Total footage</value></data>
+  <data name="CatalogStats_Metric_TotalFootageDetail" xml:space="preserve"><value>combined runtime</value></data>
+  <data name="CatalogStats_Metric_Folders" xml:space="preserve"><value>Folders</value></data>
+  <data name="CatalogStats_Metric_FoldersDetail" xml:space="preserve"><value>{0} root folder(s)</value></data>
+  <data name="CatalogStats_Metric_Cameras" xml:space="preserve"><value>Cameras</value></data>
+  <data name="CatalogStats_Metric_CamerasDetail" xml:space="preserve"><value>distinct models</value></data>
+  <data name="CatalogStats_Metric_Tags" xml:space="preserve"><value>Tags</value></data>
+  <data name="CatalogStats_Metric_TagsDetail" xml:space="preserve"><value>in the catalog</value></data>
+  <data name="CatalogStats_Metric_Reviewed" xml:space="preserve"><value>Reviewed</value></data>
+  <data name="CatalogStats_Metric_ReviewedDetail" xml:space="preserve"><value>{0} of {1} clips</value></data>
+  <data name="CatalogStats_Metric_Geotagged" xml:space="preserve"><value>Geotagged</value></data>
+  <data name="CatalogStats_Metric_GeotaggedDetail" xml:space="preserve"><value>{0} with GPS</value></data>
+  <data name="CatalogStats_Section_Status" xml:space="preserve"><value>By status</value></data>
+  <data name="CatalogStats_Section_Rating" xml:space="preserve"><value>By rating</value></data>
+  <data name="CatalogStats_Section_Resolution" xml:space="preserve"><value>By resolution</value></data>
+  <data name="CatalogStats_Section_Year" xml:space="preserve"><value>By year</value></data>
+  <data name="CatalogStats_Section_Cameras" xml:space="preserve"><value>Top cameras</value></data>
+  <data name="CatalogStats_Section_Codecs" xml:space="preserve"><value>Top codecs</value></data>
+  <data name="CatalogStats_Section_Tags" xml:space="preserve"><value>Top tags</value></data>
+  <data name="CatalogStats_PercentUnder1" xml:space="preserve"><value>&lt;1%</value></data>
+
+  <!-- ===== Video info window ===== -->
+  <data name="VideoInfo_Title" xml:space="preserve"><value>Clip info</value></data>
+  <data name="VideoInfo_Section_File" xml:space="preserve"><value>FILE</value></data>
+  <data name="VideoInfo_Section_Video" xml:space="preserve"><value>VIDEO</value></data>
+  <data name="VideoInfo_Section_Camera" xml:space="preserve"><value>CAMERA</value></data>
+  <data name="VideoInfo_Section_Location" xml:space="preserve"><value>LOCATION</value></data>
+  <data name="VideoInfo_Section_Catalog" xml:space="preserve"><value>CATALOG</value></data>
+  <data name="VideoInfo_Section_Internal" xml:space="preserve"><value>INTERNAL</value></data>
+  <data name="VideoInfo_Label_Filename" xml:space="preserve"><value>Filename</value></data>
+  <data name="VideoInfo_Label_FullPath" xml:space="preserve"><value>Full path</value></data>
+  <data name="VideoInfo_Label_Folder" xml:space="preserve"><value>Folder</value></data>
+  <data name="VideoInfo_Label_Extension" xml:space="preserve"><value>Extension</value></data>
+  <data name="VideoInfo_Label_Size" xml:space="preserve"><value>Size</value></data>
+  <data name="VideoInfo_Label_Modified" xml:space="preserve"><value>Modified</value></data>
+  <data name="VideoInfo_Label_Created" xml:space="preserve"><value>Created</value></data>
+  <data name="VideoInfo_Label_OnDisk" xml:space="preserve"><value>On disk</value></data>
+  <data name="VideoInfo_Label_Duration" xml:space="preserve"><value>Duration</value></data>
+  <data name="VideoInfo_Label_Resolution" xml:space="preserve"><value>Resolution</value></data>
+  <data name="VideoInfo_Label_AspectRatio" xml:space="preserve"><value>Aspect ratio</value></data>
+  <data name="VideoInfo_Label_FrameRate" xml:space="preserve"><value>Frame rate</value></data>
+  <data name="VideoInfo_Label_Codec" xml:space="preserve"><value>Codec</value></data>
+  <data name="VideoInfo_Label_Camera" xml:space="preserve"><value>Make / model</value></data>
+  <data name="VideoInfo_Label_FolderLocation" xml:space="preserve"><value>Folder location</value></data>
+  <data name="VideoInfo_Label_Gps" xml:space="preserve"><value>GPS</value></data>
+  <data name="VideoInfo_Label_FolderDate" xml:space="preserve"><value>Folder date</value></data>
+  <data name="VideoInfo_Label_Status" xml:space="preserve"><value>Status</value></data>
+  <data name="VideoInfo_Label_Rating" xml:space="preserve"><value>Rating</value></data>
+  <data name="VideoInfo_Label_Tags" xml:space="preserve"><value>Tags</value></data>
+  <data name="VideoInfo_Label_Notes" xml:space="preserve"><value>Notes</value></data>
+  <data name="VideoInfo_Label_Sidecar" xml:space="preserve"><value>Sidecar</value></data>
+  <data name="VideoInfo_Label_AddedToCatalog" xml:space="preserve"><value>Added to catalog</value></data>
+  <data name="VideoInfo_Label_LastUpdated" xml:space="preserve"><value>Last updated</value></data>
+  <data name="VideoInfo_Label_CatalogId" xml:space="preserve"><value>Catalog ID</value></data>
+  <data name="VideoInfo_Label_Thumbnail" xml:space="preserve"><value>Thumbnail</value></data>
+  <data name="VideoInfo_Bytes" xml:space="preserve"><value>{0:N0} bytes</value></data>
+  <data name="VideoInfo_Sidecar_Written" xml:space="preserve"><value>Written</value></data>
+  <data name="VideoInfo_Sidecar_NotWritten" xml:space="preserve"><value>Not written yet</value></data>
+
+  <!-- ===== Diagnostics window ===== -->
+  <data name="Diagnostics_Title" xml:space="preserve"><value>Diagnostics</value></data>
+  <data name="Diagnostics_Environment" xml:space="preserve"><value>ENVIRONMENT</value></data>
+  <data name="Diagnostics_RecentLog" xml:space="preserve"><value>RECENT LOG</value></data>
+  <data name="Diagnostics_LevelFilter_Tip" xml:space="preserve"><value>Show only entries at this level or more severe.</value></data>
+  <data name="Diagnostics_Level_All" xml:space="preserve"><value>All levels</value></data>
+  <data name="Diagnostics_Level_InfoUp" xml:space="preserve"><value>Info &amp; up</value></data>
+  <data name="Diagnostics_Level_WarnUp" xml:space="preserve"><value>Warnings &amp; up</value></data>
+  <data name="Diagnostics_Level_Errors" xml:space="preserve"><value>Errors only</value></data>
+  <data name="Diagnostics_FilterPlaceholder" xml:space="preserve"><value>Filter text…</value></data>
+  <data name="Diagnostics_AutoScroll" xml:space="preserve"><value>Auto-scroll</value></data>
+  <data name="Diagnostics_CopyLog" xml:space="preserve"><value>Copy log</value></data>
+  <data name="Diagnostics_CopyLog_Tip" xml:space="preserve"><value>Copy the currently shown log lines to the clipboard.</value></data>
+  <data name="Diagnostics_OpenLogFile" xml:space="preserve"><value>Open log file</value></data>
+  <data name="Diagnostics_OpenFolder" xml:space="preserve"><value>Open folder</value></data>
+  <data name="Diagnostics_Clear" xml:space="preserve"><value>Clear</value></data>
+  <data name="Diagnostics_Clear_Tip" xml:space="preserve"><value>Clear the on-screen buffer (the on-disk log file is kept).</value></data>
+  <data name="Diagnostics_CopyReport" xml:space="preserve"><value>Copy full report</value></data>
+  <data name="Diagnostics_CopyReport_Tip" xml:space="preserve"><value>Copy the environment summary and the visible log to the clipboard.</value></data>
+  <data name="Diagnostics_EntryCount" xml:space="preserve"><value>{0} entries</value></data>
+  <data name="Diagnostics_EntryCountFiltered" xml:space="preserve"><value>{0} of {1} entries</value></data>
+  <data name="Diagnostics_NoLogFile" xml:space="preserve"><value>No log file is available for this session.</value></data>
+  <data name="Diagnostics_Env_AppVersion" xml:space="preserve"><value>App version</value></data>
+  <data name="Diagnostics_Env_Runtime" xml:space="preserve"><value>Runtime</value></data>
+  <data name="Diagnostics_Env_OS" xml:space="preserve"><value>OS</value></data>
+  <data name="Diagnostics_Env_Architecture" xml:space="preserve"><value>Architecture</value></data>
+  <data name="Diagnostics_Env_PlayerEngine" xml:space="preserve"><value>Player engine</value></data>
+  <data name="Diagnostics_Env_PlayerAvailable" xml:space="preserve"><value>Player available</value></data>
+  <data name="Diagnostics_Env_Ffprobe" xml:space="preserve"><value>ffprobe</value></data>
+  <data name="Diagnostics_Env_Database" xml:space="preserve"><value>Database</value></data>
+  <data name="Diagnostics_Env_Thumbnails" xml:space="preserve"><value>Thumbnails</value></data>
+  <data name="Diagnostics_Env_Backups" xml:space="preserve"><value>Backups</value></data>
+  <data name="Diagnostics_Env_Settings" xml:space="preserve"><value>Settings</value></data>
+  <data name="Diagnostics_Env_Logs" xml:space="preserve"><value>Logs</value></data>
+  <data name="Diagnostics_Env_PlayerMpv" xml:space="preserve"><value>mpv (GPU)</value></data>
+  <data name="Diagnostics_Env_PlayerFfme" xml:space="preserve"><value>FFME (CPU)</value></data>
+  <data name="Diagnostics_Env_PlayerNo" xml:space="preserve"><value>No — {0}</value></data>
+  <data name="Diagnostics_ReportHeader" xml:space="preserve"><value>=== Find That Shot — diagnostics ===</value></data>
+  <data name="Diagnostics_ReportLogHeader" xml:space="preserve"><value>=== Recent log ===</value></data>
+  <data name="Diagnostics_LogInMemory" xml:space="preserve"><value>(in-memory only)</value></data>
+
+  <!-- ===== Misc dialogs ===== -->
+  <data name="App_DbInitFailed" xml:space="preserve"><value>Failed to initialize the database:
+
+{0}</value></data>
+  <data name="Main_ReprocessAi_Title" xml:space="preserve"><value>Re-score all clips</value></data>
+  <data name="Main_ReprocessAi_Body" xml:space="preserve"><value>Re-score every clip with the AI model?
+
+This re-runs frame sampling and CLIP inference on all clips (not just new ones), so it can take a while on a large catalog. Existing accepted/rejected tags are kept; pending suggestions are refreshed.</value></data>
+  <data name="About_NoticesNotFound_Body" xml:space="preserve"><value>THIRD-PARTY-NOTICES.md could not be found next to the application. You can read it online at https://github.com/liknes/FindThatShot/blob/main/THIRD-PARTY-NOTICES.md.</value></data>
+  <data name="About_NoticesNotFound_Title" xml:space="preserve"><value>Notices not found</value></data>
+  <data name="About_OpenNoticesFailed" xml:space="preserve"><value>Could not open the notices file: {0}</value></data>
+</root>

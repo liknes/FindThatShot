@@ -1,6 +1,7 @@
 <Window x:Class="VideoArchiveManager.App.Views.SplashWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="clr-namespace:VideoArchiveManager.App.Localization"
         Title="Find That Shot"
         WindowStyle="None"
         AllowsTransparency="True"
@@ -83,7 +84,7 @@
                             </EventTrigger>
                         </TextBlock.Triggers>
                     </TextBlock>
-                    <TextBlock Text="Loading"
+                    <TextBlock Text="{loc:Tr Splash_Loading}"
                                FontSize="12"
                                Foreground="#D0FFFFFF"
                                VerticalAlignment="Center" />

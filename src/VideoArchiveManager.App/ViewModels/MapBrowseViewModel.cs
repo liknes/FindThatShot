@@ -19,6 +19,7 @@ using System.Windows.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using VideoArchiveManager.App.Helpers;
+using VideoArchiveManager.App.Localization;
 using VideoArchiveManager.Core.Services;
 
 namespace VideoArchiveManager.App.ViewModels;
@@ -33,6 +34,7 @@ namespace VideoArchiveManager.App.ViewModels;
 public partial class MapBrowseViewModel : ObservableObject
 {
     private readonly ISearchService _searchService;
+    private static LocalizationManager L => LocalizationManager.Instance;
     private IReadOnlyList<MapClipPoint> _points = Array.Empty<MapClipPoint>();
 
     public MapBrowseViewModel(ISearchService searchService)
@@ -86,11 +88,10 @@ public partial class MapBrowseViewModel : ObservableObject
             _points = points;
 
             ResultSummary = points.Count == 0
-                ? ScopeWholeArchive
-                    ? "No geotagged clips in the catalog."
-                    : "No geotagged clips match the current filters."
-                : $"{points.Count} geotagged clip{(points.Count == 1 ? "" : "s")}"
-                    + (ScopeWholeArchive ? "" : " (current filters)");
+                ? ScopeWholeArchive ? L["MapBrowse_NoGeoWhole"] : L["MapBrowse_NoGeoFiltered"]
+                : L.Format("MapBrowse_ResultCount", points.Count,
+                    points.Count == 1 ? L["Common_ClipSingular"] : L["Common_ClipPlural"])
+                  + (ScopeWholeArchive ? "" : " " + L["Common_CurrentFilters"]);
 
             // A reload can orphan the previewed clip (e.g. scope change drops it).
             if (SelectedClip is not null && points.All(p => p.Id != SelectedClip.Id))
@@ -167,7 +168,9 @@ public sealed class MapClipPreviewViewModel
 
     public string RatingText => _point.Rating > 0 ? new string('\u2605', _point.Rating) : string.Empty;
 
-    public string AvailabilityText => _point.FileExists ? "Online" : "Offline";
+    public string AvailabilityText => _point.FileExists
+        ? LocalizationManager.Instance["Common_Online"]
+        : LocalizationManager.Instance["Common_Offline"];
 
     public BitmapImage? Thumbnail => ThumbnailLoader.LoadLarge(_point.ThumbnailPath);
 }

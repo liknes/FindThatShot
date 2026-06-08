@@ -3,7 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.modernwpf.com/2019"
         xmlns:helpers="clr-namespace:VideoArchiveManager.App.Helpers.Controls"
-        Title="Settings"
+        xmlns:loc="clr-namespace:VideoArchiveManager.App.Localization"
+        Title="{loc:Tr Settings_Title}"
         Width="760" Height="800"
         MinWidth="640" MinHeight="560"
         WindowStartupLocation="CenterOwner"
@@ -38,27 +39,27 @@
                            Background="Transparent"
                            SelectionChanged="SettingsNav_SelectionChanged">
             <ui:NavigationView.MenuItems>
-                <ui:NavigationViewItem Content="General" Tag="general" IsSelected="True">
+                <ui:NavigationViewItem Content="{loc:Tr Settings_Nav_General}" Tag="general" IsSelected="True">
                     <ui:NavigationViewItem.Icon>
                         <ui:FontIcon FontFamily="{StaticResource App.Icon.FontFamily}" Glyph="{StaticResource Icon.Filter}" />
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
-                <ui:NavigationViewItem Content="Library &amp; Storage" Tag="storage">
+                <ui:NavigationViewItem Content="{loc:Tr Settings_Nav_Storage}" Tag="storage">
                     <ui:NavigationViewItem.Icon>
                         <ui:FontIcon FontFamily="{StaticResource App.Icon.FontFamily}" Glyph="{StaticResource Icon.Folder}" />
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
-                <ui:NavigationViewItem Content="Playback &amp; Map" Tag="playback">
+                <ui:NavigationViewItem Content="{loc:Tr Settings_Nav_Playback}" Tag="playback">
                     <ui:NavigationViewItem.Icon>
                         <ui:FontIcon FontFamily="{StaticResource App.Icon.FontFamily}" Glyph="{StaticResource Icon.Movie}" />
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
-                <ui:NavigationViewItem Content="Review" Tag="review">
+                <ui:NavigationViewItem Content="{loc:Tr Settings_Nav_Review}" Tag="review">
                     <ui:NavigationViewItem.Icon>
                         <ui:FontIcon FontFamily="{StaticResource App.Icon.FontFamily}" Glyph="{StaticResource Icon.Tag}" />
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
-                <ui:NavigationViewItem Content="AI tagging" Tag="ai">
+                <ui:NavigationViewItem Content="{loc:Tr Settings_Nav_Ai}" Tag="ai">
                     <ui:NavigationViewItem.Icon>
                         <ui:FontIcon FontFamily="{StaticResource App.Icon.FontFamily}" Glyph="{StaticResource Icon.Tag}" />
                     </ui:NavigationViewItem.Icon>
@@ -72,12 +73,26 @@
                               VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Margin="24,16,20,16">
 
-                        <TextBlock Text="SCANNING" Style="{StaticResource App.Type.Section}" />
+                        <TextBlock Text="{loc:Tr Settings_Language_Header}" Style="{StaticResource App.Type.Section}" />
 
-                        <TextBlock Text="Max scan parallelism" Style="{StaticResource App.Type.Caption}" />
+                        <TextBlock Text="{loc:Tr Settings_Language_Label}" Style="{StaticResource App.Type.Caption}" />
+                        <ComboBox ItemsSource="{Binding Languages}"
+                                  SelectedItem="{Binding SelectedLanguage}"
+                                  DisplayMemberPath="DisplayName"
+                                  HorizontalAlignment="Left"
+                                  MinWidth="240"
+                                  Margin="0,4,0,4" />
+                        <TextBlock Text="{loc:Tr Settings_Language_Hint}"
+                                   Style="{StaticResource App.Type.Caption}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,16" />
+
+                        <TextBlock Text="{loc:Tr Settings_Scanning_Header}" Style="{StaticResource App.Type.Section}" />
+
+                        <TextBlock Text="{loc:Tr Settings_MaxParallelism}" Style="{StaticResource App.Type.Caption}" />
                         <ui:NumberBox Value="{Binding MaxScanParallelism}" Minimum="1" Maximum="16" Margin="0,4,0,12" />
 
-                        <TextBlock Text="Excluded folder names (comma-separated, matched on any path segment, case-insensitive)"
+                        <TextBlock Text="{loc:Tr Settings_ExcludedFolders}"
                                    Style="{StaticResource App.Type.Caption}" TextWrapping="Wrap" />
                         <TextBox Text="{Binding ExcludedFolderNames, UpdateSourceTrigger=PropertyChanged}"
                                  AcceptsReturn="True"
@@ -85,7 +100,7 @@
                                  MinHeight="60"
                                  Margin="0,4,0,12" />
 
-                        <TextBlock Text="Excluded file name patterns (comma-separated globs, e.g. *_proxy.mp4, *.LRV)"
+                        <TextBlock Text="{loc:Tr Settings_ExcludedPatterns}"
                                    Style="{StaticResource App.Type.Caption}" TextWrapping="Wrap" />
                         <TextBox Text="{Binding ExcludedFileNamePatterns, UpdateSourceTrigger=PropertyChanged}"
                                  AcceptsReturn="True"
@@ -95,7 +110,7 @@
 
                         <TextBlock TextWrapping="Wrap"
                                    Style="{StaticResource App.Type.Caption}"
-                                   Text="Settings are saved to %APPDATA%\VideoArchiveManager\settings.json." />
+                                   Text="{loc:Tr Settings_SavedTo}" />
                     </StackPanel>
                 </ScrollViewer>
 
@@ -104,32 +119,32 @@
                               VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Margin="24,16,20,16">
 
-                        <TextBlock Text="STORAGE" Style="{StaticResource App.Type.Section}" />
+                        <TextBlock Text="{loc:Tr Settings_Storage_Header}" Style="{StaticResource App.Type.Section}" />
 
-                        <TextBlock Text="Thumbnail directory" Style="{StaticResource App.Type.Caption}" />
+                        <TextBlock Text="{loc:Tr Settings_ThumbnailDir}" Style="{StaticResource App.Type.Caption}" />
                         <TextBox Text="{Binding ThumbnailDirectory, UpdateSourceTrigger=PropertyChanged}"
                                  Margin="0,4,0,12" />
 
-                        <TextBlock Text="Database file" Style="{StaticResource App.Type.Caption}" />
+                        <TextBlock Text="{loc:Tr Settings_DatabaseFile}" Style="{StaticResource App.Type.Caption}" />
                         <TextBox Text="{Binding DatabasePath, UpdateSourceTrigger=PropertyChanged}"
                                  Margin="0,4,0,4" />
                         <TextBlock TextWrapping="Wrap"
                                    Style="{StaticResource App.Type.Caption}"
                                    Margin="0,0,0,16"
-                                   Text="Changing the database path requires an app restart." />
+                                   Text="{loc:Tr Settings_DbRestart}" />
 
-                        <TextBlock Text="SIDECAR FILES" Style="{StaticResource App.Type.Section}" />
+                        <TextBlock Text="{loc:Tr Settings_Sidecar_Header}" Style="{StaticResource App.Type.Section}" />
                         <TextBlock TextWrapping="Wrap" Style="{StaticResource App.Type.BodyMuted}" Margin="0,0,0,12"
-                                   Text="When enabled, a small &quot;&lt;filename&gt;.findthatshot.json&quot; file is written next to each video on save, containing its tags, rating, status and notes. Other tools (DaVinci Resolve, Premiere, Lightroom, FCP, etc.) ignore these files. Source video files are never modified. Failures on read-only / offline drives are skipped silently." />
+                                   Text="{loc:Tr Settings_Sidecar_Desc}" />
                         <CheckBox IsChecked="{Binding WriteSidecarFiles}"
-                                  Content="Write sidecar JSON files next to videos"
+                                  Content="{loc:Tr Settings_Sidecar_Check}"
                                   Margin="0,0,0,16" />
 
-                        <TextBlock Text="CATALOG BACKUP" Style="{StaticResource App.Type.Section}" />
+                        <TextBlock Text="{loc:Tr Settings_Backup_Header}" Style="{StaticResource App.Type.Section}" />
                         <TextBlock TextWrapping="Wrap" Style="{StaticResource App.Type.BodyMuted}" Margin="0,0,0,12"
-                                   Text="The app can back up the catalog database (your tags, ratings, notes, status) to a folder you choose. Source video files are never touched." />
+                                   Text="{loc:Tr Settings_Backup_Desc}" />
 
-                        <TextBlock Text="Backup directory" Style="{StaticResource App.Type.Caption}" />
+                        <TextBlock Text="{loc:Tr Settings_Backup_Dir}" Style="{StaticResource App.Type.Caption}" />
                         <Grid Margin="0,4,0,8">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -137,31 +152,31 @@
                             </Grid.ColumnDefinitions>
                             <TextBox Grid.Column="0" Text="{Binding BackupDirectory, UpdateSourceTrigger=PropertyChanged}" />
                             <Button Grid.Column="1" Margin="8,0,0,0"
-                                    Content="Browse"
+                                    Content="{loc:Tr Common_Browse}"
                                     Style="{StaticResource App.Button.Secondary}"
                                     helpers:Theme.Icon="{StaticResource Icon.Folder}"
                                     Command="{Binding BrowseBackupDirectoryCommand}" />
                         </Grid>
 
                         <CheckBox IsChecked="{Binding AutoBackupOnStartup}"
-                                  Content="Back up automatically on app startup"
+                                  Content="{loc:Tr Settings_Backup_Auto}"
                                   Margin="0,0,0,8" />
 
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,12" VerticalAlignment="Center">
-                            <TextBlock Text="Keep last" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBlock Text="{loc:Tr Settings_Backup_KeepLast}" VerticalAlignment="Center" Margin="0,0,8,0" />
                             <ui:NumberBox Width="100"
                                           Minimum="1" Maximum="365"
                                           Value="{Binding BackupRetentionCount}" />
-                            <TextBlock Text="backup(s); older backups are deleted." VerticalAlignment="Center" Margin="8,0,0,0" />
+                            <TextBlock Text="{loc:Tr Settings_Backup_KeepSuffix}" VerticalAlignment="Center" Margin="8,0,0,0" />
                         </StackPanel>
 
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                            <Button Content="Back up now"
+                            <Button Content="{loc:Tr Settings_Backup_Now}"
                                     Style="{StaticResource App.Button.Secondary}"
                                     helpers:Theme.Icon="{StaticResource Icon.Cloud}"
                                     Command="{Binding BackupNowCommand}"
                                     IsEnabled="{Binding IsBackingUp, Converter={StaticResource InverseBool}}" />
-                            <Button Content="Refresh list"
+                            <Button Content="{loc:Tr Settings_Backup_RefreshList}"
                                     Margin="8,0,0,0"
                                     Style="{StaticResource App.Button.Ghost}"
                                     helpers:Theme.Icon="{StaticResource Icon.Refresh}"
@@ -172,7 +187,7 @@
                                    Style="{StaticResource App.Type.Caption}"
                                    Margin="0,4,0,12" />
 
-                        <TextBlock Text="Available backups (select one to restore)"
+                        <TextBlock Text="{loc:Tr Settings_Backup_Available}"
                                    Style="{StaticResource App.Type.Caption}" />
                         <ListBox ItemsSource="{Binding Backups}"
                                  SelectedItem="{Binding SelectedBackup}"
@@ -204,11 +219,11 @@
                             </ListBox.ItemTemplate>
                         </ListBox>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                            <Button Content="Restore selected"
+                            <Button Content="{loc:Tr Settings_Backup_Restore}"
                                     Style="{StaticResource App.Button.Secondary}"
                                     helpers:Theme.Icon="{StaticResource Icon.Refresh}"
                                     Command="{Binding RestoreCommand}"
-                                    ToolTip="Stage a restore from the selected backup. The app will restart to safely swap the database file." />
+                                    ToolTip="{loc:Tr Settings_Backup_Restore_Tip}" />
                         </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
@@ -218,9 +233,9 @@
                               VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Margin="24,16,20,16">
 
-                        <TextBlock Text="FFMPEG" Style="{StaticResource App.Type.Section}" />
+                        <TextBlock Text="{loc:Tr Settings_Ffmpeg_Header}" Style="{StaticResource App.Type.Section}" />
 
-                        <TextBlock Text="ffmpeg.exe path (leave blank to use PATH)"
+                        <TextBlock Text="{loc:Tr Settings_FfmpegPath}"
                                    Style="{StaticResource App.Type.Caption}" />
                         <Grid Margin="0,4,0,12">
                 <Grid.ColumnDefinitions>
@@ -229,13 +244,13 @@
                 </Grid.ColumnDefinitions>
                 <TextBox Grid.Column="0" Text="{Binding FfmpegPath, UpdateSourceTrigger=PropertyChanged}" />
                             <Button Grid.Column="1" Margin="8,0,0,0"
-                                    Content="Browse"
+                                    Content="{loc:Tr Common_Browse}"
                                     Style="{StaticResource App.Button.Secondary}"
                                     helpers:Theme.Icon="{StaticResource Icon.Folder}"
                                     Command="{Binding BrowseFfmpegCommand}" />
             </Grid>
 
-                        <TextBlock Text="ffprobe.exe path (leave blank to use PATH)"
+                        <TextBlock Text="{loc:Tr Settings_FfprobePath}"
                                    Style="{StaticResource App.Type.Caption}" />
                         <Grid Margin="0,4,0,16">
                 <Grid.ColumnDefinitions>
@@ -244,36 +259,36 @@
                 </Grid.ColumnDefinitions>
                 <TextBox Grid.Column="0" Text="{Binding FfprobePath, UpdateSourceTrigger=PropertyChanged}" />
                             <Button Grid.Column="1" Margin="8,0,0,0"
-                                    Content="Browse"
+                                    Content="{loc:Tr Common_Browse}"
                                     Style="{StaticResource App.Button.Secondary}"
                                     helpers:Theme.Icon="{StaticResource Icon.Folder}"
                                     Command="{Binding BrowseFfprobeCommand}" />
             </Grid>
 
-                        <TextBlock Text="PLAYBACK" Style="{StaticResource App.Type.Section}" />
+                        <TextBlock Text="{loc:Tr Settings_Playback_Header}" Style="{StaticResource App.Type.Section}" />
                         <TextBlock TextWrapping="Wrap" Style="{StaticResource App.Type.BodyMuted}" Margin="0,0,0,12"
-                                   Text="When enabled, the in-app player prefers a DaVinci Resolve-style proxy when one exists. For each clip we look for a sibling &quot;Proxy&quot; folder containing a file with the same base name (any extension) and play that instead — much faster on high-bitrate 4K 60p sources. Falls back to the original clip silently when no proxy is found. The catalog, thumbnails, metadata and the &quot;Play externally&quot; command always continue to point at the original file." />
+                                   Text="{loc:Tr Settings_Proxy_Desc}" />
                         <CheckBox IsChecked="{Binding PreferProxyForPlayback}"
-                                  Content="Prefer DaVinci Resolve proxies for in-app playback"
+                                  Content="{loc:Tr Settings_Proxy_Check}"
                                   Margin="0,0,0,12" />
                         <TextBlock TextWrapping="Wrap" Style="{StaticResource App.Type.BodyMuted}" Margin="0,0,0,12"
-                                   Text="When enabled, the in-app player shows a telemetry strip under the video for DJI clips that have a sibling &quot;.SRT&quot; file — ISO, shutter, aperture, focal length, altitude and GPS, synced to the current frame. Display-only and read live from the file; the player also has its own inline toggle." />
+                                   Text="{loc:Tr Settings_Telemetry_Desc}" />
                         <CheckBox IsChecked="{Binding ShowPlayerTelemetry}"
-                                  Content="Show drone telemetry overlay in the player"
+                                  Content="{loc:Tr Settings_Telemetry_Check}"
                                   Margin="0,0,0,16" />
 
-                        <TextBlock Text="MAP" Style="{StaticResource App.Type.Section}" />
+                        <TextBlock Text="{loc:Tr Settings_Map_Header}" Style="{StaticResource App.Type.Section}" />
                         <TextBlock TextWrapping="Wrap" Style="{StaticResource App.Type.BodyMuted}" Margin="0,0,0,12"
-                                   Text="When enabled, the sidebar map draws the full drone flight path for clips that have a sibling DJI &quot;.SRT&quot; file, as a line with start / end markers. This is display-only: turning it off just hides the route — clips are still geotagged with their location and the single pin still shows. The flight path is read live from the file and never stored." />
+                                   Text="{loc:Tr Settings_FlightPath_Desc}" />
                         <CheckBox IsChecked="{Binding ShowDroneFlightPaths}"
-                                  Content="Show drone flight paths on the map"
+                                  Content="{loc:Tr Settings_FlightPath_Check}"
                                   Margin="0,0,0,16" />
 
-                        <TextBlock Text="CATALOG GRID" Style="{StaticResource App.Type.Section}" />
+                        <TextBlock Text="{loc:Tr Settings_Grid_Header}" Style="{StaticResource App.Type.Section}" />
                         <TextBlock TextWrapping="Wrap" Style="{StaticResource App.Type.BodyMuted}" Margin="0,0,0,12"
-                                   Text="When enabled, hovering a catalog card and sweeping the pointer left-to-right scrubs through preview frames sampled across the clip — fast visual triage without opening the player. Frames are generated on demand the first time you hover a clip (a brief pause while ffmpeg extracts them), then cached; clips you never hover cost nothing. The source files are only ever read." />
+                                   Text="{loc:Tr Settings_HoverScrub_Desc}" />
                         <CheckBox IsChecked="{Binding EnableHoverScrubPreview}"
-                                  Content="Enable hover-scrub previews on catalog cards"
+                                  Content="{loc:Tr Settings_HoverScrub_Check}"
                                   Margin="0,0,0,16" />
                     </StackPanel>
                 </ScrollViewer>
@@ -283,17 +298,17 @@
                               VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Margin="24,16,20,16">
 
-                        <TextBlock Text="REVIEW HOTKEYS" Style="{StaticResource App.Type.Section}" />
+                        <TextBlock Text="{loc:Tr Settings_Review_Header}" Style="{StaticResource App.Type.Section}" />
                         <TextBlock TextWrapping="Wrap" Style="{StaticResource App.Type.BodyMuted}" Margin="0,0,0,12"
-                                   Text="Pin up to ten tags to the number keys. While the in-app player is open (review mode), pressing a digit toggles that tag on or off for the current clip — no mouse needed. Digits still type normally while you're editing the tag name, notes or coordinates fields." />
+                                   Text="{loc:Tr Settings_Review_Desc}" />
 
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                            <Button Content="Fill from most-used"
+                            <Button Content="{loc:Tr Settings_Review_Fill}"
                                     Style="{StaticResource App.Button.Secondary}"
                                     helpers:Theme.Icon="{StaticResource Icon.Tag}"
                                     Command="{Binding FillFromMostUsedCommand}"
-                                    ToolTip="Drop your most-used tags into the empty slots." />
-                            <Button Content="Clear all"
+                                    ToolTip="{loc:Tr Settings_Review_Fill_Tip}" />
+                            <Button Content="{loc:Tr Settings_Review_ClearAll}"
                                     Margin="8,0,0,0"
                                     Style="{StaticResource App.Button.Ghost}"
                                     Command="{Binding ClearAllPinnedTagsCommand}" />
@@ -325,7 +340,7 @@
                                         <ComboBox Grid.Column="1"
                                                   Margin="8,0,0,0"
                                                   VerticalAlignment="Center"
-                                                  ui:ControlHelper.PlaceholderText="— not bound —"
+                                                  ui:ControlHelper.PlaceholderText="{loc:Tr Settings_Review_NotBound}"
                                                   ItemsSource="{Binding DataContext.AvailableTags, RelativeSource={RelativeSource AncestorType=Window}}"
                                                   SelectedItem="{Binding SelectedTag, Mode=TwoWay}">
                                             <ComboBox.ItemTemplate>
@@ -344,7 +359,7 @@
                                                 Style="{StaticResource App.Button.Ghost}"
                                                 helpers:Theme.Icon="{StaticResource Icon.Close}"
                                                 Command="{Binding ClearCommand}"
-                                                ToolTip="Unbind this key" />
+                                                ToolTip="{loc:Tr Settings_Review_Unbind_Tip}" />
                                     </Grid>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
@@ -357,14 +372,14 @@
                               VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Margin="24,16,20,16">
 
-                        <TextBlock Text="AI AUTO-TAGGING &amp; SEARCH" Style="{StaticResource App.Type.Section}" />
+                        <TextBlock Text="{loc:Tr Settings_Ai_Header}" Style="{StaticResource App.Type.Section}" />
                         <TextBlock TextWrapping="Wrap" Style="{StaticResource App.Type.BodyMuted}" Margin="0,0,0,12"
-                                   Text="Optional. Runs a local CLIP model over frames sampled across each clip to propose tags (sea, fog, ships, snow…) you accept or reject, and to enable natural-language search (e.g. &quot;drone shot over snowy mountains at sunset&quot;). All processing is local and offline; the model only ever reads frames — source files are never modified. Off by default; turning it on enables a one-time model download (~150 MB)." />
+                                   Text="{loc:Tr Settings_Ai_Desc}" />
                         <CheckBox IsChecked="{Binding EnableAiTagging}"
-                                  Content="Enable AI auto-tagging and natural-language search"
+                                  Content="{loc:Tr Settings_Ai_Check}"
                                   Margin="0,0,0,16" />
 
-                        <TextBlock Text="MODEL" Style="{StaticResource App.Type.Section}" />
+                        <TextBlock Text="{loc:Tr Settings_Ai_Model_Header}" Style="{StaticResource App.Type.Section}" />
                         <TextBlock Text="{Binding AiModelStatus}"
                      TextWrapping="Wrap"
                                    Style="{StaticResource App.Type.Caption}"
@@ -372,16 +387,16 @@
 
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8"
                                     IsEnabled="{Binding EnableAiTagging}">
-                            <Button Content="Download model"
+                            <Button Content="{loc:Tr Settings_Ai_Download}"
                                     Style="{StaticResource App.Button.Secondary}"
                                     helpers:Theme.Icon="{StaticResource Icon.Cloud}"
                                     Command="{Binding DownloadModelCommand}"
                                     IsEnabled="{Binding CanDownloadModel}" />
-                            <Button Content="Clear AI data"
+                            <Button Content="{loc:Tr Settings_Ai_ClearData}"
                                     Margin="8,0,0,0"
                                     Style="{StaticResource App.Button.Ghost}"
                                     Command="{Binding ClearAiDataCommand}"
-                                    ToolTip="Remove all embeddings and pending suggestions. Accepted tags and source files are kept." />
+                                    ToolTip="{loc:Tr Settings_Ai_ClearData_Tip}" />
         </StackPanel>
 
                         <ProgressBar Minimum="0" Maximum="1" Height="4"
@@ -389,7 +404,7 @@
                                      Margin="0,0,0,12"
                                      Visibility="{Binding IsDownloadingModel, Converter={StaticResource BoolToVisibility}}" />
 
-                        <TextBlock Text="Model folder (optional — leave blank to use the managed download location)"
+                        <TextBlock Text="{loc:Tr Settings_Ai_ModelFolder}"
                                    Style="{StaticResource App.Type.Caption}" TextWrapping="Wrap" />
                         <Grid Margin="0,4,0,16">
                             <Grid.ColumnDefinitions>
@@ -398,15 +413,15 @@
                             </Grid.ColumnDefinitions>
                             <TextBox Grid.Column="0" Text="{Binding AiModelDirectory, UpdateSourceTrigger=LostFocus}" />
                             <Button Grid.Column="1" Margin="8,0,0,0"
-                                    Content="Browse"
+                                    Content="{loc:Tr Common_Browse}"
                                     Style="{StaticResource App.Button.Secondary}"
                                     helpers:Theme.Icon="{StaticResource Icon.Folder}"
                                     Command="{Binding BrowseAiModelDirectoryCommand}" />
                         </Grid>
 
-                        <TextBlock Text="TUNING" Style="{StaticResource App.Type.Section}" />
+                        <TextBlock Text="{loc:Tr Settings_Ai_Tuning_Header}" Style="{StaticResource App.Type.Section}" />
 
-                        <TextBlock Text="Sample one frame every N seconds (frame count scales with clip length, then clamps to the min/max below)"
+                        <TextBlock Text="{loc:Tr Settings_Ai_SecondsPerFrame}"
                                    Style="{StaticResource App.Type.Caption}" TextWrapping="Wrap" />
                         <ui:NumberBox Value="{Binding AiSecondsPerFrame}" Minimum="2" Maximum="120"
                                       SmallChange="1" LargeChange="5" Margin="0,4,0,12" />
@@ -418,31 +433,31 @@
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0">
-                                <TextBlock Text="Min frames per clip"
+                                <TextBlock Text="{loc:Tr Settings_Ai_MinFrames}"
                                            Style="{StaticResource App.Type.Caption}" TextWrapping="Wrap" />
                                 <ui:NumberBox Value="{Binding AiMinFramesPerClip}" Minimum="1" Maximum="64" Margin="0,4,0,0" />
                             </StackPanel>
                             <StackPanel Grid.Column="2">
-                                <TextBlock Text="Max frames per clip"
+                                <TextBlock Text="{loc:Tr Settings_Ai_MaxFrames}"
                                            Style="{StaticResource App.Type.Caption}" TextWrapping="Wrap" />
                                 <ui:NumberBox Value="{Binding AiMaxFramesPerClip}" Minimum="1" Maximum="128" Margin="0,4,0,0" />
                             </StackPanel>
                         </Grid>
 
-                        <TextBlock Text="Suggestion confidence threshold (0.20–0.40; higher = fewer, cleaner suggestions)"
+                        <TextBlock Text="{loc:Tr Settings_Ai_Threshold}"
                                    Style="{StaticResource App.Type.Caption}" TextWrapping="Wrap" />
                         <ui:NumberBox Value="{Binding AiSuggestionThreshold}"
                                       Minimum="0.10" Maximum="0.90"
                                       SmallChange="0.01" LargeChange="0.05"
                                       Margin="0,4,0,12" />
 
-                        <CheckBox Content="Adapt thresholds to my accept/reject history (per-label)"
+                        <CheckBox Content="{loc:Tr Settings_Ai_Adaptive}"
                                   IsChecked="{Binding AiAdaptiveThresholds}" Margin="0,0,0,4" />
                         <TextBlock TextWrapping="Wrap" Style="{StaticResource App.Type.Caption}"
-                                   Text="Once a label has a few accepted/rejected suggestions, its confidence cutoff is learned from your decisions instead of the global value above — labels you keep rejecting are suppressed, labels you accept appear sooner. The CLIP model itself is never modified." />
+                                   Text="{loc:Tr Settings_Ai_Adaptive_Desc}" />
 
                         <TextBlock TextWrapping="Wrap" Style="{StaticResource App.Type.Caption}"
-                                   Text="After enabling and downloading, run Catalog → Generate AI tags…, then review proposals in Catalog → Review AI suggestions…." />
+                                   Text="{loc:Tr Settings_Ai_Footer}" />
                     </StackPanel>
                 </ScrollViewer>
 
@@ -450,10 +465,10 @@
         </ui:NavigationView>
 
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="24,12,24,24">
-            <Button Content="Cancel"
+            <Button Content="{loc:Tr Common_Cancel}"
                     Style="{StaticResource App.Button.Ghost}"
                     Command="{Binding CancelCommand}" />
-            <Button Content="Save"
+            <Button Content="{loc:Tr Common_Save}"
                     Margin="8,0,0,0"
                     Style="{StaticResource App.Button.Primary}"
                     helpers:Theme.Icon="{StaticResource Icon.Save}"

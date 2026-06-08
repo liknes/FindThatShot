@@ -24,6 +24,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.EntityFrameworkCore;
 using VideoArchiveManager.App.Helpers;
+using VideoArchiveManager.App.Localization;
 using VideoArchiveManager.Core.Configuration;
 using VideoArchiveManager.Core.Models;
 using VideoArchiveManager.Core.Models.Enums;
@@ -45,6 +46,9 @@ public enum FeedbackSeverity
 
 public partial class VideoDetailViewModel : ObservableObject
 {
+    // Shorthand for localized string lookup throughout this view-model.
+    private static LocalizationManager L => LocalizationManager.Instance;
+
     private readonly IDbContextFactory<VideoArchiveDbContext> _contextFactory;
     private readonly ITagService _tagService;
     private readonly IMomentService _momentService;
@@ -337,7 +341,9 @@ public partial class VideoDetailViewModel : ObservableObject
 
     public bool HasMoments => MomentCount > 0;
 
-    public string MomentCountText => MomentCount == 1 ? "1 moment" : $"{MomentCount} moments";
+    public string MomentCountText => MomentCount == 1
+        ? L["Detail_Moment_CountOne"]
+        : L.Format("Detail_Moment_CountMany", MomentCount);
 
     // The moment whose compact editor (label / rating / notes / tags) is shown
     // below the list. Null when nothing is selected.
@@ -816,7 +822,7 @@ public partial class VideoDetailViewModel : ObservableObject
         Current.Status = Status;
 
         var (_, sidecarText) = await WriteSidecarStatusAsync(entity);
-        LastSaveStatus = $"Saved · {sidecarText}";
+        LastSaveStatus = L.Format("Detail_Save_Saved", sidecarText);
     }
 
     [RelayCommand]
@@ -866,27 +872,27 @@ public partial class VideoDetailViewModel : ObservableObject
 
             var (sidecarFailed, sidecarText) = await WriteSidecarStatusAsync();
             LastSaveStatus = statusBumped
-                ? $"Tag added · status → Keep · {sidecarText}"
-                : $"Tag added · {sidecarText}";
+                ? L.Format("Detail_Save_TagAddedKeep", sidecarText)
+                : L.Format("Detail_Save_TagAdded", sidecarText);
 
             // The catalog write succeeded by the time we get here; a sidecar
             // failure is a partial success (curation is safe in the DB), so it's
             // surfaced as a warning rather than a hard error.
             if (sidecarFailed)
             {
-                ShowTagFeedback($"Tag added: {tag.Name} — sidecar write failed", FeedbackSeverity.Warning);
+                ShowTagFeedback(L.Format("Detail_Fb_TagAddedSidecarFailed", tag.Name), FeedbackSeverity.Warning);
             }
             else
             {
                 ShowTagFeedback(
-                    statusBumped ? $"Tag added: {tag.Name} · status → Keep" : $"Tag added: {tag.Name}",
+                    statusBumped ? L.Format("Detail_Fb_TagAddedKeep", tag.Name) : L.Format("Detail_Fb_TagAdded", tag.Name),
                     FeedbackSeverity.Success);
             }
         }
         catch (Exception ex)
         {
-            LastSaveStatus = $"Tag add failed: {ex.Message}";
-            ShowTagFeedback($"Couldn't add tag: {ex.Message}", FeedbackSeverity.Error);
+            LastSaveStatus = L.Format("Detail_Save_TagAddFailed", ex.Message);
+            ShowTagFeedback(L.Format("Detail_Fb_TagAddError", ex.Message), FeedbackSeverity.Error);
         }
     }
 
@@ -966,15 +972,15 @@ public partial class VideoDetailViewModel : ObservableObject
             Current.TagSummary = string.Join(", ", Tags.Select(t => t.Name));
 
             var (sidecarFailed, sidecarText) = await WriteSidecarStatusAsync();
-            LastSaveStatus = $"Tag removed · {sidecarText}";
+            LastSaveStatus = L.Format("Detail_Save_TagRemoved", sidecarText);
             ShowTagFeedback(
-                sidecarFailed ? $"Tag removed: {tag.Name} — sidecar write failed" : $"Tag removed: {tag.Name}",
+                sidecarFailed ? L.Format("Detail_Fb_TagRemovedSidecarFailed", tag.Name) : L.Format("Detail_Fb_TagRemoved", tag.Name),
                 sidecarFailed ? FeedbackSeverity.Warning : FeedbackSeverity.Success);
         }
         catch (Exception ex)
         {
-            LastSaveStatus = $"Tag remove failed: {ex.Message}";
-            ShowTagFeedback($"Couldn't remove tag: {ex.Message}", FeedbackSeverity.Error);
+            LastSaveStatus = L.Format("Detail_Save_TagRemoveFailed", ex.Message);
+            ShowTagFeedback(L.Format("Detail_Fb_TagRemoveError", ex.Message), FeedbackSeverity.Error);
         }
     }
 
@@ -993,12 +999,12 @@ public partial class VideoDetailViewModel : ObservableObject
 
             var (sidecarFailed, _) = await WriteSidecarStatusAsync();
             ShowTagFeedback(
-                next ? $"Marked as background: {tag.Name}" : $"Marked as main subject: {tag.Name}",
+                next ? L.Format("Detail_Fb_MarkedBackground", tag.Name) : L.Format("Detail_Fb_MarkedMain", tag.Name),
                 sidecarFailed ? FeedbackSeverity.Warning : FeedbackSeverity.Success);
         }
         catch (Exception ex)
         {
-            ShowTagFeedback($"Couldn't update tag: {ex.Message}", FeedbackSeverity.Error);
+            ShowTagFeedback(L.Format("Detail_Fb_TagUpdateError", ex.Message), FeedbackSeverity.Error);
         }
     }
 
@@ -1023,18 +1029,18 @@ public partial class VideoDetailViewModel : ObservableObject
     {
         if (Current is null)
         {
-            return (false, "sidecar skipped (no video selected)");
+            return (false, L["Detail_Sidecar_NoVideo"]);
         }
         if (!_sidecar.ShouldWriteFor(Current.FilePath))
         {
-            return (false, "sidecar disabled");
+            return (false, L["Detail_Sidecar_Disabled"]);
         }
 
         if (entity is null)
         {
             await using var ctx = await _contextFactory.CreateDbContextAsync();
             entity = await ctx.VideoItems.FirstOrDefaultAsync(v => v.Id == Current.Id);
-            if (entity is null) return (true, "sidecar skipped (video not found in catalog)");
+            if (entity is null) return (true, L["Detail_Sidecar_NotFound"]);
         }
 
         // Always carry the clip's current moments into the sidecar so the
@@ -1046,13 +1052,13 @@ public partial class VideoDetailViewModel : ObservableObject
         var result = await _sidecar.WriteAsync(entity, videoTags, moments);
         if (result.Written && !string.IsNullOrEmpty(result.Path))
         {
-            return (false, $"sidecar written: {result.Path}");
+            return (false, L.Format("Detail_Sidecar_Written", result.Path));
         }
         if (result.Skipped)
         {
-            return (false, "sidecar disabled");
+            return (false, L["Detail_Sidecar_Disabled"]);
         }
-        return (true, $"sidecar FAILED: {result.ErrorMessage ?? "unknown error"}");
+        return (true, L.Format("Detail_Sidecar_Failed", result.ErrorMessage ?? L["Detail_Sidecar_UnknownError"]));
     }
 
     [RelayCommand]
@@ -1153,7 +1159,7 @@ public partial class VideoDetailViewModel : ObservableObject
         // LocationText simply stays as-is. Reuses the same Nominatim
         // service the "Fill missing locations from GPS…" command uses,
         // including its on-disk geocode cache.
-        var geoStatus = "geocode skipped";
+        var geoStatus = L["Detail_Geo_Skipped"];
         try
         {
             var geo = await _reverseGeocoder.LookupAsync(lat, lon);
@@ -1169,12 +1175,12 @@ public partial class VideoDetailViewModel : ObservableObject
                     Current.Model.LocationText = geo.LocationShort;
                     Current.RefreshLocation();
                     entity = fresh;
-                    geoStatus = $"location → {geo.LocationShort}";
+                    geoStatus = L.Format("Detail_Geo_Location", geo.LocationShort);
                 }
             }
             else
             {
-                geoStatus = "geocode: no match";
+                geoStatus = L["Detail_Geo_NoMatch"];
             }
         }
         catch
@@ -1182,11 +1188,11 @@ public partial class VideoDetailViewModel : ObservableObject
             // Network blip / rate limit / parse error — keep the GPS save
             // but signal geocode didn't run. The user can retry via the
             // existing "Fill missing locations from GPS…" catalog command.
-            geoStatus = "geocode failed";
+            geoStatus = L["Detail_Geo_Failed"];
         }
 
         var (_, sidecarText) = await WriteSidecarStatusAsync(entity);
-        LastSaveStatus = $"Location saved · {geoStatus} · {sidecarText}";
+        LastSaveStatus = L.Format("Detail_Save_LocationSaved", geoStatus, sidecarText);
 
         ResetPickState();
     }
@@ -1218,7 +1224,7 @@ public partial class VideoDetailViewModel : ObservableObject
         Current.RefreshLocation();
 
         var (_, sidecarText) = await WriteSidecarStatusAsync(entity);
-        LastSaveStatus = $"Location cleared · {sidecarText}";
+        LastSaveStatus = L.Format("Detail_Save_LocationCleared", sidecarText);
 
         ResetPickState();
     }
@@ -1246,7 +1252,7 @@ public partial class VideoDetailViewModel : ObservableObject
     {
         if (Current is null) return;
         PendingInPoint = Math.Max(0, position.TotalSeconds);
-        MomentMarkStatus = $"In point {FormatSeconds(PendingInPoint!.Value)} — press O to set the out point";
+        MomentMarkStatus = L.Format("Detail_Moment_InPoint", FormatSeconds(PendingInPoint!.Value));
     }
 
     // "O" key / Mark out button: close the staged range into a saved moment. If
@@ -1293,8 +1299,8 @@ public partial class VideoDetailViewModel : ObservableObject
         Current.MomentCount = MomentCount;
 
         MomentMarkStatus = endSeconds is null
-            ? $"Marker added at {vm.StartText}"
-            : $"Moment added {vm.TimeRangeText}";
+            ? L.Format("Detail_Moment_MarkerAdded", vm.StartText)
+            : L.Format("Detail_Moment_MomentAdded", vm.TimeRangeText);
 
         await WriteSidecarStatusAsync();
     }
@@ -1358,14 +1364,14 @@ public partial class VideoDetailViewModel : ObservableObject
             moment.RefreshTagSummary();
 
             var (sidecarFailed, _) = await WriteSidecarStatusAsync();
-            MomentMarkStatus = $"Changes saved · {moment.DisplayLabel}";
+            MomentMarkStatus = L.Format("Detail_Moment_ChangesSaved", moment.DisplayLabel);
             ShowMomentFeedback(
-                sidecarFailed ? "Changes saved — sidecar write failed" : "Changes saved",
+                sidecarFailed ? L["Detail_MomentFb_SavedSidecarFailed"] : L["Detail_MomentFb_Saved"],
                 sidecarFailed ? FeedbackSeverity.Warning : FeedbackSeverity.Success);
         }
         catch (Exception ex)
         {
-            ShowMomentFeedback($"Couldn't save changes: {ex.Message}", FeedbackSeverity.Error);
+            ShowMomentFeedback(L.Format("Detail_MomentFb_SaveError", ex.Message), FeedbackSeverity.Error);
         }
     }
 
@@ -1393,7 +1399,7 @@ public partial class VideoDetailViewModel : ObservableObject
         {
             Current.MomentCount = MomentCount;
         }
-        MomentMarkStatus = "Moment deleted";
+        MomentMarkStatus = L["Detail_Moment_Deleted"];
         await WriteSidecarStatusAsync();
     }
 
@@ -1414,7 +1420,7 @@ public partial class VideoDetailViewModel : ObservableObject
         // A moment tag can mint a brand-new catalog tag; surface it like the
         // clip-tag path so the sidebar picker stays in sync.
         TagCatalogChanged?.Invoke(this, tag);
-        MomentMarkStatus = $"Tag added to moment · {tag.Name}";
+        MomentMarkStatus = L.Format("Detail_Moment_TagAdded", tag.Name);
         await WriteSidecarStatusAsync();
     }
 
@@ -1425,7 +1431,7 @@ public partial class VideoDetailViewModel : ObservableObject
         await _momentService.DetachTagAsync(SelectedMoment.Id, tag.Id);
         SelectedMoment.Tags.Remove(tag);
         SelectedMoment.RefreshTagSummary();
-        MomentMarkStatus = $"Tag removed from moment · {tag.Name}";
+        MomentMarkStatus = L.Format("Detail_Moment_TagRemoved", tag.Name);
         await WriteSidecarStatusAsync();
     }
 
@@ -1439,8 +1445,8 @@ public partial class VideoDetailViewModel : ObservableObject
         await _momentService.SetTagProminenceAsync(SelectedMoment.Id, tag.Id, next);
         tag.IsBackground = next;
         MomentMarkStatus = next
-            ? $"Moment tag marked as background · {tag.Name}"
-            : $"Moment tag marked as main subject · {tag.Name}";
+            ? L.Format("Detail_Moment_TagBackground", tag.Name)
+            : L.Format("Detail_Moment_TagMain", tag.Name);
         await WriteSidecarStatusAsync();
     }
 

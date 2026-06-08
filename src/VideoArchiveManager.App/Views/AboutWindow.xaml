@@ -3,7 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.modernwpf.com/2019"
         xmlns:helpers="clr-namespace:VideoArchiveManager.App.Helpers.Controls"
-        Title="About Find That Shot"
+        xmlns:loc="clr-namespace:VideoArchiveManager.App.Localization"
+        Title="{loc:Tr About_Title}"
         Width="540" SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
         Background="{DynamicResource App.Background.Base}"
@@ -36,9 +37,8 @@
         </StackPanel>
 
         <TextBlock Grid.Row="1" Margin="0,16,0,0" TextWrapping="Wrap"
-                   Style="{StaticResource App.Type.Body}">
-            A local-first catalog for browsing, tagging, and searching your video archive.
-        </TextBlock>
+                   Style="{StaticResource App.Type.Body}"
+                   Text="{loc:Tr About_Tagline}" />
 
         <Border Grid.Row="2" Margin="0,20,0,0" Padding="16"
                 Background="{DynamicResource App.Background.Elevated}"
@@ -46,18 +46,16 @@
                 BorderThickness="1"
                 CornerRadius="8">
             <StackPanel>
-                <TextBlock Text="LICENSE" Style="{StaticResource App.Type.Section}" Margin="0,0,0,6" />
+                <TextBlock Text="{loc:Tr About_License_Header}" Style="{StaticResource App.Type.Section}" Margin="0,0,0,6" />
                 <TextBlock TextWrapping="Wrap" Style="{StaticResource App.Type.Body}">
-                    <Run Text="This application is distributed under the " />
+                    <Run Text="{loc:Tr About_License_Intro}" /><Run Text=" " />
                     <Hyperlink NavigateUri="https://www.gnu.org/licenses/gpl-3.0.html"
                                RequestNavigate="Hyperlink_RequestNavigate"
-                               Foreground="{DynamicResource App.Accent}">
-                        GNU General Public License v3
-                    </Hyperlink>
+                               Foreground="{DynamicResource App.Accent}"><Run Text="{loc:Tr About_License_LinkText}" /></Hyperlink>
                     <Run Text="." />
                 </TextBlock>
                 <TextBlock TextWrapping="Wrap" Margin="0,8,0,0" Style="{StaticResource App.Type.Body}">
-                    <Run Text="Source code: " />
+                    <Run Text="{loc:Tr About_Source_Label}" /><Run Text=" " />
                     <Hyperlink NavigateUri="https://github.com/liknes/FindThatShot"
                                RequestNavigate="Hyperlink_RequestNavigate"
                                Foreground="{DynamicResource App.Accent}">
@@ -73,7 +71,7 @@
                 BorderThickness="1"
                 CornerRadius="8">
             <StackPanel>
-                <TextBlock Text="THIRD-PARTY COMPONENTS" Style="{StaticResource App.Type.Section}" Margin="0,0,0,6" />
+                <TextBlock Text="{loc:Tr About_ThirdParty_Header}" Style="{StaticResource App.Type.Section}" Margin="0,0,0,6" />
                 <TextBlock TextWrapping="Wrap" Style="{StaticResource App.Type.Body}">
                     This product uses
                     <Hyperlink NavigateUri="https://ffmpeg.org/"
@@ -117,11 +115,11 @@
         </Border>
 
         <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-            <Button Content="View third-party notices"
+            <Button Content="{loc:Tr About_Button_ViewNotices}"
                     Style="{StaticResource App.Button.Secondary}"
                     helpers:Theme.Icon="{StaticResource Icon.Document}"
                     Click="ViewNotices_Click" />
-            <Button Content="OK"
+            <Button Content="{loc:Tr Common_OK}"
                     Margin="8,0,0,0"
                     IsDefault="True" IsCancel="True"
                     Style="{StaticResource App.Button.Primary}"

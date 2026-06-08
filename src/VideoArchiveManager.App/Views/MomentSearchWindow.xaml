@@ -4,7 +4,8 @@
         xmlns:ui="http://schemas.modernwpf.com/2019"
         xmlns:helpers="clr-namespace:VideoArchiveManager.App.Helpers.Controls"
         xmlns:vm="clr-namespace:VideoArchiveManager.App.ViewModels"
-        Title="Find moments"
+        xmlns:loc="clr-namespace:VideoArchiveManager.App.Localization"
+        Title="{loc:Tr MomentSearch_Title}"
         Width="760" Height="780"
         MinWidth="560" MinHeight="480"
         WindowStartupLocation="CenterOwner"
@@ -29,9 +30,9 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0">
-            <TextBlock Text="Find moments" Style="{StaticResource App.Type.Display}" />
+            <TextBlock Text="{loc:Tr MomentSearch_Title}" Style="{StaticResource App.Type.Display}" />
             <TextBlock Margin="0,4,0,0"
-                       Text="Search every shot you've marked — by label, note, tag, file name, or rating — and jump straight to it."
+                       Text="{loc:Tr MomentSearch_Subtitle}"
                        TextWrapping="Wrap"
                        Style="{StaticResource App.Type.Caption}" />
         </StackPanel>
@@ -47,11 +48,11 @@
 
             <TextBox Grid.Column="0"
                      Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                     ui:ControlHelper.PlaceholderText="Search moments…"
+                     ui:ControlHelper.PlaceholderText="{loc:Tr MomentSearch_SearchPlaceholder}"
                      KeyDown="SearchBox_KeyDown" />
 
             <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="10,0,0,0" VerticalAlignment="Center">
-                <TextBlock Text="Min rating" VerticalAlignment="Center"
+                <TextBlock Text="{loc:Tr MomentSearch_MinRating}" VerticalAlignment="Center"
                            Foreground="{DynamicResource App.Foreground.Secondary}" />
                 <ComboBox Width="64" Margin="6,0,0,0"
                           ItemsSource="{Binding RatingValues}"
@@ -60,12 +61,12 @@
 
             <CheckBox Grid.Column="2" Margin="12,0,0,0"
                       VerticalAlignment="Center"
-                      Content="Online only"
+                      Content="{loc:Tr MomentSearch_OnlineOnly}"
                       IsChecked="{Binding OnlyAvailable}"
-                      ToolTip="Hide moments whose source file is currently offline." />
+                      ToolTip="{loc:Tr MomentSearch_OnlineOnlyToolTip}" />
 
             <Button Grid.Column="3" Margin="10,0,0,0"
-                    Content="Search"
+                    Content="{loc:Tr MomentSearch_SearchButton}"
                     Command="{Binding SearchCommand}"
                     Style="{StaticResource App.Button.Primary}"
                     helpers:Theme.Icon="{StaticResource Icon.Search}" />
@@ -132,7 +133,7 @@
 
                             <Button Grid.Column="2"
                                     VerticalAlignment="Center"
-                                    Content="Jump to"
+                                    Content="{loc:Tr MomentSearch_JumpTo}"
                                     Style="{StaticResource App.Button.Secondary}"
                                     helpers:Theme.Icon="{StaticResource Icon.Play}"
                                     Command="{Binding DataContext.JumpCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"

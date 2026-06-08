@@ -3,7 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.modernwpf.com/2019"
         xmlns:helpers="clr-namespace:VideoArchiveManager.App.Helpers.Controls"
-        Title="Clip info"
+        xmlns:loc="clr-namespace:VideoArchiveManager.App.Localization"
+        Title="{loc:Tr VideoInfo_Title}"
         Width="560" Height="640"
         MinWidth="420" MinHeight="360"
         WindowStartupLocation="CenterOwner"
@@ -90,42 +91,42 @@
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20,16">
             <StackPanel>
                 <!-- FILE -->
-                <TextBlock Text="FILE" Style="{StaticResource App.Type.Section}" />
-                <helpers:InfoRow Label="Filename" Value="{Binding FileName}" />
-                <helpers:InfoRow Label="Full path" Value="{Binding FilePath}" IsMono="True" />
-                <helpers:InfoRow Label="Folder" Value="{Binding FolderPath}" IsMono="True" />
-                <helpers:InfoRow Label="Extension" Value="{Binding Extension}" />
-                <helpers:InfoRow Label="Size"
+                <TextBlock Text="{loc:Tr VideoInfo_Section_File}" Style="{StaticResource App.Type.Section}" />
+                <helpers:InfoRow Label="{loc:Tr VideoInfo_Label_Filename}" Value="{Binding FileName}" />
+                <helpers:InfoRow Label="{loc:Tr VideoInfo_Label_FullPath}" Value="{Binding FilePath}" IsMono="True" />
+                <helpers:InfoRow Label="{loc:Tr VideoInfo_Label_Folder}" Value="{Binding FolderPath}" IsMono="True" />
+                <helpers:InfoRow Label="{loc:Tr VideoInfo_Label_Extension}" Value="{Binding Extension}" />
+                <helpers:InfoRow Label="{loc:Tr VideoInfo_Label_Size}"
                                  Value="{Binding FileSizeText}"
                                  SubValue="{Binding FileSizeBytesText}" />
-                <helpers:InfoRow Label="Modified" Value="{Binding ModifiedAtText}" />
-                <helpers:InfoRow Label="Created" Value="{Binding CreatedAtFileText}" />
-                <helpers:InfoRow Label="On disk" Value="{Binding FileExistsText}" />
+                <helpers:InfoRow Label="{loc:Tr VideoInfo_Label_Modified}" Value="{Binding ModifiedAtText}" />
+                <helpers:InfoRow Label="{loc:Tr VideoInfo_Label_Created}" Value="{Binding CreatedAtFileText}" />
+                <helpers:InfoRow Label="{loc:Tr VideoInfo_Label_OnDisk}" Value="{Binding FileExistsText}" />
 
                 <!-- VIDEO -->
-                <TextBlock Text="VIDEO" Style="{StaticResource App.Type.Section}" Margin="0,16,0,0" />
-                <helpers:InfoRow Label="Duration" Value="{Binding DurationText}" IsMono="True" />
-                <helpers:InfoRow Label="Resolution" Value="{Binding Resolution}" />
-                <helpers:InfoRow Label="Aspect ratio"
+                <TextBlock Text="{loc:Tr VideoInfo_Section_Video}" Style="{StaticResource App.Type.Section}" Margin="0,16,0,0" />
+                <helpers:InfoRow Label="{loc:Tr VideoInfo_Label_Duration}" Value="{Binding DurationText}" IsMono="True" />
+                <helpers:InfoRow Label="{loc:Tr VideoInfo_Label_Resolution}" Value="{Binding Resolution}" />
+                <helpers:InfoRow Label="{loc:Tr VideoInfo_Label_AspectRatio}"
                                  Style="{StaticResource OptionalRowStyle}"
                                  Value="{Binding AspectRatioText}" />
-                <helpers:InfoRow Label="Frame rate"
+                <helpers:InfoRow Label="{loc:Tr VideoInfo_Label_FrameRate}"
                                  Style="{StaticResource OptionalRowStyle}"
                                  Value="{Binding FrameRateText}" />
-                <helpers:InfoRow Label="Codec"
+                <helpers:InfoRow Label="{loc:Tr VideoInfo_Label_Codec}"
                                  Style="{StaticResource OptionalRowStyle}"
                                  Value="{Binding Codec}" />
 
                 <!-- CAMERA (only if Camera is set) -->
                 <StackPanel Visibility="{Binding HasCamera, Converter={StaticResource BoolToVisibility}}">
-                    <TextBlock Text="CAMERA" Style="{StaticResource App.Type.Section}" Margin="0,16,0,0" />
-                    <helpers:InfoRow Label="Make / model" Value="{Binding Camera}" />
+                    <TextBlock Text="{loc:Tr VideoInfo_Section_Camera}" Style="{StaticResource App.Type.Section}" Margin="0,16,0,0" />
+                    <helpers:InfoRow Label="{loc:Tr VideoInfo_Label_Camera}" Value="{Binding Camera}" />
                 </StackPanel>
 
                 <!-- LOCATION (only if any location field is set) -->
                 <StackPanel Visibility="{Binding HasAnyLocation, Converter={StaticResource BoolToVisibility}}">
-                    <TextBlock Text="LOCATION" Style="{StaticResource App.Type.Section}" Margin="0,16,0,0" />
-                    <helpers:InfoRow Label="Folder location"
+                    <TextBlock Text="{loc:Tr VideoInfo_Section_Location}" Style="{StaticResource App.Type.Section}" Margin="0,16,0,0" />
+                    <helpers:InfoRow Label="{loc:Tr VideoInfo_Label_FolderLocation}"
                                      Style="{StaticResource OptionalRowStyle}"
                                      Value="{Binding LocationText}" />
                     <Grid Visibility="{Binding HasGps, Converter={StaticResource BoolToVisibility}}"
@@ -134,7 +135,7 @@
                             <ColumnDefinition Width="140" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="GPS"
+                        <TextBlock Grid.Column="0" Text="{loc:Tr VideoInfo_Label_Gps}"
                                    Foreground="{DynamicResource App.Foreground.Tertiary}"
                                    FontSize="11"
                                    VerticalAlignment="Top"
@@ -147,20 +148,20 @@
                                 <Hyperlink NavigateUri="{Binding GpsMapUrl}"
                                            RequestNavigate="Hyperlink_RequestNavigate"
                                            Foreground="{DynamicResource App.Accent}">
-                                    Open in map
+                                    <Run Text="{loc:Tr Common_OpenInMap}" />
                                 </Hyperlink>
                             </TextBlock>
                         </StackPanel>
                     </Grid>
-                    <helpers:InfoRow Label="Folder date"
+                    <helpers:InfoRow Label="{loc:Tr VideoInfo_Label_FolderDate}"
                                      Style="{StaticResource OptionalRowStyle}"
                                      Value="{Binding FolderDateText}" />
                 </StackPanel>
 
                 <!-- CATALOG -->
-                <TextBlock Text="CATALOG" Style="{StaticResource App.Type.Section}" Margin="0,16,0,0" />
-                <helpers:InfoRow Label="Status" Value="{Binding StatusText}" />
-                <helpers:InfoRow Label="Rating" Value="{Binding RatingText}" />
+                <TextBlock Text="{loc:Tr VideoInfo_Section_Catalog}" Style="{StaticResource App.Type.Section}" Margin="0,16,0,0" />
+                <helpers:InfoRow Label="{loc:Tr VideoInfo_Label_Status}" Value="{Binding StatusText}" />
+                <helpers:InfoRow Label="{loc:Tr VideoInfo_Label_Rating}" Value="{Binding RatingText}" />
 
                 <!-- Tags row: rendered as inline chip list, not a copyable string. -->
                 <Grid Margin="0,3,0,3">
@@ -168,7 +169,7 @@
                         <ColumnDefinition Width="140" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="Tags"
+                    <TextBlock Grid.Column="0" Text="{loc:Tr VideoInfo_Label_Tags}"
                                Foreground="{DynamicResource App.Foreground.Tertiary}"
                                FontSize="11"
                                VerticalAlignment="Top"
@@ -189,7 +190,7 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
                     <TextBlock Grid.Column="1"
-                               Text="No tags"
+                               Text="{loc:Tr Common_NoTags}"
                                Foreground="{DynamicResource App.Foreground.Tertiary}"
                                FontStyle="Italic"
                                FontSize="13"
@@ -197,19 +198,19 @@
                                Visibility="{Binding HasTags, Converter={StaticResource BoolToVisibilityInverted}}" />
                 </Grid>
 
-                <helpers:InfoRow Label="Notes"
+                <helpers:InfoRow Label="{loc:Tr VideoInfo_Label_Notes}"
                                  Style="{StaticResource OptionalRowStyle}"
                                  Value="{Binding NotesPreview}" />
-                <helpers:InfoRow Label="Sidecar"
+                <helpers:InfoRow Label="{loc:Tr VideoInfo_Label_Sidecar}"
                                  Value="{Binding SidecarStatusText}"
                                  SubValue="{Binding SidecarPathText}" />
-                <helpers:InfoRow Label="Added to catalog" Value="{Binding CreatedAtText}" />
-                <helpers:InfoRow Label="Last updated" Value="{Binding UpdatedAtText}" />
+                <helpers:InfoRow Label="{loc:Tr VideoInfo_Label_AddedToCatalog}" Value="{Binding CreatedAtText}" />
+                <helpers:InfoRow Label="{loc:Tr VideoInfo_Label_LastUpdated}" Value="{Binding UpdatedAtText}" />
 
                 <!-- INTERNAL -->
-                <TextBlock Text="INTERNAL" Style="{StaticResource App.Type.Section}" Margin="0,16,0,0" />
-                <helpers:InfoRow Label="Catalog ID" Value="{Binding CatalogIdText}" IsMono="True" />
-                <helpers:InfoRow Label="Thumbnail"
+                <TextBlock Text="{loc:Tr VideoInfo_Section_Internal}" Style="{StaticResource App.Type.Section}" Margin="0,16,0,0" />
+                <helpers:InfoRow Label="{loc:Tr VideoInfo_Label_CatalogId}" Value="{Binding CatalogIdText}" IsMono="True" />
+                <helpers:InfoRow Label="{loc:Tr VideoInfo_Label_Thumbnail}"
                                  Style="{StaticResource OptionalRowStyle}"
                                  Value="{Binding ThumbnailPath}"
                                  IsMono="True" />
@@ -224,7 +225,7 @@
                 BorderThickness="0,1,0,0"
                 Padding="20,12">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Content="Close"
+                <Button Content="{loc:Tr Common_Close}"
                         Style="{StaticResource App.Button.Ghost}"
                         Click="Close_Click"
                         IsCancel="True" />

@@ -18,6 +18,11 @@ namespace VideoArchiveManager.Core.Configuration;
 
 public class AppSettings
 {
+    // UI language as a .NET culture name (e.g. "en", "nb-NO"). Null/empty means
+    // "follow the operating system". Applied at startup before the first window
+    // paints and switchable live from Settings → General → Language.
+    public string? Language { get; set; }
+
     public string? FfmpegPath { get; set; }
 
     public string? FfprobePath { get; set; }

@@ -1,5 +1,6 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:loc="clr-namespace:VideoArchiveManager.App.Localization"
                     xmlns:helpers="clr-namespace:VideoArchiveManager.App.Helpers.Controls">
 
     <!--
@@ -69,7 +70,7 @@
                                     Margin="8,0,0,0"
                                     Padding="0"
                                     VerticalAlignment="Top"
-                                    ToolTip="Copy value"
+                                    ToolTip="{loc:Tr Common_CopyValue}"
                                     Visibility="Collapsed" />
                         </Grid>
                     </Border>

@@ -20,6 +20,7 @@ using System.Windows;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using VideoArchiveManager.App.Helpers;
+using VideoArchiveManager.App.Localization;
 using VideoArchiveManager.App.ViewModels;
 using VideoArchiveManager.Core.Models;
 using VideoArchiveManager.Core.Models.Enums;
@@ -119,11 +120,13 @@ public partial class VideoInfoWindow : Window
         // underneath. The byte count is what audit / scripting workflows
         // actually need — humanised is for at-a-glance.
         FileSizeText = item.FileSizeText;
-        FileSizeBytesText = $"{m.FileSize:N0} bytes";
+        FileSizeBytesText = LocalizationManager.Instance.Format("VideoInfo_Bytes", m.FileSize);
 
         ModifiedAtText = FormatLocalDateTime(m.ModifiedAtFile);
         CreatedAtFileText = FormatLocalDateTime(m.CreatedAtFile);
-        FileExistsText = m.FileExists ? "Available" : "Offline (file missing)";
+        FileExistsText = m.FileExists
+            ? LocalizationManager.Instance["Common_Available"]
+            : LocalizationManager.Instance["Common_OfflineMissing"];
 
         DurationText = item.DurationText;
         Resolution = item.Resolution;
@@ -143,7 +146,7 @@ public partial class VideoInfoWindow : Window
         FolderDateText = m.FolderDate is DateTime fd ? fd.ToString("yyyy-MM-dd") : null;
         HasAnyLocation = !string.IsNullOrWhiteSpace(LocationText) || HasGps || FolderDateText is not null;
 
-        StatusText = FormatStatus(m.Status);
+        StatusText = EnumDisplay.For(m.Status);
         RatingText = FormatRating(m.Rating);
         NotesPreview = TrimNotes(m.Notes);
 
@@ -194,24 +197,12 @@ public partial class VideoInfoWindow : Window
         }
     }
 
-    private static string FormatStatus(VideoStatus status) => status switch
-    {
-        VideoStatus.Unreviewed => "Unreviewed",
-        VideoStatus.Keep => "Keep",
-        VideoStatus.Favorite => "Favorite",
-        VideoStatus.ForStock => "For stock",
-        VideoStatus.UploadedPond5 => "Uploaded \u2014 Pond5",
-        VideoStatus.UploadedShutterstock => "Uploaded \u2014 Shutterstock",
-        VideoStatus.UploadedAdobe => "Uploaded \u2014 Adobe Stock",
-        VideoStatus.Rejected => "Rejected",
-        VideoStatus.Archive => "Archive",
-        _ => status.ToString()
-    };
+    private static string FormatStatus(VideoStatus status) => EnumDisplay.For(status);
 
     private static string FormatRating(int rating)
     {
         rating = Math.Clamp(rating, 0, 5);
-        if (rating == 0) return "Not rated";
+        if (rating == 0) return LocalizationManager.Instance["Common_NotRated"];
         // U+2605 BLACK STAR / U+2606 WHITE STAR keeps the rating compact
         // and matches the convention used in the catalog grid.
         return new string('\u2605', rating) + new string('\u2606', 5 - rating);
@@ -227,9 +218,10 @@ public partial class VideoInfoWindow : Window
 
     private static (string status, string? path) ResolveSidecarStatus(ISidecarService sidecar, VideoItem video)
     {
+        var loc = LocalizationManager.Instance;
         if (!sidecar.IsEnabled)
         {
-            return ("Disabled", null);
+            return (loc["Common_Disabled"], null);
         }
 
         try
@@ -237,18 +229,15 @@ public partial class VideoInfoWindow : Window
             var path = sidecar.GetSidecarPathFor(video.FilePath);
             if (string.IsNullOrEmpty(path))
             {
-                return ("Unknown", null);
+                return (loc["Common_Unknown"], null);
             }
             return File.Exists(path)
-                ? ("Written", path)
-                : ("Not written yet", path);
+                ? (loc["VideoInfo_Sidecar_Written"], path)
+                : (loc["VideoInfo_Sidecar_NotWritten"], path);
         }
         catch
         {
-            // Path resolution can fail for malformed paths (legacy entries
-            // imported from another machine, very long paths, etc.) — show
-            // a polite fallback rather than tearing down the popup.
-            return ("Unavailable", null);
+            return (loc["Common_Unavailable"], null);
         }
     }
 

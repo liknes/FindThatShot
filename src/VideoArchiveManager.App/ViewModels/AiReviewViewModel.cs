@@ -19,6 +19,7 @@ using System.Windows.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using VideoArchiveManager.App.Helpers;
+using VideoArchiveManager.App.Localization;
 using VideoArchiveManager.Core.Models.Enums;
 using VideoArchiveManager.Core.Services;
 using VideoArchiveManager.Core.Services.Ai;
@@ -32,6 +33,7 @@ public partial class AiReviewViewModel : ObservableObject
 {
     private readonly IAiSuggestionService _suggestions;
     private readonly IThumbnailService _thumbnails;
+    private static LocalizationManager L => LocalizationManager.Instance;
 
     public AiReviewViewModel(IAiSuggestionService suggestions, IThumbnailService thumbnails)
     {
@@ -91,8 +93,8 @@ public partial class AiReviewViewModel : ObservableObject
             IsEmpty = Groups.Count == 0;
             HasData = Groups.Count > 0;
             SummaryText = pending == 0
-                ? "No pending suggestions."
-                : $"{pending:N0} suggestion(s) across {Groups.Count:N0} clip(s)";
+                ? L["AiReview_SummaryEmpty"]
+                : L.Format("AiReview_Summary", pending.ToString("N0", System.Globalization.CultureInfo.CurrentCulture), Groups.Count.ToString("N0", System.Globalization.CultureInfo.CurrentCulture));
         }
         finally
         {
@@ -141,8 +143,8 @@ public partial class AiReviewViewModel : ObservableObject
         IsEmpty = Groups.Count == 0;
         HasData = Groups.Count > 0;
         SummaryText = remaining == 0
-            ? "No pending suggestions."
-            : $"{remaining:N0} suggestion(s) across {Groups.Count:N0} clip(s)";
+            ? L["AiReview_SummaryEmpty"]
+            : L.Format("AiReview_Summary", remaining.ToString("N0", System.Globalization.CultureInfo.CurrentCulture), Groups.Count.ToString("N0", System.Globalization.CultureInfo.CurrentCulture));
     }
 }
 
@@ -217,8 +219,8 @@ public partial class AiReviewChipViewModel : ObservableObject
     public bool IsOffline => !CanPreview;
 
     public string PreviewTooltip => CanPreview
-        ? "Click to jump to this moment in the player; hover to preview the best frame"
-        : "Source file is offline — preview unavailable";
+        ? LocalizationManager.Instance["AiReview_PreviewTooltip"]
+        : LocalizationManager.Instance["AiReview_OfflineTooltip"];
 
     // The best-scoring frame for this tag, lazily extracted on first hover.
     [ObservableProperty]

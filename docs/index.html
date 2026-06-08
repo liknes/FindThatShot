@@ -86,6 +86,17 @@
   .nav-links a { color: var(--ink-2); font-weight: 500; font-size: 15px; }
   .nav-links a:hover { color: var(--ink); }
   .nav-cta { display: flex; align-items: center; gap: 12px; }
+  .lang-switch {
+    display: inline-flex; align-items: center; gap: 2px; padding: 3px;
+    border: 1px solid var(--line); border-radius: 10px; background: #fff;
+  }
+  .lang-switch button {
+    border: none; background: transparent; cursor: pointer; font: inherit;
+    font-size: 12px; font-weight: 600; color: var(--muted); padding: 5px 10px;
+    border-radius: 7px; transition: background .15s ease, color .15s ease;
+  }
+  .lang-switch button.lang-active { background: var(--accent-soft); color: var(--accent-strong); }
+  .lang-switch button:hover:not(.lang-active) { color: var(--ink); }
   @media (max-width: 860px) { .nav-links { display: none; } }
 
   /* ---------- Hero ---------- */
@@ -275,18 +286,22 @@
       Find That Shot
     </a>
     <nav class="nav-links">
-      <a href="#features">Features</a>
-      <a href="#drone">Drone</a>
-      <a href="#deepdive">Deep dive</a>
-      <a href="#how">How it works</a>
-      <a href="#download">Download</a>
+      <a href="#features" data-i18n="nav.features">Features</a>
+      <a href="#drone" data-i18n="nav.drone">Drone</a>
+      <a href="#deepdive" data-i18n="nav.deepdive">Deep dive</a>
+      <a href="#how" data-i18n="nav.how">How it works</a>
+      <a href="#download" data-i18n="nav.download">Download</a>
     </nav>
     <div class="nav-cta">
+      <div class="lang-switch" role="group" aria-label="Language">
+        <button type="button" data-lang-btn="en" data-i18n="lang.en">English</button>
+        <button type="button" data-lang-btn="nb" data-i18n="lang.nb">Norsk</button>
+      </div>
       <a class="btn btn-outline" href="https://github.com/liknes/FindThatShot" target="_blank" rel="noopener">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.2.8-.5v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.4-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.7 18.3 5 18.3 5c.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .3.2.6.8.5 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5Z"/></svg>
-        GitHub
+        <span data-i18n="nav.github">GitHub</span>
       </a>
-      <a class="btn btn-primary" href="#download">Download</a>
+      <a class="btn btn-primary" href="#download" data-i18n="nav.download">Download</a>
     </div>
   </div>
 </header>
@@ -297,29 +312,30 @@
   <div class="wrap">
     <div class="hero-grid">
       <div>
-        <span class="pill"><span class="dot"></span> Local-first · Windows 10/11 · Open source</span>
-        <h1>Find <span class="accent">that</span> shot.<br />Across every drive.</h1>
-        <p class="lead">
+        <span class="pill"><span class="dot"></span> <span data-i18n="hero.pill">Local-first · Windows 10/11 · Open source</span></span>
+        <h1 data-i18n="hero.title" data-i18n-html>Find <span class="accent">that</span> shot.<br />Across every drive.</h1>
+        <p class="lead" data-i18n="hero.lead" data-i18n-html>
           A desktop app that catalogs, tags, and instantly searches your entire local video archive —
           internal disks, externals, offline drives — <b style="color:#fff">without ever moving, renaming, or modifying a single source file.</b>
         </p>
         <div class="hero-actions">
           <a class="btn btn-primary" href="#download">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"/></svg>
-            <span>Download for Windows</span>
+            <span data-i18n="hero.download">Download for Windows</span>
           </a>
-          <a class="btn btn-ghost" href="#features">See what it does</a>
+          <a class="btn btn-ghost" href="#features" data-i18n="hero.seeFeatures">See what it does</a>
         </div>
         <div class="hero-meta">
-          <span><b>0</b> files touched on disk</span>
-          <span><b>100%</b> local &amp; offline</span>
-          <span><b>GPLv3</b> open source</span>
+          <span data-i18n="hero.meta.files" data-i18n-html><b>0</b> files touched on disk</span>
+          <span data-i18n="hero.meta.local" data-i18n-html><b>100%</b> local &amp; offline</span>
+          <span data-i18n="hero.meta.license" data-i18n-html><b>GPLv3</b> open source</span>
         </div>
       </div>
 
       <!-- App screenshot -->
       <div class="shot">
         <img src="assets/shot-hero.png" width="1847" height="1107" fetchpriority="high"
+             data-i18n-alt="hero.shotAlt"
              alt="Find That Shot main window — a grid of drone clip thumbnails with a folders sidebar and a location map in the detail panel." />
       </div>
     </div>
@@ -332,7 +348,7 @@
     <div class="lock" aria-hidden="true">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
     </div>
-    <p><b>Your footage is never modified.</b> Source video files are never moved, renamed, deleted, or touched — the app only writes its own catalog, thumbnails, and (optionally) sidecar files.</p>
+    <p data-i18n="promise.text" data-i18n-html><b>Your footage is never modified.</b> Source video files are never moved, renamed, deleted, or touched — the app only writes its own catalog, thumbnails, and (optionally) sidecar files.</p>
   </div>
 </div>
 
@@ -340,55 +356,55 @@
 <section id="features">
   <div class="wrap">
     <div class="sec-head">
-      <span class="eyebrow">Built for big archives</span>
-      <h2>Everything you need to find a single clip in thousands</h2>
-      <p>Catalog once, then slice your library by text, tags, rating, status, camera, date, location, and more — even for clips on drives that are currently unplugged.</p>
+      <span class="eyebrow" data-i18n="features.eyebrow">Built for big archives</span>
+      <h2 data-i18n="features.title">Everything you need to find a single clip in thousands</h2>
+      <p data-i18n="features.subtitle">Catalog once, then slice your library by text, tags, rating, status, camera, date, location, and more — even for clips on drives that are currently unplugged.</p>
     </div>
     <div class="features">
       <div class="card">
         <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></div>
-        <h3>Instant search &amp; smart collections</h3>
-        <p>AND-matched tokens across filename, path, location, notes, camera &amp; tags. Save any filter combo as a live, self-updating collection.</p>
+        <h3 data-i18n="features.search.title">Instant search &amp; smart collections</h3>
+        <p data-i18n="features.search.text">AND-matched tokens across filename, path, location, notes, camera &amp; tags. Save any filter combo as a live, self-updating collection.</p>
       </div>
       <div class="card">
         <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 4v16"/></svg></div>
-        <h3>Moments — mark the exact shot</h3>
-        <p>A shot is rarely a whole file. Drop timestamped in/out markers with their own label, rating, notes &amp; tags, and jump straight back to them.</p>
+        <h3 data-i18n="features.moments.title">Moments — mark the exact shot</h3>
+        <p data-i18n="features.moments.text">A shot is rarely a whole file. Drop timestamped in/out markers with their own label, rating, notes &amp; tags, and jump straight back to them.</p>
       </div>
       <div class="card">
         <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 3 14 9-14 9V3z"/></svg></div>
-        <h3>Built-in player &amp; Review mode</h3>
-        <p>Preview clips in-app with an FFmpeg-powered player (H.264/265, ProRes, DNxHD…) while you tag, rate and take notes side-by-side.</p>
+        <h3 data-i18n="features.player.title">Built-in player &amp; Review mode</h3>
+        <p data-i18n="features.player.text">Preview clips in-app with an FFmpeg-powered player (H.264/265, ProRes, DNxHD…) while you tag, rate and take notes side-by-side.</p>
       </div>
       <div class="card">
         <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></div>
-        <h3>Browse on a map</h3>
-        <p>Every geotagged clip plotted on a clustered offline map. Click a region to scope your whole grid to "where did I shoot that?"</p>
+        <h3 data-i18n="features.map.title">Browse on a map</h3>
+        <p data-i18n="features.map.text">Every geotagged clip plotted on a clustered offline map. Click a region to scope your whole grid to "where did I shoot that?"</p>
       </div>
       <div class="card">
         <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></div>
-        <h3>Browse by date</h3>
-        <p>A year-by-month heatmap bucketed by when footage was actually captured. Click a month to scope the grid to it.</p>
+        <h3 data-i18n="features.calendar.title">Browse by date</h3>
+        <p data-i18n="features.calendar.text">A year-by-month heatmap bucketed by when footage was actually captured. Click a month to scope the grid to it.</p>
       </div>
       <div class="card">
         <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M4 16V6a2 2 0 0 1 2-2h10"/></svg></div>
-        <h3>Find duplicates</h3>
-        <p>Instantly group copies by metadata fingerprint — even across offline backups — and clear redundant catalog entries (never the files).</p>
+        <h3 data-i18n="features.dupes.title">Find duplicates</h3>
+        <p data-i18n="features.dupes.text">Instantly group copies by metadata fingerprint — even across offline backups — and clear redundant catalog entries (never the files).</p>
       </div>
       <div class="card">
         <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 7v6c0 4 3.5 7 8 8 4.5-1 8-4 8-8V7l-8-4Z"/><path d="m9 12 2 2 4-4"/></svg></div>
-        <h3>Local AI tagging &amp; NL search</h3>
-        <p>Opt-in CLIP model runs fully offline on your CPU. Get subject-tag suggestions and search by plain English — <em>"drone shot over snowy mountains at sunset."</em></p>
+        <h3 data-i18n="features.ai.title">Local AI tagging &amp; NL search</h3>
+        <p data-i18n="features.ai.text" data-i18n-html>Opt-in CLIP model runs fully offline on your CPU. Get subject-tag suggestions and search by plain English — <em>"drone shot over snowy mountains at sunset."</em></p>
       </div>
       <div class="card">
         <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M5 3h9l5 5v13H5z"/><path d="M9 13h6M9 17h6"/></svg></div>
-        <h3>Portable sidecar files</h3>
-        <p>Optionally write a tiny JSON next to each video so your tags, ratings, notes &amp; moments travel with the footage to any machine.</p>
+        <h3 data-i18n="features.sidecar.title">Portable sidecar files</h3>
+        <p data-i18n="features.sidecar.text">Optionally write a tiny JSON next to each video so your tags, ratings, notes &amp; moments travel with the footage to any machine.</p>
       </div>
       <div class="card">
         <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0Z"/><path d="M12 7v5l3 2"/></svg></div>
-        <h3>Stats &amp; automatic backups</h3>
-        <p>A read-only dashboard of your whole archive, plus rotating, restorable backups of your catalog so curation work is never lost.</p>
+        <h3 data-i18n="features.stats.title">Stats &amp; automatic backups</h3>
+        <p data-i18n="features.stats.text">A read-only dashboard of your whole archive, plus rotating, restorable backups of your catalog so curation work is never lost.</p>
       </div>
     </div>
   </div>
@@ -399,25 +415,25 @@
   <div class="wrap">
     <div class="drone-grid">
       <div>
-        <span class="eyebrow">Made for aerial archives</span>
-        <h2>Drone footage gets superpowers</h2>
-        <p class="lead">Drop in your DJI clips and Find That Shot reads the <code style="color:#9be8db;background:rgba(46,230,201,.12);padding:1px 6px;border-radius:5px;font-size:.92em">.SRT</code> flight logs that ship next to them — turning raw footage into a geotagged, flyable, fully-searchable map of where you've been.</p>
+        <span class="eyebrow" data-i18n="drone.eyebrow">Made for aerial archives</span>
+        <h2 data-i18n="drone.title">Drone footage gets superpowers</h2>
+        <p class="lead" data-i18n="drone.lead" data-i18n-html>Drop in your DJI clips and Find That Shot reads the <code style="color:#9be8db;background:rgba(46,230,201,.12);padding:1px 6px;border-radius:5px;font-size:.92em">.SRT</code> flight logs that ship next to them — turning raw footage into a geotagged, flyable, fully-searchable map of where you've been.</p>
         <ul class="drone-points">
           <li>
             <span class="pt-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
-            <div><h4>Auto-geotagged on scan</h4><p>The GPS takeoff fix is lifted straight from the flight log — no manual tagging needed.</p></div>
+            <div><h4 data-i18n="drone.p1.title">Auto-geotagged on scan</h4><p data-i18n="drone.p1.text">The GPS takeoff fix is lifted straight from the flight log — no manual tagging needed.</p></div>
           </li>
           <li>
             <span class="pt-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 18 6-12 6 9 6-6"/></svg></span>
-            <div><h4>Full flight path on the map</h4><p>The whole route is drawn as a polyline with start &amp; end markers and per-point altitude.</p></div>
+            <div><h4 data-i18n="drone.p2.title">Full flight path on the map</h4><p data-i18n="drone.p2.text">The whole route is drawn as a polyline with start &amp; end markers and per-point altitude.</p></div>
           </li>
           <li>
             <span class="pt-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></span>
-            <div><h4>Live position &amp; telemetry while you watch</h4><p>A marker rides the path in sync with playback; an overlay shows ISO, shutter, aperture &amp; altitude frame-by-frame.</p></div>
+            <div><h4 data-i18n="drone.p3.title">Live position &amp; telemetry while you watch</h4><p data-i18n="drone.p3.text">A marker rides the path in sync with playback; an overlay shows ISO, shutter, aperture &amp; altitude frame-by-frame.</p></div>
           </li>
           <li>
             <span class="pt-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m13 2-9 13h7l-1 7 9-13h-7z"/></svg></span>
-            <div><h4>Smooth 4K / 60p playback</h4><p>GPU-accelerated decoding plays high-bitrate DJI &amp; GoPro clips at real time, not slow-motion.</p></div>
+            <div><h4 data-i18n="drone.p4.title">Smooth 4K / 60p playback</h4><p data-i18n="drone.p4.text">GPU-accelerated decoding plays high-bitrate DJI &amp; GoPro clips at real time, not slow-motion.</p></div>
           </li>
         </ul>
       </div>
@@ -425,7 +441,8 @@
       <!-- Flight-path screenshot -->
       <div class="shot">
         <img src="assets/flight-path.png" width="1326" height="912" loading="lazy"
-             alt="Find That Shot review mode — a drone clip playing with a live telemetry strip (ISO, shutter, aperture, focal length, altitude, GPS), the flight path drawn on the sidebar map, and a list of captured moments." />
+             data-i18n-alt="drone.shotAlt"
+             alt="Find That Shot review mode — a drone clip playing with a live telemetry strip, the flight path drawn on the sidebar map, and a list of captured moments." />
       </div>
     </div>
   </div>
@@ -435,27 +452,27 @@
 <section class="deepdive" id="deepdive">
   <div class="wrap">
     <div class="sec-head">
-      <span class="eyebrow">Go deeper</span>
-      <h2>The advanced stuff, one tab at a time</h2>
-      <p>Power features for serious archives — explore whichever you care about, skip the rest.</p>
+      <span class="eyebrow" data-i18n="deepdive.eyebrow">Go deeper</span>
+      <h2 data-i18n="deepdive.title">The advanced stuff, one tab at a time</h2>
+      <p data-i18n="deepdive.subtitle">Power features for serious archives — explore whichever you care about, skip the rest.</p>
     </div>
 
-    <div class="tabs" role="tablist" aria-label="Advanced features">
+    <div class="tabs" role="tablist" data-i18n-aria-label="deepdive.tabsLabel" aria-label="Advanced features">
       <button class="tab" role="tab" aria-selected="true" aria-controls="dd-ai" id="tab-ai">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 7v6c0 4 3.5 7 8 8 4.5-1 8-4 8-8V7l-8-4Z"/><path d="m9 12 2 2 4-4"/></svg>
-        AI search
+        <span data-i18n="deepdive.tab.ai">AI search</span>
       </button>
       <button class="tab" role="tab" aria-selected="false" aria-controls="dd-moments" id="tab-moments">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 4v16"/></svg>
-        Moments
+        <span data-i18n="deepdive.tab.moments">Moments</span>
       </button>
       <button class="tab" role="tab" aria-selected="false" aria-controls="dd-nav" id="tab-nav">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
-        Map &amp; time
+        <span data-i18n="deepdive.tab.nav">Map &amp; time</span>
       </button>
       <button class="tab" role="tab" aria-selected="false" aria-controls="dd-safe" id="tab-safe">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v6c0 4 3.5 7 8 9 4.5-2 8-5 8-9V6l-8-3Z"/></svg>
-        Safe cleanup
+        <span data-i18n="deepdive.tab.safe">Safe cleanup</span>
       </button>
     </div>
 
@@ -463,18 +480,18 @@
     <div class="tab-panel" id="dd-ai" role="tabpanel" aria-labelledby="tab-ai" data-active="true">
       <div class="dd-grid">
         <div>
-          <h3>AI that actually understands your footage</h3>
-          <p>An opt-in CLIP model runs <strong>fully offline on your CPU</strong> — nothing is uploaded. It looks at frames sampled across each clip, so a match counts even if the subject only appears halfway through.</p>
+          <h3 data-i18n="deepdive.ai.title">AI that actually understands your footage</h3>
+          <p data-i18n="deepdive.ai.lead" data-i18n-html>An opt-in CLIP model runs <strong>fully offline on your CPU</strong> — nothing is uploaded. It looks at frames sampled across each clip, so a match counts even if the subject only appears halfway through.</p>
           <ul class="dd-list">
-            <li><span class="ck"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span>Search by plain English — <em>"drone shot over snowy mountains at sunset."</em></li>
-            <li><span class="ck"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span>Subject-tag suggestions you accept or reject — nothing is auto-applied.</li>
-            <li><span class="ck"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span>Adaptive thresholds learn from your choices and sharpen over time.</li>
+            <li><span class="ck"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span><span data-i18n="deepdive.ai.l1" data-i18n-html>Search by plain English — <em>"drone shot over snowy mountains at sunset."</em></span></li>
+            <li><span class="ck"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span><span data-i18n="deepdive.ai.l2" data-i18n-html>Subject-tag suggestions you accept or reject — nothing is auto-applied.</span></li>
+            <li><span class="ck"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span><span data-i18n="deepdive.ai.l3" data-i18n-html>Adaptive thresholds learn from your choices and sharpen over time.</span></li>
           </ul>
         </div>
         <div class="dd-visual">
           <div class="vsearch">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-            <span>drone shot over snowy mountains at sunset</span><span class="cursor"></span>
+            <span data-i18n="deepdive.ai.demo">drone shot over snowy mountains at sunset</span><span class="cursor"></span>
           </div>
           <div class="vresults">
             <div class="vthumb" style="background:linear-gradient(135deg,#cdd9e6,#9fb6cf)"><span class="score">98%</span></div>
@@ -489,12 +506,12 @@
     <div class="tab-panel" id="dd-moments" role="tabpanel" aria-labelledby="tab-moments">
       <div class="dd-grid">
         <div>
-          <h3>Mark the exact shot, not the whole file</h3>
-          <p>A shot is rarely a whole clip. While reviewing, press <strong>I</strong> and <strong>O</strong> to capture a timestamped in/out range with its own thumbnail, label, rating, notes &amp; tags.</p>
+          <h3 data-i18n="deepdive.moments.title">Mark the exact shot, not the whole file</h3>
+          <p data-i18n="deepdive.moments.lead" data-i18n-html>A shot is rarely a whole clip. While reviewing, press <strong>I</strong> and <strong>O</strong> to capture a timestamped in/out range with its own thumbnail, label, rating, notes &amp; tags.</p>
           <ul class="dd-list">
-            <li><span class="ck"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span>Auto-grabbed thumbnail at the in-point — every moment has a frame.</li>
-            <li><span class="ck"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span><strong>Jump to</strong> seeks the player straight to that timestamp.</li>
-            <li><span class="ck"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span>Search moments across the whole archive — <em>"jump to 00:01:32."</em></li>
+            <li><span class="ck"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span><span data-i18n="deepdive.moments.l1" data-i18n-html>Auto-grabbed thumbnail at the in-point — every moment has a frame.</span></li>
+            <li><span class="ck"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span><span data-i18n="deepdive.moments.l2" data-i18n-html><strong>Jump to</strong> seeks the player straight to that timestamp.</span></li>
+            <li><span class="ck"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span><span data-i18n="deepdive.moments.l3" data-i18n-html>Search moments across the whole archive — <em>"jump to 00:01:32."</em></span></li>
           </ul>
         </div>
         <div class="dd-visual">
@@ -514,12 +531,12 @@
     <div class="tab-panel" id="dd-nav" role="tabpanel" aria-labelledby="tab-nav">
       <div class="dd-grid">
         <div>
-          <h3>Location &amp; time become navigation</h3>
-          <p>Stop scrolling endless folders. Ask <em>where</em> and <em>when</em> you shot something and let the archive answer.</p>
+          <h3 data-i18n="deepdive.nav.title">Location &amp; time become navigation</h3>
+          <p data-i18n="deepdive.nav.lead" data-i18n-html>Stop scrolling endless folders. Ask <em>where</em> and <em>when</em> you shot something and let the archive answer.</p>
           <ul class="dd-list">
-            <li><span class="ck"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span>Whole-archive map with clustering — click a cluster to scope the grid to it.</li>
-            <li><span class="ck"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span>Year × month heatmap by when footage was actually captured.</li>
-            <li><span class="ck"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span>Map &amp; markers work offline — only the tiles need a connection.</li>
+            <li><span class="ck"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span><span data-i18n="deepdive.nav.l1" data-i18n-html>Whole-archive map with clustering — click a cluster to scope the grid to it.</span></li>
+            <li><span class="ck"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span><span data-i18n="deepdive.nav.l2" data-i18n-html>Year × month heatmap by when footage was actually captured.</span></li>
+            <li><span class="ck"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span><span data-i18n="deepdive.nav.l3" data-i18n-html>Map &amp; markers work offline — only the tiles need a connection.</span></li>
           </ul>
         </div>
         <div class="dd-visual">
@@ -539,12 +556,12 @@
     <div class="tab-panel" id="dd-safe" role="tabpanel" aria-labelledby="tab-safe">
       <div class="dd-grid">
         <div>
-          <h3>A catalog that protects your work</h3>
-          <p>Curate fearlessly. Every cleanup tool touches only the catalog — your <strong>source files are never moved, renamed, or deleted</strong>.</p>
+          <h3 data-i18n="deepdive.safe.title">A catalog that protects your work</h3>
+          <p data-i18n="deepdive.safe.lead" data-i18n-html>Curate fearlessly. Every cleanup tool touches only the catalog — your <strong>source files are never moved, renamed, or deleted</strong>.</p>
           <ul class="dd-list">
-            <li><span class="ck"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span>Find duplicates by metadata fingerprint — even copies on offline drives.</li>
-            <li><span class="ck"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span>Offline clips stay searchable with a clear <em>Offline</em> badge.</li>
-            <li><span class="ck"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span>Rotating, restorable backups of your catalog database.</li>
+            <li><span class="ck"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span><span data-i18n="deepdive.safe.l1" data-i18n-html>Find duplicates by metadata fingerprint — even copies on offline drives.</span></li>
+            <li><span class="ck"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span><span data-i18n="deepdive.safe.l2" data-i18n-html>Offline clips stay searchable with a clear <em>Offline</em> badge.</span></li>
+            <li><span class="ck"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span><span data-i18n="deepdive.safe.l3" data-i18n-html>Rotating, restorable backups of your catalog database.</span></li>
           </ul>
         </div>
         <div class="dd-visual">
@@ -563,24 +580,24 @@
 <section class="steps-wrap" id="how">
   <div class="wrap">
     <div class="sec-head">
-      <span class="eyebrow">How it works</span>
-      <h2>Three steps to a searchable archive</h2>
+      <span class="eyebrow" data-i18n="how.eyebrow">How it works</span>
+      <h2 data-i18n="how.title">Three steps to a searchable archive</h2>
     </div>
     <div class="steps">
       <div class="step">
         <div class="num">1</div>
-        <h3>Add your folders</h3>
-        <p>Point the app at any root directory on any drive — add as many as you like. Nothing is copied or moved.</p>
+        <h3 data-i18n="how.s1.title">Add your folders</h3>
+        <p data-i18n="how.s1.text">Point the app at any root directory on any drive — add as many as you like. Nothing is copied or moved.</p>
       </div>
       <div class="step">
         <div class="num">2</div>
-        <h3>Scan</h3>
-        <p>It walks each folder, reads technical metadata with FFprobe, parses dates &amp; locations, and generates thumbnails in the background.</p>
+        <h3 data-i18n="how.s2.title">Scan</h3>
+        <p data-i18n="how.s2.text">It walks each folder, reads technical metadata with FFprobe, parses dates &amp; locations, and generates thumbnails in the background.</p>
       </div>
       <div class="step">
         <div class="num">3</div>
-        <h3>Find that shot</h3>
-        <p>Search, filter, tag, rate, mark moments, and review — across your entire library, online or offline.</p>
+        <h3 data-i18n="how.s3.title">Find that shot</h3>
+        <p data-i18n="how.s3.text">Search, filter, tag, rate, mark moments, and review — across your entire library, online or offline.</p>
       </div>
     </div>
   </div>
@@ -590,32 +607,32 @@
 <section class="download" id="download">
   <div class="wrap">
     <div class="dl-box">
-      <span class="eyebrow" style="color:var(--accent)">Get started</span>
-      <h2>Download Find That Shot</h2>
-      <p>A self-contained Windows build with a one-click installer (auto-updates) or a portable zip. Free and open source under the GPLv3.</p>
+      <span class="eyebrow" style="color:var(--accent)" data-i18n="download.eyebrow">Get started</span>
+      <h2 data-i18n="download.title">Download Find That Shot</h2>
+      <p data-i18n="download.lead">A self-contained Windows build with a one-click installer (auto-updates) or a portable zip. Free and open source under the GPLv3.</p>
       <div class="dl-actions">
         <a class="btn btn-primary" href="https://github.com/liknes/FindThatShot/releases/latest/download/VideoArchiveManager-win-Setup.exe">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"/></svg>
-          <span>Installer (Setup.exe)</span>
+          <span data-i18n="download.installer">Installer (Setup.exe)</span>
         </a>
-        <a class="btn btn-ghost" href="https://github.com/liknes/FindThatShot/releases/latest/download/VideoArchiveManager-win-Portable.zip">Portable .zip</a>
-        <a class="btn btn-ghost" href="https://github.com/liknes/FindThatShot/releases/latest" target="_blank" rel="noopener">Release notes</a>
-        <a class="btn btn-ghost" href="https://github.com/liknes/FindThatShot" target="_blank" rel="noopener">View source</a>
+        <a class="btn btn-ghost" href="https://github.com/liknes/FindThatShot/releases/latest/download/VideoArchiveManager-win-Portable.zip" data-i18n="download.portable">Portable .zip</a>
+        <a class="btn btn-ghost" href="https://github.com/liknes/FindThatShot/releases/latest" target="_blank" rel="noopener" data-i18n="download.notes">Release notes</a>
+        <a class="btn btn-ghost" href="https://github.com/liknes/FindThatShot" target="_blank" rel="noopener" data-i18n="download.source">View source</a>
       </div>
-      <p class="dl-note">Requires Windows 10/11. FFmpeg is bundled — or install with <code>winget install Gyan.FFmpeg</code>.</p>
-      <p class="dl-note"><b>First launch:</b> the build isn't code-signed yet, so Windows may show <i>“Windows protected your PC.”</i> That's expected — click <b>More info</b>, then <b>Run anyway</b>. It's fully open source, so you can read every line on <a href="https://github.com/liknes/FindThatShot" target="_blank" rel="noopener">GitHub</a> first if you like. And your footage is never modified — the app only ever reads your video files.</p>
+      <p class="dl-note" data-i18n="download.ffmpeg" data-i18n-html>Requires Windows 10/11. FFmpeg is bundled — or install with <code>winget install Gyan.FFmpeg</code>.</p>
+      <p class="dl-note" data-i18n="download.smartscreen" data-i18n-html><b>First launch:</b> the build isn't code-signed yet, so Windows may show <i>"Windows protected your PC."</i> That's expected — click <b>More info</b>, then <b>Run anyway</b>. It's fully open source, so you can read every line on <a href="https://github.com/liknes/FindThatShot" target="_blank" rel="noopener">GitHub</a> first if you like. And your footage is never modified — the app only ever reads your video files.</p>
 
       <div class="dl-actions" style="margin-top:20px;">
         <a class="btn btn-ghost" href="https://github.com/liknes/FindThatShot/issues/new" target="_blank" rel="noopener">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg>
-          <span>Report a bug</span>
+          <span data-i18n="download.reportBug">Report a bug</span>
         </a>
         <a class="btn btn-ghost" href="mailto:findthatshot@ingve.no?subject=Find%20That%20Shot%20feedback">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4z"/><path d="m4 6 8 6 8-6"/></svg>
-          <span>Email feedback</span>
+          <span data-i18n="download.emailFeedback">Email feedback</span>
         </a>
       </div>
-      <p class="dl-note">Hit a problem? In the app, use <b>Help → Diagnostics → Copy full report</b> and paste it into your bug report or email — it includes the version and recent logs, which makes issues far easier to fix.</p>
+      <p class="dl-note" data-i18n="download.diagnostics" data-i18n-html>Hit a problem? In the app, use <b>Help → Diagnostics → Copy full report</b> and paste it into your bug report or email — it includes the version and recent logs, which makes issues far easier to fix.</p>
     </div>
   </div>
 </section>
@@ -630,18 +647,19 @@
       Find That Shot
     </div>
     <div class="foot-links">
-      <a href="#features">Features</a>
-      <a href="#how">How it works</a>
-      <a href="#download">Download</a>
-      <a href="https://github.com/liknes/FindThatShot" target="_blank" rel="noopener">GitHub</a>
-      <a href="https://github.com/liknes/FindThatShot/issues/new" target="_blank" rel="noopener">Report a bug</a>
-      <a href="mailto:findthatshot@ingve.no?subject=Find%20That%20Shot%20feedback">Feedback</a>
-      <a href="https://github.com/liknes/FindThatShot/blob/main/LICENSE" target="_blank" rel="noopener">GPLv3 License</a>
+      <a href="#features" data-i18n="nav.features">Features</a>
+      <a href="#how" data-i18n="nav.how">How it works</a>
+      <a href="#download" data-i18n="nav.download">Download</a>
+      <a href="https://github.com/liknes/FindThatShot" target="_blank" rel="noopener" data-i18n="nav.github">GitHub</a>
+      <a href="https://github.com/liknes/FindThatShot/issues/new" target="_blank" rel="noopener" data-i18n="footer.reportBug">Report a bug</a>
+      <a href="mailto:findthatshot@ingve.no?subject=Find%20That%20Shot%20feedback" data-i18n="footer.feedback">Feedback</a>
+      <a href="https://github.com/liknes/FindThatShot/blob/main/LICENSE" target="_blank" rel="noopener" data-i18n="footer.license">GPLv3 License</a>
     </div>
-    <div>© <span id="year"></span> Find That Shot · Find. Tag. Review. Anywhere.</div>
+    <div>© <span id="year"></span> Find That Shot · <span data-i18n="footer.tagline">Find. Tag. Review. Anywhere.</span></div>
   </div>
 </footer>
 
+<script src="i18n.js"></script>
 <script>
   document.getElementById("year").textContent = new Date().getFullYear();
 

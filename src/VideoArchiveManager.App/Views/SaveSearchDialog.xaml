@@ -3,7 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.modernwpf.com/2019"
         xmlns:helpers="clr-namespace:VideoArchiveManager.App.Helpers.Controls"
-        Title="Save search"
+        xmlns:loc="clr-namespace:VideoArchiveManager.App.Localization"
+        Title="{loc:Tr SaveSearch_Title}"
         Width="460"
         SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
@@ -25,8 +26,8 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0" Margin="0,0,0,16">
-            <TextBlock Text="Save this search" Style="{StaticResource App.Type.H1}" />
-            <TextBlock Text="Give the current filters a name. It re-runs live against the catalog whenever you click it."
+            <TextBlock Text="{loc:Tr SaveSearch_Header}" Style="{StaticResource App.Type.H1}" />
+            <TextBlock Text="{loc:Tr SaveSearch_Desc}"
                        Style="{StaticResource App.Type.BodyMuted}"
                        TextWrapping="Wrap"
                        Margin="0,4,0,0" />
@@ -34,15 +35,15 @@
 
         <TextBox x:Name="NameBox"
                  Grid.Row="1"
-                 ui:ControlHelper.PlaceholderText="Saved search name"
+                 ui:ControlHelper.PlaceholderText="{loc:Tr SaveSearch_Placeholder}"
                  MaxLength="256" />
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-            <Button Content="Cancel"
+            <Button Content="{loc:Tr Common_Cancel}"
                     IsCancel="True"
                     Style="{StaticResource App.Button.Ghost}"
                     Click="Cancel_OnClick" />
-            <Button Content="Save"
+            <Button Content="{loc:Tr Common_Save}"
                     Margin="8,0,0,0"
                     IsDefault="True"
                     Style="{StaticResource App.Button.Primary}"

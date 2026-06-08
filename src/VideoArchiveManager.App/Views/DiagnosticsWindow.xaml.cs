@@ -22,6 +22,7 @@ using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Extensions.Logging;
+using VideoArchiveManager.App.Localization;
 using VideoArchiveManager.App.Services.Diagnostics;
 using VideoArchiveManager.Core.Configuration;
 using VideoArchiveManager.Core.Services;
@@ -120,11 +121,13 @@ public partial class DiagnosticsWindow : Window
         }
     }
 
+    private static LocalizationManager L => LocalizationManager.Instance;
+
     private void UpdateCount()
     {
         LogCountText.Text = _shown.Count == _all.Count
-            ? $"{_all.Count} entries"
-            : $"{_shown.Count} of {_all.Count} entries";
+            ? L.Format("Diagnostics_EntryCount", _all.Count)
+            : L.Format("Diagnostics_EntryCountFiltered", _shown.Count, _all.Count);
     }
 
     private void LevelFilter_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -154,19 +157,19 @@ public partial class DiagnosticsWindow : Window
     {
         var s = _settings.Current;
 
-        AddEnvRow(EnvLeftColumn, "App version", AppVersion());
-        AddEnvRow(EnvLeftColumn, "Runtime", RuntimeInformation.FrameworkDescription);
-        AddEnvRow(EnvLeftColumn, "OS", RuntimeInformation.OSDescription);
-        AddEnvRow(EnvLeftColumn, "Architecture", RuntimeInformation.OSArchitecture.ToString());
-        AddEnvRow(EnvLeftColumn, "Player engine", App.UseMpvPlayer ? "mpv (GPU)" : "FFME (CPU)");
-        AddEnvRow(EnvLeftColumn, "Player available", App.IsPlayerAvailable ? "Yes" : $"No — {App.PlayerInitError ?? "unavailable"}");
-        AddEnvRow(EnvLeftColumn, "ffprobe", _ffprobe.IsAvailable() ? "Found" : "Not found");
+        AddEnvRow(EnvLeftColumn, L["Diagnostics_Env_AppVersion"], AppVersion());
+        AddEnvRow(EnvLeftColumn, L["Diagnostics_Env_Runtime"], RuntimeInformation.FrameworkDescription);
+        AddEnvRow(EnvLeftColumn, L["Diagnostics_Env_OS"], RuntimeInformation.OSDescription);
+        AddEnvRow(EnvLeftColumn, L["Diagnostics_Env_Architecture"], RuntimeInformation.OSArchitecture.ToString());
+        AddEnvRow(EnvLeftColumn, L["Diagnostics_Env_PlayerEngine"], App.UseMpvPlayer ? L["Diagnostics_Env_PlayerMpv"] : L["Diagnostics_Env_PlayerFfme"]);
+        AddEnvRow(EnvLeftColumn, L["Diagnostics_Env_PlayerAvailable"], App.IsPlayerAvailable ? L["Common_Yes"] : L.Format("Diagnostics_Env_PlayerNo", App.PlayerInitError ?? L["Common_Unavailable"]));
+        AddEnvRow(EnvLeftColumn, L["Diagnostics_Env_Ffprobe"], _ffprobe.IsAvailable() ? L["Common_Found"] : L["Common_NotFound"]);
 
-        AddEnvRow(EnvRightColumn, "Database", s.EffectiveDatabasePath);
-        AddEnvRow(EnvRightColumn, "Thumbnails", s.EffectiveThumbnailDirectory);
-        AddEnvRow(EnvRightColumn, "Backups", s.EffectiveBackupDirectory);
-        AddEnvRow(EnvRightColumn, "Settings", AppSettings.UserSettingsPath);
-        AddEnvRow(EnvRightColumn, "Logs", _log.LogFilePath ?? _log.LogDirectory);
+        AddEnvRow(EnvRightColumn, L["Diagnostics_Env_Database"], s.EffectiveDatabasePath);
+        AddEnvRow(EnvRightColumn, L["Diagnostics_Env_Thumbnails"], s.EffectiveThumbnailDirectory);
+        AddEnvRow(EnvRightColumn, L["Diagnostics_Env_Backups"], s.EffectiveBackupDirectory);
+        AddEnvRow(EnvRightColumn, L["Diagnostics_Env_Settings"], AppSettings.UserSettingsPath);
+        AddEnvRow(EnvRightColumn, L["Diagnostics_Env_Logs"], _log.LogFilePath ?? _log.LogDirectory);
     }
 
     private static void AddEnvRow(Panel host, string label, string value)
@@ -209,19 +212,19 @@ public partial class DiagnosticsWindow : Window
     {
         var s = _settings.Current;
         var sb = new StringBuilder();
-        sb.AppendLine("=== Find That Shot — diagnostics ===");
-        sb.AppendLine($"App version:      {AppVersion()}");
-        sb.AppendLine($"Runtime:          {RuntimeInformation.FrameworkDescription}");
-        sb.AppendLine($"OS:               {RuntimeInformation.OSDescription}");
-        sb.AppendLine($"Architecture:     {RuntimeInformation.OSArchitecture}");
-        sb.AppendLine($"Player engine:    {(App.UseMpvPlayer ? "mpv (GPU)" : "FFME (CPU)")}");
-        sb.AppendLine($"Player available: {(App.IsPlayerAvailable ? "Yes" : $"No — {App.PlayerInitError ?? "unavailable"}")}");
-        sb.AppendLine($"ffprobe:          {(_ffprobe.IsAvailable() ? "Found" : "Not found")}");
-        sb.AppendLine($"Database:         {s.EffectiveDatabasePath}");
-        sb.AppendLine($"Thumbnails:       {s.EffectiveThumbnailDirectory}");
-        sb.AppendLine($"Backups:          {s.EffectiveBackupDirectory}");
-        sb.AppendLine($"Settings:         {AppSettings.UserSettingsPath}");
-        sb.AppendLine($"Log file:         {_log.LogFilePath ?? "(in-memory only)"}");
+        sb.AppendLine(L["Diagnostics_ReportHeader"]);
+        sb.AppendLine($"{L["Diagnostics_Env_AppVersion"]}:      {AppVersion()}");
+        sb.AppendLine($"{L["Diagnostics_Env_Runtime"]}:          {RuntimeInformation.FrameworkDescription}");
+        sb.AppendLine($"{L["Diagnostics_Env_OS"]}:               {RuntimeInformation.OSDescription}");
+        sb.AppendLine($"{L["Diagnostics_Env_Architecture"]}:     {RuntimeInformation.OSArchitecture}");
+        sb.AppendLine($"{L["Diagnostics_Env_PlayerEngine"]}:    {(App.UseMpvPlayer ? L["Diagnostics_Env_PlayerMpv"] : L["Diagnostics_Env_PlayerFfme"])}");
+        sb.AppendLine($"{L["Diagnostics_Env_PlayerAvailable"]}: {(App.IsPlayerAvailable ? L["Common_Yes"] : L.Format("Diagnostics_Env_PlayerNo", App.PlayerInitError ?? L["Common_Unavailable"]))}");
+        sb.AppendLine($"{L["Diagnostics_Env_Ffprobe"]}:          {(_ffprobe.IsAvailable() ? L["Common_Found"] : L["Common_NotFound"])}");
+        sb.AppendLine($"{L["Diagnostics_Env_Database"]}:         {s.EffectiveDatabasePath}");
+        sb.AppendLine($"{L["Diagnostics_Env_Thumbnails"]}:       {s.EffectiveThumbnailDirectory}");
+        sb.AppendLine($"{L["Diagnostics_Env_Backups"]}:          {s.EffectiveBackupDirectory}");
+        sb.AppendLine($"{L["Diagnostics_Env_Settings"]}:         {AppSettings.UserSettingsPath}");
+        sb.AppendLine($"{L["Diagnostics_Env_Logs"]}:         {_log.LogFilePath ?? L["Diagnostics_LogInMemory"]}");
         return sb.ToString();
     }
 
@@ -237,7 +240,7 @@ public partial class DiagnosticsWindow : Window
     private void CopyLog_Click(object sender, RoutedEventArgs e) => TrySetClipboard(BuildVisibleLogText());
 
     private void CopyReport_Click(object sender, RoutedEventArgs e) =>
-        TrySetClipboard(BuildEnvironmentText() + Environment.NewLine + "=== Recent log ===" + Environment.NewLine + BuildVisibleLogText());
+        TrySetClipboard(BuildEnvironmentText() + Environment.NewLine + L["Diagnostics_ReportLogHeader"] + Environment.NewLine + BuildVisibleLogText());
 
     private void ClearLog_Click(object sender, RoutedEventArgs e)
     {
@@ -252,7 +255,7 @@ public partial class DiagnosticsWindow : Window
         var path = _log.LogFilePath;
         if (string.IsNullOrEmpty(path) || !File.Exists(path))
         {
-            MessageBox.Show(this, "No log file is available for this session.", "Diagnostics",
+            MessageBox.Show(this, L["Diagnostics_NoLogFile"], L["Diagnostics_Title"],
                 MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
