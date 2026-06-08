@@ -520,6 +520,36 @@ public partial class MainViewModel : ObservableObject
         _ = SearchAsync();
     }
 
+    // Debounce for the search box so typing re-runs the search live (in both
+    // literal and AI-description modes) without firing a query on every
+    // keystroke. Enter still searches immediately via SearchCommand.
+    private CancellationTokenSource? _searchTextDebounceCts;
+
+    private async void DebounceSearchText()
+    {
+        if (_suppressFilterSearch) return;
+
+        _searchTextDebounceCts?.Cancel();
+        _searchTextDebounceCts?.Dispose();
+        var cts = new CancellationTokenSource();
+        _searchTextDebounceCts = cts;
+
+        try
+        {
+            // Short settle delay; resumes on the UI thread (no ConfigureAwait)
+            // so SearchAsync can safely touch the bound collections.
+            await Task.Delay(250, cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        if (cts.Token.IsCancellationRequested) return;
+        ClearMapSelectionState();
+        await SearchAsync();
+    }
+
     // --- Map browse scoping ---------------------------------------------
     //
     // When the user clicks a cluster / "Filter grid to this view" in the map
@@ -632,6 +662,10 @@ public partial class MainViewModel : ObservableObject
     partial void OnShowOnlyAvailableChanged(bool value) => OnFilterChanged();
     partial void OnOnlyUnreviewedChanged(bool value) => OnFilterChanged();
     partial void OnMainSubjectOnlyChanged(bool value) => OnFilterChanged();
+    // Typing in the search box re-runs the search (debounced). This applies to
+    // both literal keyword search and AI description search, so a query updates
+    // results as you type instead of only on Enter or a filter toggle.
+    partial void OnSearchTextChanged(string value) => DebounceSearchText();
 
     public async Task InitializeAsync()
     {
