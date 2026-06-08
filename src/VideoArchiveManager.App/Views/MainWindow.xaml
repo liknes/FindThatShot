@@ -219,17 +219,90 @@
                 <WrapPanel Orientation="Horizontal"
                            VerticalAlignment="Center"
                            Margin="12,4,12,4">
+                    <!-- The placeholder text and an accent border switch with the
+                         AI search mode so the box itself announces whether it's
+                         doing literal keyword matching or natural-language
+                         (CLIP) matching. Based on the ModernWPF default TextBox
+                         style so we keep its chrome; the DataTriggers only
+                         override the placeholder + border. -->
                     <TextBox x:Name="SearchBox"
                              Width="360"
                              Margin="0,2,0,2"
                              FontSize="13"
                              Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                             ui:ControlHelper.PlaceholderText="Search filename, folder, tags, notes, camera..."
                              VerticalAlignment="Center">
+                        <TextBox.Style>
+                            <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                                <Setter Property="ui:ControlHelper.PlaceholderText"
+                                        Value="Search filename, folder, tags, notes, camera..." />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding UseSemanticSearch}" Value="True">
+                                        <Setter Property="ui:ControlHelper.PlaceholderText"
+                                                Value="Describe a shot, e.g. &quot;cruise ship at sunset&quot;" />
+                                        <Setter Property="BorderBrush" Value="{DynamicResource App.Accent}" />
+                                        <Setter Property="BorderThickness" Value="1.5" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBox.Style>
                         <TextBox.InputBindings>
                             <KeyBinding Key="Enter" Command="{Binding SearchCommand}" />
                         </TextBox.InputBindings>
                     </TextBox>
+
+                    <!-- Inline AI-search toggle. Mirrors View → "Search by
+                         description (AI)" (same UseSemanticSearch binding, so the
+                         two stay in sync) but sits right beside the box so the
+                         mode is discoverable. Only shown when AI is enabled and
+                         the model is installed (IsAiEnabled). Filled amber when
+                         on, outlined when off. -->
+                    <ToggleButton x:Name="SemanticToggle"
+                                  Margin="8,2,0,2"
+                                  Padding="11,0"
+                                  MinWidth="0"
+                                  Cursor="Hand"
+                                  VerticalAlignment="Center"
+                                  IsChecked="{Binding UseSemanticSearch}"
+                                  Visibility="{Binding IsAiEnabled, Converter={StaticResource BoolToVisibility}}"
+                                  ToolTip="Search by description (AI): type a natural-language description (e.g. &quot;cruise ship at sunset&quot;) and rank clips by AI visual similarity instead of literal keyword matching.">
+                        <ToggleButton.Template>
+                            <ControlTemplate TargetType="ToggleButton">
+                                <Border x:Name="Bd"
+                                        Height="28"
+                                        CornerRadius="4"
+                                        BorderThickness="1"
+                                        BorderBrush="{DynamicResource App.Accent}"
+                                        Background="Transparent"
+                                        Padding="{TemplateBinding Padding}">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock x:Name="Glyph"
+                                                   Text="&#xE945;"
+                                                   FontFamily="Segoe MDL2 Assets"
+                                                   FontSize="11"
+                                                   Margin="0,0,6,0"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource App.Accent}" />
+                                        <TextBlock x:Name="Label"
+                                                   Text="AI search"
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource App.Accent}" />
+                                    </StackPanel>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsChecked" Value="True">
+                                        <Setter TargetName="Bd" Property="Background" Value="{DynamicResource App.Accent}" />
+                                        <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource App.Accent.OnAccent}" />
+                                        <Setter TargetName="Label" Property="Foreground" Value="{DynamicResource App.Accent.OnAccent}" />
+                                    </Trigger>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource App.Accent.Hover}" />
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </ToggleButton.Template>
+                    </ToggleButton>
                 </WrapPanel>
             </DockPanel>
         </Border>
