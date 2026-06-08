@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-06-08
+
+### Added
+
+- **Full UI localization (English + Norwegian Bokmål).** The entire WPF app now ships with a runtime localization system: `LocalizationManager`, `{loc:Tr}` markup extension, `EnumDisplay` for enum labels, and `Strings.resx` / `Strings.nb-NO.resx` resource files. Pick your language under **Settings → General → Language**; the choice persists across sessions. All major windows, dialogs, status text, and MessageBoxes are translated — including AI review, map/calendar browse, catalog stats, video info, diagnostics, and the main editor panels.
+- **Localized landing page.** The GitHub Pages site (`docs/index.html`) gains an **EN | Norsk** switcher with client-side i18n (`docs/i18n.js`): auto-detects Norwegian browsers, persists the choice in `localStorage`, and updates meta title/description for SEO.
+
+### Changed
+
+- **Debounced search input.** The main search box no longer fires a query on every keystroke — a short debounce waits until you pause typing, which keeps both keyword and AI description searches smoother on large catalogs.
+
 ## [0.15.0] - 2026-06-08
 
 ### Added
@@ -398,7 +409,8 @@ First public release.
 
 - Responsive default window size; date pickers and the *Play externally* button are no longer clipped at common screen widths.
 
-[Unreleased]: https://github.com/liknes/FindThatShot/compare/v0.15.0...HEAD
+[Unreleased]: https://github.com/liknes/FindThatShot/compare/v0.16.0...HEAD
+[0.16.0]: https://github.com/liknes/FindThatShot/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/liknes/FindThatShot/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/liknes/FindThatShot/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/liknes/FindThatShot/compare/v0.12.0...v0.13.0
