@@ -42,16 +42,18 @@ public class AiModelProvider : IAiModelProvider
     }
 
     // Managed default lives alongside the catalog/thumbnails in app-data. This is
-    // also the download target for EnsureDownloadedAsync.
+    // also the download target for EnsureDownloadedAsync. The multilingual bundle
+    // gets its own folder so it installs cleanly next to (not on top of) any
+    // older English-only clip-vit-b32 bundle.
     private static string ManagedDirectory =>
-        Path.Combine(AppSettings.DefaultBaseDirectory, "Models", "clip-vit-b32");
+        Path.Combine(AppSettings.DefaultBaseDirectory, "Models", "clip-multilingual-v1");
 
     // Bundled location shipped next to the executable, mirroring how ffmpeg/libmpv
     // are distributed (tools\ffmpeg, tools\mpv). The publish/build copy step and the
-    // scripts/export-clip-onnx.py prep script both target this folder, so a model
+    // scripts/export-mclip-onnx.py prep script both target this folder, so a model
     // dropped here works with zero configuration.
     private static string BundledDirectory =>
-        Path.Combine(AppContext.BaseDirectory, "tools", "models", "clip-vit-b32");
+        Path.Combine(AppContext.BaseDirectory, "tools", "models", "clip-multilingual-v1");
 
     public string ModelDirectory
     {

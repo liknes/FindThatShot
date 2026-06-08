@@ -13,6 +13,7 @@
          this package — they are downloaded on demand (or dropped into a local
          folder) at runtime, so this only adds the runtime, not the weights. -->
     <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.20.1" />
+    <PackageReference Include="Microsoft.ML.Tokenizers" Version="2.0.0" />
   </ItemGroup>
 
 </Project>

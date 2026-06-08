@@ -24,7 +24,7 @@ namespace VideoArchiveManager.Core.Services.Ai;
 // standard bpe_simple_vocab_16e6 merges file (gzip or plain text), builds the
 // byte<->unicode table and merge ranks, and turns a caption / query into the
 // [BOS] … [EOS] (+zero-pad) token id sequence the CLIP text encoder expects.
-public sealed class ClipTokenizer
+public sealed class ClipTokenizer : IClipTokenizer
 {
     private const int BosId = 49406; // <|startoftext|>
     private const int EosId = 49407; // <|endoftext|>
@@ -37,12 +37,18 @@ public sealed class ClipTokenizer
     private readonly Dictionary<string, int> _encoder;
     private readonly Dictionary<(string, string), int> _bpeRanks;
     private readonly Dictionary<string, string> _cache = new();
+    private readonly int _contextLength;
 
-    public ClipTokenizer(string vocabFilePath)
+    // contextLength is the fixed sequence length the IClipTokenizer entry point
+    // pads to (OpenAI CLIP's text encoder is trained at 77). The explicit
+    // Tokenize(text, contextLength) overload remains for callers/tests that want
+    // to pass it directly.
+    public ClipTokenizer(string vocabFilePath, int contextLength = 77)
     {
         if (!File.Exists(vocabFilePath))
             throw new FileNotFoundException("CLIP BPE vocabulary not found.", vocabFilePath);
 
+        _contextLength = contextLength > 0 ? contextLength : 77;
         _byteToUnicode = BytesToUnicode();
 
         var merges = ReadMerges(vocabFilePath);
@@ -62,6 +68,11 @@ public sealed class ClipTokenizer
         _bpeRanks = new Dictionary<(string, string), int>(merges.Count);
         for (var i = 0; i < merges.Count; i++) _bpeRanks[merges[i]] = i;
     }
+
+    // IClipTokenizer entry point: tokenize at the context length configured on
+    // construction.
+    public (long[] InputIds, long[] AttentionMask) Tokenize(string text) =>
+        Tokenize(text, _contextLength);
 
     // Returns a fixed-length (contextLength) id sequence: BOS, tokens, EOS,
     // then 0-padded, alongside the matching attention mask (1 up to and

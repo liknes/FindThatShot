@@ -103,12 +103,14 @@ public class AppSettings
     // URL the model bundle (.zip) is fetched from on first use
     // (download-on-demand) by the in-app "Download model" button. Points at the
     // GitHub Release asset for this repo; the archive is produced by
-    // scripts/export-clip-onnx.py --zip and uploaded under the models-v1 tag.
-    // If you re-export the model, upload it under the SAME tag/filename or bump
-    // this default. Power users can still override via AiModelDirectory (a
-    // drop-in folder) or by editing this in appsettings.json.
+    // scripts/export-mclip-onnx.py --zip and uploaded under the models-v2 tag.
+    // This is the MULTILINGUAL bundle (CLIP ViT-B/32 image encoder + a
+    // multilingual DistilBERT text encoder), so natural-language search works in
+    // 50+ languages. If you re-export the model, upload it under the SAME
+    // tag/filename or bump this default. Power users can still override via
+    // AiModelDirectory (a drop-in folder) or by editing this in appsettings.json.
     public string? AiModelDownloadUrl { get; set; } =
-        "https://github.com/liknes/FindThatShot/releases/download/models-v1/clip-vit-b32.zip";
+        "https://github.com/liknes/FindThatShot/releases/download/models-v2/clip-multilingual-v1.zip";
 
     // Frame sampling is duration-proportional: we aim for one sampled frame
     // every AiSecondsPerFrame seconds of footage, then clamp the count to

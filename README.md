@@ -147,29 +147,29 @@ Because a single thumbnail is a weak signal for a whole video, the scoring pass 
 Two capabilities come from the one model:
 
 - **Auto-tag suggestions.** Each clip's frames are scored against a scene/subject vocabulary (sea, fog, ships, beach, forest, mountains, city, snow, sunset, plus coastal/drone/aerial terms like coastline, cliffs, marina, lighthouse, reef, kayak, and terrain/urban terms like canyon, glacier, skyscrapers, wind turbines, …). Above-threshold labels become suggestions you triage in **Catalog → Review AI suggestions…** as accept/reject chips. **Accept** promotes a suggestion to a real tag on the clip; **Reject** dismisses it (and is remembered, so a later re-run won't keep re-proposing it). Nothing is ever auto-applied. The candidate list lives in `AiLabelVocabulary` — add a row and **Re-score all clips** to detect new subjects. Optionally, **adaptive thresholds** (on by default) learn a per-label confidence cutoff from your accept/reject history, so suggestions sharpen toward your footage over time without ever changing the CLIP model.
-- **Natural-language search.** Turn on **View → Search by description (AI)** and type something like *"drone shot over snowy mountains at sunset"* — clips are ranked by visual similarity to your phrase rather than by literal text matching.
+- **Natural-language search.** Turn on **View → Search by description (AI)** (or the inline **AI search** toggle beside the search box) and type something like *"drone shot over snowy mountains at sunset"* — clips are ranked by visual similarity to your phrase rather than by literal text matching. The default bundle is **multilingual**: the query text is encoded by a multilingual DistilBERT aligned to the CLIP ViT-B/32 image space, so search works in **50+ languages** (Norwegian, Brazilian Portuguese, German, …). (Auto-tag suggestion labels are still applied from the English `AiLabelVocabulary`; localizing the displayed tag names is a separate concern.)
 
 ### Enabling it
 
 The feature is **off by default**, and — like the bundled FFmpeg/mpv binaries — the **model is not shipped in the repo** (it's large, and gitignored under `tools/models/`). You supply it once; there is **no official hosted download**. Pick one of:
 
-- **Produce the bundle with the prep script (recommended).** Run the included exporter once to download the public `openai/clip-vit-base-patch32` weights and assemble the exact bundle the app expects into `tools/models/clip-vit-b32`:
+- **Produce the bundle with the prep script (recommended).** Run the included exporter once to download the public weights and assemble the exact bundle the app expects into `tools/models/clip-multilingual-v1`. The default exporter builds the **multilingual** bundle (OpenAI CLIP ViT-B/32 image encoder + `sentence-transformers/clip-ViT-B-32-multilingual-v1` text encoder + multilingual BERT vocab):
 
 ```bash
-python -m pip install "torch" "transformers" "onnx" "onnxscript"
-python scripts/export-clip-onnx.py
+python -m pip install "torch" "transformers" "sentence-transformers" "onnx" "onnxscript"
+python scripts/export-mclip-onnx.py
 ```
 
-  The app resolves `tools/models/clip-vit-b32` automatically (it's also copied into the build/publish output, like FFmpeg), so it's then **zero-config**.
+  The app resolves `tools/models/clip-multilingual-v1` automatically (it's also copied into the build/publish output, like FFmpeg), so it's then **zero-config**. (An English-only bundle can still be produced with `scripts/export-clip-onnx.py`; the app detects which tokenizer to use from the bundle's `manifest.json`.)
 
 - **Drop in a bundle you already have.** Put the files (below) in any folder and set **Settings → AI tagging → Model folder** to it (handy offline).
 
-- **Self-host + download-on-demand (recommended for distribution; the shipped default).** The default **AI model download URL** points at this repo's GitHub Release asset (`models-v1/clip-vit-b32.zip`), so the in-app **Download model** button fetches + extracts the bundle into `%LOCALAPPDATA%\VideoArchiveManager\Models\` on first use — no Python for end users. To (re)publish that asset: run `python scripts/export-clip-onnx.py --zip` (writes `tools/models/clip-vit-b32.zip`), then upload it to the GitHub Release under the **`models-v1`** tag with that exact filename. Publish the app with `-SkipBundleModel` to keep the installer small; the ~340 MB only downloads for users who actually opt in. (If you re-export the model, reuse the same tag/filename or bump `AppSettings.AiModelDownloadUrl`.)
+- **Self-host + download-on-demand (recommended for distribution; the shipped default).** The default **AI model download URL** points at this repo's GitHub Release asset (`models-v2/clip-multilingual-v1.zip`), so the in-app **Download model** button fetches + extracts the bundle into `%LOCALAPPDATA%\VideoArchiveManager\Models\` on first use — no Python for end users. To (re)publish that asset: run `python scripts/export-mclip-onnx.py --zip` (writes `tools/models/clip-multilingual-v1.zip`), then upload it to the GitHub Release under the **`models-v2`** tag with that exact filename. Publish the app with `-SkipBundleModel` to keep the installer small; the ~450 MB only downloads for users who actually opt in. (If you re-export the model, reuse the same tag/filename or bump `AppSettings.AiModelDownloadUrl`.)
 
 Then, in **Settings → AI tagging**:
 
 1. Tick **Enable AI auto-tagging and natural-language search**.
-2. Confirm the status shows the model as **Ready** (it resolves a configured **Model folder**, then a bundled `tools/models/clip-vit-b32`, then the managed app-data folder).
+2. Confirm the status shows the model as **Ready** (it resolves a configured **Model folder**, then a bundled `tools/models/clip-multilingual-v1`, then the managed app-data folder).
 3. Run **Catalog → Generate AI tags…** to score your clips (progress shows in the status bar), then open **Catalog → Review AI suggestions…**.
 
 **Catalog → Generate AI tags…** scores only clips that don't have AI embeddings yet (the incremental pass), while **Catalog → Re-score all clips with AI…** re-runs scoring on every clip — use it after changing the sampling settings, label vocabulary, or model. Re-scoring is idempotent: it replaces prior embeddings and refreshes pending suggestions, but never resurrects tags you've already accepted or rejected.

@@ -25,7 +25,7 @@ namespace VideoArchiveManager.Core.Services.Ai;
 public sealed class ClipOnnxModel : IClipModel
 {
     private readonly ClipModelManifest _manifest;
-    private readonly ClipTokenizer _tokenizer;
+    private readonly IClipTokenizer _tokenizer;
     private readonly InferenceSession _imageSession;
     private readonly InferenceSession _textSession;
     private readonly object _imageLock = new();
@@ -53,7 +53,21 @@ public sealed class ClipOnnxModel : IClipModel
 
         _imageSession = new InferenceSession(imagePath, options);
         _textSession = new InferenceSession(textPath, options);
-        _tokenizer = new ClipTokenizer(vocabPath);
+        _tokenizer = CreateTokenizer(_manifest, vocabPath);
+    }
+
+    // Picks the tokenizer the bundle's manifest asks for. The default
+    // (clip-bpe) keeps older English bundles working; bert-wordpiece drives the
+    // multilingual model.
+    private static IClipTokenizer CreateTokenizer(ClipModelManifest manifest, string vocabPath)
+    {
+        var type = manifest.TokenizerType?.Trim().ToLowerInvariant();
+        return type switch
+        {
+            "bert-wordpiece" or "bert" or "wordpiece" =>
+                new BertWordPieceTokenizer(vocabPath, manifest.ContextLength, manifest.TokenizerLowerCase),
+            _ => new ClipTokenizer(vocabPath, manifest.ContextLength)
+        };
     }
 
     public string ModelId => _manifest.ModelId;
@@ -101,11 +115,11 @@ public sealed class ClipOnnxModel : IClipModel
 
     public float[] EncodeText(string text)
     {
-        var ctx = _manifest.ContextLength;
-        var (ids, mask) = _tokenizer.Tokenize(text ?? string.Empty, ctx);
+        var (ids, mask) = _tokenizer.Tokenize(text ?? string.Empty);
+        var len = ids.Length;
 
-        var idTensor = new DenseTensor<long>(ids, new[] { 1, ctx });
-        var maskTensor = new DenseTensor<long>(mask, new[] { 1, ctx });
+        var idTensor = new DenseTensor<long>(ids, new[] { 1, len });
+        var maskTensor = new DenseTensor<long>(mask, new[] { 1, len });
 
         var inputs = new List<NamedOnnxValue>
         {

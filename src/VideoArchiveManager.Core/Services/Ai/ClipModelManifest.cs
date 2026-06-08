@@ -36,8 +36,22 @@ public class ClipModelManifest
     public string TextEncoderFile { get; set; } = "text_encoder.onnx";
 
     // Standard OpenAI CLIP BPE vocabulary (gzip-compressed text of merges).
+    // For a bert-wordpiece bundle this is the plain BERT vocab.txt instead.
     [JsonPropertyName("vocabFile")]
     public string VocabFile { get; set; } = "bpe_simple_vocab_16e6.txt.gz";
+
+    // Selects how the query/caption text is turned into token ids:
+    //   "clip-bpe"        -> OpenAI CLIP byte-level BPE (the English model)
+    //   "bert-wordpiece"  -> multilingual BERT WordPiece (the multilingual model)
+    // Defaults to clip-bpe so older English bundles (which predate this field)
+    // keep working unchanged.
+    [JsonPropertyName("tokenizerType")]
+    public string TokenizerType { get; set; } = "clip-bpe";
+
+    // Whether the WordPiece tokenizer lowercases before tokenizing. The
+    // multilingual model is cased (do_lower_case = false). Ignored for clip-bpe.
+    [JsonPropertyName("tokenizerLowerCase")]
+    public bool TokenizerLowerCase { get; set; } = false;
 
     [JsonPropertyName("imageSize")]
     public int ImageSize { get; set; } = 224;
