@@ -98,15 +98,30 @@ public class AiTaggingService : IAiTaggingService
 
         var ids = await GetPendingIdsAsync(reprocessAll, cancellationToken).ConfigureAwait(false);
         var total = ids.Count;
+        // For the incremental pass, surface the full online catalog size so the
+        // progress count makes sense (e.g. "12 new clips" out of "2103 total"),
+        // instead of looking like the app forgot the already-scored clips. For a
+        // re-score, the work set already is the full catalog.
+        var catalogTotal = reprocessAll
+            ? total
+            : await CountPendingAsync(reprocessAll: true, cancellationToken).ConfigureAwait(false);
         var processed = 0;
         var tagged = 0;
         var failed = 0;
         var skipped = 0;
 
+        string ProgressMessage(int done) => reprocessAll
+            ? $"Scored {done} of {total} clip(s)"
+            : $"Scored {done} of {total} new clip(s) ({catalogTotal} total)";
+
         progress?.Report(new AiTaggingProgress
         {
             Total = total,
-            Message = total == 0 ? "Nothing to tag." : $"Scoring {total} clip(s)…"
+            Message = total == 0
+                ? "Nothing to tag."
+                : reprocessAll
+                    ? $"Scoring {total} clip(s)"
+                    : $"Scoring {total} new clip(s) ({catalogTotal} total)"
         });
 
         foreach (var id in ids)
@@ -142,7 +157,7 @@ public class AiTaggingService : IAiTaggingService
                 Failed = failed,
                 Skipped = skipped,
                 CurrentFile = currentFile,
-                Message = $"Scored {processed}/{total}…"
+                Message = ProgressMessage(processed)
             });
         }
 

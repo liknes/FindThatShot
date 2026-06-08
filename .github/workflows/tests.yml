@@ -1,0 +1,45 @@
+name: Tests
+
+# Gate every push / PR on the automated suites. The two highest-priority
+# invariants — original media is never touched, and user curation is never
+# silently destroyed — are covered by these projects, so a red run here means
+# a change broke a safety guarantee and must not merge.
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  test:
+    # Windows runner: the app targets net8.0-windows (WPF) and the production
+    # code paths (paths, SQLite file locking, casing) behave as they do for the
+    # end user only on Windows.
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore test projects
+        run: |
+          dotnet restore tests/VideoArchiveManager.Core.Tests/VideoArchiveManager.Core.Tests.csproj
+          dotnet restore tests/VideoArchiveManager.Data.Tests/VideoArchiveManager.Data.Tests.csproj
+
+      - name: Core.Tests (media-immutability guard, sidecar, backup, parsing)
+        run: dotnet test tests/VideoArchiveManager.Core.Tests/VideoArchiveManager.Core.Tests.csproj --configuration Release --logger "trx;LogFileName=core.trx"
+
+      - name: Data.Tests (durability, cascade scope, removal safety, search)
+        run: dotnet test tests/VideoArchiveManager.Data.Tests/VideoArchiveManager.Data.Tests.csproj --configuration Release --logger "trx;LogFileName=data.trx"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: '**/TestResults/*.trx'
+          if-no-files-found: ignore

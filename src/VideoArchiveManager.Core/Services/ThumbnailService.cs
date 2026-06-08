@@ -192,6 +192,10 @@ public class ThumbnailService : IThumbnailService
 
                 if (File.Exists(candidate))
                 {
+                    // Last-line-of-defence: refuse to delete anything that looks
+                    // like media or escapes the cache dir, regardless of how the
+                    // candidate path was derived.
+                    MediaSafetyGuard.EnsureSafeToDelete(candidate, thumbDirFull);
                     File.Delete(candidate);
                     deleted++;
                 }
@@ -362,6 +366,7 @@ public class ThumbnailService : IThumbnailService
 
                 if (File.Exists(candidate))
                 {
+                    MediaSafetyGuard.EnsureSafeToDelete(candidate, momentsDirFull);
                     File.Delete(candidate);
                     deleted++;
                 }

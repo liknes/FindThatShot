@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\VideoArchiveManager.Data\VideoArchiveManager.Data.csproj" />
+  </ItemGroup>
+
+</Project>
