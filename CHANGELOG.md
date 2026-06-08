@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-06-08
+
 ### Added
 
 - **Multilingual natural-language search.** The default AI bundle now encodes the search text with a multilingual DistilBERT (`sentence-transformers/clip-ViT-B-32-multilingual-v1`) distilled to match the **same** CLIP ViT-B/32 image space, so *"Describe a shot"* search works in **50+ languages** (Norwegian, Brazilian Portuguese, German, …) — not just English. Because the image encoder is unchanged, existing per-clip image embeddings stay valid; only the query-text path changes. The tokenizer is selected per bundle from `manifest.json` (`tokenizerType`: `clip-bpe` for the old English model, `bert-wordpiece` for the multilingual one) via a new `IClipTokenizer` abstraction, with the multilingual WordPiece tokenizer backed by the well-tested `Microsoft.ML.Tokenizers` `BertTokenizer`. A new `scripts/export-mclip-onnx.py` produces the bundle (image encoder + multilingual text encoder + BERT vocab + manifest), and the default download URL now points at `models-v2/clip-multilingual-v1.zip`.
@@ -396,7 +398,8 @@ First public release.
 
 - Responsive default window size; date pickers and the *Play externally* button are no longer clipped at common screen widths.
 
-[Unreleased]: https://github.com/liknes/FindThatShot/compare/v0.14.0...HEAD
+[Unreleased]: https://github.com/liknes/FindThatShot/compare/v0.15.0...HEAD
+[0.15.0]: https://github.com/liknes/FindThatShot/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/liknes/FindThatShot/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/liknes/FindThatShot/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/liknes/FindThatShot/compare/v0.11.0...v0.12.0
