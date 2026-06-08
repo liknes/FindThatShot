@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+### Added
+
+- **Automated test suite for the two safety invariants.** Two new xUnit projects (`tests/VideoArchiveManager.Core.Tests` and `tests/VideoArchiveManager.Data.Tests`, using NSubstitute + FluentAssertions) turn the codebase's written "SAFETY CONTRACT" comments into enforced, regression-tested invariants. **Media immutability** is verified with a `MediaSnapshot` helper that fingerprints every file in a fixture tree (SHA-256 + length + last-write time) before and after an operation and asserts **zero diffs** on the source media — exercised across catalog removal, thumbnail-cache cleanup, sidecar writes (off → no file appears; on → only the `.findthatshot.json` appears and the video bytes are unchanged), and read-only ffprobe/thumbnail paths. **Data durability** is verified against a **real file-backed SQLite catalog** migrated with the production migrations (not the InMemory provider, so cascade deletes and `ExecuteDeleteAsync` behave exactly as in production): cascade scope keeps the global `Tag` vocabulary when a clip is deleted, `ClearAllAiDataAsync` only purges AI tables, backup/restore round-trips, and migrations are additive. Plus functional coverage for `SearchService`, `FolderNameParser`, `VectorMath`, `ClipTokenizer`, `DuplicateDetectionService`, `SavedSearchService`, `TagService`, `MomentService`, and `NominatimReverseGeocodingService` (stubbed `HttpClient`).
+- **`MediaSafetyGuard` — centralized refuse-to-delete guard.** A new Core helper that throws unless a delete target resolves inside the app's cache directory **and** carries no protected media/sidecar extension. It carries its own media-extension list (independent of user settings) so a misconfigured setting can't widen what counts as "safe". The thumbnail-cache cleanup (`ThumbnailService.DeleteForVideos` / `DeleteForMoments`) now routes its `File.Delete` calls through it as a last line of defence behind the existing cache-directory checks.
+- **CI workflow (`.github/workflows/tests.yml`).** Runs both test suites on a Windows runner for every push / pull request, so a change that breaks a media-immutability or data-durability guarantee fails the build before it can merge.
+
+### Changed
+
+- **Every bulk catalog removal now takes a safety backup first.** `VideoLibraryService.RemoveByIdsAsync` / `RemoveOfflineAsync` / `RemoveUnderRootAsync` (and the new `RemoveRootFolderAsync`) call `ICatalogBackupService` to snapshot the catalog before deleting — best-effort and logged, so a backup failure never blocks the user's action. This guarantees any mistaken bulk delete is recoverable from a snapshot at most one destructive action old.
+- **Removing a root folder is now atomic.** The two-step root removal (delete the `RootFolder` row + forget every video record under it) is consolidated into a single `VideoLibraryService.RemoveRootFolderAsync` that runs both deletions in one database transaction, so a partial failure can no longer leave the catalog half-deleted (orphaned video rows, or a root with no videos). Thumbnail-cache cleanup is deferred until after the commit. As always, source video files on disk are never touched.
+
 ## [0.14.0] - 2026-06-05
 
 ### Changed
