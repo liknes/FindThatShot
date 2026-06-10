@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+## [0.16.1] - 2026-06-08
+
+### Changed
+
+- **AI search placeholder hints.** The search box now says to press Enter when AI description mode is active (English and Norwegian), so it is clear that AI queries are not fired on every keystroke.
+
+### Fixed
+
+- **Reverted live debounced search.** Typing in the main search box no longer auto-runs queries after a short pause — search runs on Enter (or filter changes) again. This avoids unexpected AI searches while composing a description.
+- **Moment search list layout.** Result rows in the moment search window now stretch full width without extra ListBox item chrome.
+
 ## [0.16.0] - 2026-06-08
 
 ### Added
@@ -409,7 +420,8 @@ First public release.
 
 - Responsive default window size; date pickers and the *Play externally* button are no longer clipped at common screen widths.
 
-[Unreleased]: https://github.com/liknes/FindThatShot/compare/v0.16.0...HEAD
+[Unreleased]: https://github.com/liknes/FindThatShot/compare/v0.16.1...HEAD
+[0.16.1]: https://github.com/liknes/FindThatShot/compare/v0.16.0...v0.16.1
 [0.16.0]: https://github.com/liknes/FindThatShot/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/liknes/FindThatShot/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/liknes/FindThatShot/compare/v0.13.0...v0.14.0

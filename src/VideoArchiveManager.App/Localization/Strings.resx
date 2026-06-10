@@ -322,7 +322,7 @@ Tags you've already accepted stay. Source files are never touched. You can regen
 
   <!-- ===== Main window: search box ===== -->
   <data name="Main_Search_Placeholder" xml:space="preserve"><value>Search filename, folder, tags, notes, camera...</value></data>
-  <data name="Main_Search_Placeholder_Ai" xml:space="preserve"><value>Describe a shot, e.g. "cruise ship at sunset"</value></data>
+  <data name="Main_Search_Placeholder_Ai" xml:space="preserve"><value>Describe a shot, e.g. "cruise ship at sunset" — press Enter</value></data>
   <data name="Main_Search_AiToggle_Tip" xml:space="preserve"><value>Search by description (AI): type a natural-language description (e.g. "cruise ship at sunset") and rank clips by AI visual similarity instead of literal keyword matching.</value></data>
   <data name="Main_Search_AiToggle_Label" xml:space="preserve"><value>AI search</value></data>
 

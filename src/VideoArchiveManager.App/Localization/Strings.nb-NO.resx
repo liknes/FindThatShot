@@ -315,7 +315,7 @@ Tagger du allerede har godtatt beholdes. Kildefiler røres aldri. Du kan generer
 
   <!-- ===== Hovedvindu: søkefelt ===== -->
   <data name="Main_Search_Placeholder" xml:space="preserve"><value>Søk filnavn, mappe, tagger, notater, kamera...</value></data>
-  <data name="Main_Search_Placeholder_Ai" xml:space="preserve"><value>Beskriv et opptak, f.eks. «cruiseskip ved solnedgang»</value></data>
+  <data name="Main_Search_Placeholder_Ai" xml:space="preserve"><value>Beskriv et opptak, f.eks. «cruiseskip ved solnedgang» — trykk Enter</value></data>
   <data name="Main_Search_AiToggle_Tip" xml:space="preserve"><value>Søk etter beskrivelse (AI): skriv en naturlig språkbeskrivelse (f.eks. «cruiseskip ved solnedgang») og ranger klipp etter visuell AI-likhet i stedet for bokstavelig nøkkelordsøk.</value></data>
   <data name="Main_Search_AiToggle_Label" xml:space="preserve"><value>AI-søk</value></data>
 
