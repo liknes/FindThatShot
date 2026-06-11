@@ -14,11 +14,8 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-using System.Collections;
 using System.ComponentModel;
 using System.Globalization;
-using System.IO;
-using System.Reflection;
 using System.Resources;
 
 namespace VideoArchiveManager.App.Localization;
@@ -48,23 +45,17 @@ public sealed class LocalizationManager : INotifyPropertyChanged
 
     private CultureInfo _currentCulture = CultureInfo.CurrentUICulture;
 
-    // Friendlier labels than CultureInfo.NativeName for cultures we ship today.
-    private static readonly Dictionary<string, string> DisplayNameOverrides =
-        new(StringComparer.OrdinalIgnoreCase)
-        {
-            ["en"] = "English",
-            ["nb"] = "Norsk (bokmål)",
-            ["nb-NO"] = "Norsk (bokmål)",
-        };
-
     private LocalizationManager() { }
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    // English plus every culture that has a Strings.<culture>.resx satellite
-    // (e.g. added via a Crowdin pull request). No code change needed when a
-    // new translation lands — only the resource file.
-    public IReadOnlyList<LanguageOption> AvailableLanguages { get; } = DiscoverAvailableLanguages();
+    // The languages offered in Settings. Add a row here (and a matching
+    // Strings.<culture>.resx) to surface a new language.
+    public IReadOnlyList<LanguageOption> AvailableLanguages { get; } = new[]
+    {
+        new LanguageOption("en", "English"),
+        new LanguageOption("nb-NO", "Norsk (bokmål)"),
+    };
 
     public CultureInfo CurrentCulture => _currentCulture;
 
@@ -131,97 +122,5 @@ public sealed class LocalizationManager : INotifyPropertyChanged
         // on this source, refreshing all {loc:Tr} text in place.
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Item[]"));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentCulture)));
-    }
-
-    private static IReadOnlyList<LanguageOption> DiscoverAvailableLanguages()
-    {
-        var byCulture = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["en"] = GetDisplayName("en"),
-        };
-
-        var mainAssembly = typeof(LocalizationManager).Assembly;
-        var assemblyDir = Path.GetDirectoryName(mainAssembly.Location);
-        if (assemblyDir is null)
-            return OrderLanguages(byCulture);
-
-        var satelliteDllName = $"{mainAssembly.GetName().Name}.resources.dll";
-        foreach (var cultureDir in Directory.EnumerateDirectories(assemblyDir))
-        {
-            var cultureName = Path.GetFileName(cultureDir);
-            if (!IsPlausibleCultureName(cultureName)) continue;
-            if (cultureName.Equals("en", StringComparison.OrdinalIgnoreCase)) continue;
-
-            var satellitePath = Path.Combine(cultureDir, satelliteDllName);
-            if (!File.Exists(satellitePath)) continue;
-
-            try
-            {
-                var satellite = Assembly.LoadFrom(satellitePath);
-                if (!HasStringResources(satellite, cultureName)) continue;
-
-                byCulture[cultureName] = GetDisplayName(cultureName);
-            }
-            catch (FileLoadException)
-            {
-            }
-            catch (BadImageFormatException)
-            {
-            }
-        }
-
-        return OrderLanguages(byCulture);
-    }
-
-    private static IReadOnlyList<LanguageOption> OrderLanguages(
-        Dictionary<string, string> byCulture) =>
-        byCulture
-            .OrderBy(kv => kv.Key.Equals("en", StringComparison.OrdinalIgnoreCase) ? 0 : 1)
-            .ThenBy(kv => kv.Value, StringComparer.CurrentCultureIgnoreCase)
-            .Select(kv => new LanguageOption(kv.Key, kv.Value))
-            .ToList();
-
-    private static bool IsPlausibleCultureName(string name)
-    {
-        if (name.Length is < 2 or > 11) return false;
-
-        foreach (var ch in name)
-        {
-            if (!char.IsLetter(ch) && ch != '-') return false;
-        }
-
-        return true;
-    }
-
-    private static bool HasStringResources(Assembly satellite, string cultureName)
-    {
-        try
-        {
-            var culture = CultureInfo.GetCultureInfo(cultureName);
-            var rm = new ResourceManager(
-                "VideoArchiveManager.App.Localization.Strings",
-                satellite);
-            var set = rm.GetResourceSet(culture, tryParents: false, createIfNotExists: false);
-            return set is not null && set.Cast<DictionaryEntry>().Any();
-        }
-        catch (CultureNotFoundException)
-        {
-            return false;
-        }
-    }
-
-    private static string GetDisplayName(string cultureName)
-    {
-        if (DisplayNameOverrides.TryGetValue(cultureName, out var name))
-            return name;
-
-        try
-        {
-            return CultureInfo.GetCultureInfo(cultureName).NativeName;
-        }
-        catch (CultureNotFoundException)
-        {
-            return cultureName;
-        }
     }
 }
