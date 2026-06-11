@@ -377,6 +377,33 @@ Two independent signals, since one tool can't cover both cleanly:
 
 The installer and binaries are currently unsigned. End users will see a SmartScreen "Unknown publisher" warning the first time. For personal / internal use this is acceptable. If you ever distribute publicly, look into a code-signing certificate and `vpk pack --signParams …`.
 
+## Localization & translating the app
+
+The Windows app is fully localizable. English is the source language in `src/VideoArchiveManager.App/Localization/Strings.resx`; each translation is a sibling file `Strings.<culture>.resx` (for example `Strings.nb-NO.resx` for Norwegian Bokmål). Pick your language under **Settings → General → Language**; the choice is saved in your user settings.
+
+**Community translations** are managed on [Crowdin](https://crowdin.com/). The repository root contains a [`crowdin.yml`](./crowdin.yml) file that tells Crowdin which files to sync with GitHub.
+
+### For translators
+
+1. Open the Find That Shot project on Crowdin (link from the project **About** page or README once the maintainer has published it).
+2. Choose a target language (or request a new one if the project allows it).
+3. Translate strings in the Crowdin editor. Context comments from `Strings.resx` appear when present.
+4. When translations are approved, Crowdin opens a pull request on GitHub with the updated `.resx` files. After that PR is merged, the new language appears automatically in the in-app language picker — no code changes required.
+
+Placeholders such as `{0}` must be preserved exactly; they are filled at runtime with numbers, paths, or other dynamic text.
+
+### For maintainers (Crowdin ↔ GitHub)
+
+If you have already connected Crowdin to this repository:
+
+1. Merge or push [`crowdin.yml`](./crowdin.yml) to the `main` branch.
+2. In Crowdin: **Integrations → GitHub → Edit** — confirm the configuration file is `crowdin.yml` and sync mode is **Source and translation files**.
+3. Set the source language to **English** and add target languages (Norwegian Bokmål is already in the repo as `nb-NO`).
+4. Under **Settings → Translations**, enable **Allow users to suggest new languages** if you want volunteers to propose additional locales.
+5. Configure when Crowdin should open PRs (on each update, on a schedule, or manually).
+
+The landing page (`docs/index.html`) still uses inline strings in `docs/i18n.js` (English + Norwegian only). App UI strings and the website can be split into separate Crowdin file groups later if needed.
+
 ## Licensing & attribution
 
 > Copyright (C) 2026 Ingve Moss Liknes &lt;findthatshot@ingve.no&gt;
