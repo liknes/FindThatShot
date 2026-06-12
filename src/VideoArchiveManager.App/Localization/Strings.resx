@@ -9,9 +9,11 @@
     only need to override the keys they translate; anything missing falls back to
     the value here.
 
-    Translators normally never edit this XML by hand — use ResX Resource Manager
-    (Excel round-trip) for local work, or send a pull request with a new
-    Strings.<culture>.resx alongside a row in LocalizationManager.AvailableLanguages.
+    Translators normally never edit this XML by hand — export to Excel with
+    scripts/resx-l10n.ps1 export, translate the workbook, then import with
+    scripts/resx-l10n.ps1 import. For a new language, add a column (e.g. de-DE)
+    and a row in LocalizationManager.AvailableLanguages, then create Strings.de-DE.resx
+    on import.
   -->
   <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
     <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
